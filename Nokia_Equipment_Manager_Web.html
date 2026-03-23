@@ -422,10 +422,39 @@ tr.selected  { background: #bbd6f8 !important; }
   </fieldset>
   <fieldset class="section-box" style="border-color:#0d6efd;">
     <legend style="color:#0d6efd;">제품명 마스터 DB (입고 시 자동완성 기준)</legend>
-    <div class="mb-2"><button class="btn btn-sm btn-outline-info" onclick="loadMaster()">🔄 리스트 새로고침</button></div>
+    <!-- 검색 + 새로고침 -->
+    <div class="d-flex gap-2 align-items-center flex-wrap mb-2">
+      <button class="btn btn-sm btn-outline-info" onclick="loadMaster()">🔄 새로고침</button>
+      <div class="input-group input-group-sm" style="width:180px;">
+        <span class="input-group-text">🔍</span>
+        <input type="text" id="master-filter-group" class="form-control" placeholder="장비군 필터" oninput="renderMasterTable()">
+      </div>
+      <div class="input-group input-group-sm" style="width:200px;">
+        <span class="input-group-text">🔍</span>
+        <input type="text" id="master-filter-pn" class="form-control" placeholder="P/N 필터" oninput="renderMasterTable()">
+      </div>
+      <div class="input-group input-group-sm" style="width:240px;">
+        <span class="input-group-text">🔍</span>
+        <input type="text" id="master-filter-name" class="form-control" placeholder="품명 필터" oninput="renderMasterTable()">
+      </div>
+      <button class="btn btn-sm btn-outline-secondary" onclick="clearMasterFilter()">✕ 필터 초기화</button>
+      <span id="master-count" class="text-secondary small ms-2"></span>
+    </div>
     <div class="tbl-wrap">
       <table class="inv-table" id="tbl-master">
-        <thead><tr><th>장비군</th><th>P/N (자재번호)</th><th>품명 (Part Name)</th></tr></thead>
+        <thead>
+          <tr>
+            <th style="cursor:pointer; user-select:none;" onclick="sortMaster('group')" id="th-master-group">
+              장비군 <span id="sort-icon-group">⇅</span>
+            </th>
+            <th style="cursor:pointer; user-select:none;" onclick="sortMaster('pn')" id="th-master-pn">
+              P/N (자재번호) <span id="sort-icon-pn">⇅</span>
+            </th>
+            <th style="cursor:pointer; user-select:none;" onclick="sortMaster('name')" id="th-master-name">
+              품명 (Part Name) <span id="sort-icon-name">⇅</span>
+            </th>
+          </tr>
+        </thead>
         <tbody id="master-tbody"></tbody>
       </table>
     </div>
@@ -1161,17 +1190,76 @@ window.loadLogs = async function(){
 // ══════════════════════════════════════════════════
 // 탭4: 마스터
 // ══════════════════════════════════════════════════
+// 마스터 정렬 상태
+let masterSortKey = 'group';  // 'group'|'pn'|'name'
+let masterSortAsc = true;
+
 window.loadMaster = async function(){
   showLoading('마스터 로딩 중...');
   try {
     await fetchMasterCache();
-    const items = Object.entries(allMaster).sort((a,b)=>a[0].localeCompare(b[0]));
-    document.getElementById('master-tbody').innerHTML = items.map(([pn,v])=>`
-      <tr onclick="selectMaster('${esc(pn)}','${esc(v.part_name)}','${esc(v.equip_group||'')}')">
-        <td>${esc(v.equip_group)}</td><td>${esc(pn)}</td><td>${esc(v.part_name)}</td>
-      </tr>`).join('');
-    setStatus(`🏷️ 마스터 ${items.length}건 로딩 완료`);
+    renderMasterTable();
   } finally { hideLoading(); }
+};
+
+window.renderMasterTable = function(){
+  const fg = (document.getElementById('master-filter-group')?.value||'').trim().toLowerCase();
+  const fp = (document.getElementById('master-filter-pn')?.value||'').trim().toLowerCase();
+  const fn = (document.getElementById('master-filter-name')?.value||'').trim().toLowerCase();
+
+  let items = Object.entries(allMaster).map(([pn,v])=>({
+    pn, name: v.part_name||'', group: v.equip_group||''
+  }));
+
+  // 필터링
+  if(fg) items = items.filter(i=>i.group.toLowerCase().includes(fg));
+  if(fp) items = items.filter(i=>i.pn.toLowerCase().includes(fp));
+  if(fn) items = items.filter(i=>i.name.toLowerCase().includes(fn));
+
+  // 정렬
+  items.sort((a,b)=>{
+    const va = a[masterSortKey]||'';
+    const vb = b[masterSortKey]||'';
+    return masterSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+
+  // 아이콘 업데이트
+  ['group','pn','name'].forEach(k=>{
+    const el = document.getElementById('sort-icon-'+k);
+    if(el) el.textContent = masterSortKey===k ? (masterSortAsc?'▲':'▼') : '⇅';
+  });
+
+  // 행 렌더 (짝수/홀수 줄무늬)
+  document.getElementById('master-tbody').innerHTML = items.length
+    ? items.map((it,i)=>`
+      <tr style="background:${i%2===0?'#fff':'#f0f6ff'}; cursor:pointer;"
+          onclick="selectMaster('${esc(it.pn)}','${esc(it.name)}','${esc(it.group)}')">
+        <td>${esc(it.group)}</td>
+        <td><span class="badge" style="background:#e3f0ff;color:#1a4fa8;font-weight:600;font-size:11.5px;">${esc(it.pn)}</span></td>
+        <td>${esc(it.name)}</td>
+      </tr>`)
+      .join('')
+    : '<tr><td colspan="3" class="text-center text-secondary py-3">검색 결과가 없습니다.</td></tr>';
+
+  const total = Object.keys(allMaster).length;
+  const shown = items.length;
+  document.getElementById('master-count').textContent =
+    shown === total ? `총 ${total}건` : `${shown}건 표시 / 전체 ${total}건`;
+  setStatus(`🏷️ 마스터 ${shown}건 표시`);
+};
+
+window.sortMaster = function(key){
+  if(masterSortKey === key) masterSortAsc = !masterSortAsc;
+  else { masterSortKey = key; masterSortAsc = true; }
+  renderMasterTable();
+};
+
+window.clearMasterFilter = function(){
+  ['master-filter-group','master-filter-pn','master-filter-name'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value='';
+  });
+  renderMasterTable();
 };
 
 window.selectMaster = function(pn, name, group){
@@ -1409,47 +1497,115 @@ async function importReportFormat(wb, mode){
 // ── 엑셀 내보내기 ──
 window.exportExcel = async function(){
   if(!allInventory.length){ alert('내보낼 재고 데이터가 없습니다.'); return; }
-  showLoading('엑셀 생성 중...');
+  showLoading('엑셀 보고서 생성 중...');
   try {
-    const wb = XLSX.utils.book_new();
-    const reportDate = new Date().toLocaleString('ko-KR');
-    const detailCols = ['순번','프로젝트명','입고일자','출고일자','장비군','품명','P/N','S/N','총수량','출고','재고','비고'];
-    const statCols   = ['장비군','품명','P/N','총입고','총출고','총현재고'];
-
-    // 열 너비 설정 헬퍼 (문자 단위 근사)
-    function setColWidths(ws, widths){
-      ws['!cols'] = widths.map(w=>({wch:w}));
-    }
-    // 셀 병합 헬퍼
-    function setMerge(ws, merges){ ws['!merges'] = merges; }
-
+    const EJS   = window.ExcelJS;
+    if(!EJS){ alert('ExcelJS 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.'); return; }
+    const wb    = new EJS.Workbook();
+    const now   = new Date();
+    const reportDate = now.toLocaleString('ko-KR');
+    const dt    = now.toISOString().slice(2,10).replace(/-/g,'');
     const activeRows = allInventory.filter(r=>+r.current_stock>0);
 
-    // ──────────────────────────────
+    // ── 공통 스타일 정의 ──
+    const TITLE_FONT  = { name:'맑은 고딕', size:14, bold:true, color:{argb:'FF002060'} };
+    const DATE_FONT   = { name:'맑은 고딕', size:9,  italic:true, color:{argb:'FF595959'} };
+    const HDR_FONT    = { name:'맑은 고딕', size:10, bold:true };
+    const DATA_FONT   = { name:'맑은 고딕', size:9 };
+    const HDR_FILL    = { type:'pattern', pattern:'solid', fgColor:{argb:'FFDDEBF7'} };
+    const EVEN_FILL   = { type:'pattern', pattern:'solid', fgColor:{argb:'FFEBF3FB'} };
+    const THIN_BORDER = { style:'thin', color:{argb:'FFB8CFE8'} };
+    const THICK_BORDER= { style:'medium', color:{argb:'FF1A6EA8'} };
+    const CELL_BORDER = { top:THIN_BORDER, bottom:THIN_BORDER, left:THIN_BORDER, right:THIN_BORDER };
+    const HDR_BORDER  = { top:THICK_BORDER, bottom:THICK_BORDER, left:THIN_BORDER, right:THIN_BORDER };
+
+    function applyBorder(cell, isBold=false){
+      cell.border = isBold ? HDR_BORDER : CELL_BORDER;
+    }
+    function applyHdrStyle(cell){
+      cell.font      = HDR_FONT;
+      cell.fill      = HDR_FILL;
+      cell.border    = HDR_BORDER;
+      cell.alignment = { horizontal:'center', vertical:'middle', wrapText:false };
+    }
+    function applyDataStyle(cell, align='left', rowIdx=0){
+      cell.font      = DATA_FONT;
+      cell.border    = CELL_BORDER;
+      cell.alignment = { horizontal:align, vertical:'middle' };
+      if(rowIdx%2===1) cell.fill = EVEN_FILL;
+    }
+
+    function buildDetailSheet(ws, sheetTitle, dataRows, detailCols, colWidths){
+      ws.properties.defaultRowHeight = 16;
+
+      // 행1: 타이틀 + 출력일시
+      const titleCell = ws.getCell('A1');
+      titleCell.value = `NOKIA 장비 재고 현황 보고서  [${sheetTitle}]`;
+      titleCell.font  = TITLE_FONT;
+      titleCell.alignment = { horizontal:'left', vertical:'middle' };
+      const mergeEnd  = String.fromCharCode(64+Math.min(detailCols.length,8));  // 최대 H까지 병합
+      ws.mergeCells(`A1:${mergeEnd}1`);
+      ws.getRow(1).height = 24;
+
+      const lastColLetter = String.fromCharCode(64+detailCols.length);
+      const dateCell = ws.getCell(`${lastColLetter}1`);
+      dateCell.value = `출력일시: ${reportDate}`;
+      dateCell.font  = DATE_FONT;
+      dateCell.alignment = { horizontal:'right' };
+
+      // 행2: 빈 행
+      ws.getRow(2).height = 6;
+
+      // 행3: 헤더
+      detailCols.forEach((h,ci)=>{
+        const cell = ws.getCell(3, ci+1);
+        cell.value = h;
+        applyHdrStyle(cell);
+      });
+      ws.getRow(3).height = 18;
+
+      // 행4~: 데이터
+      dataRows.forEach((row, ri)=>{
+        const excelRow = ws.getRow(ri+4);
+        row.forEach((val, ci)=>{
+          const cell = excelRow.getCell(ci+1);
+          cell.value = val;
+          const numCols = [8,9,10];  // 총수량, 출고, 재고 인덱스
+          const align   = numCols.includes(ci) ? 'center' : 'left';
+          applyDataStyle(cell, align, ri);
+        });
+        excelRow.height = 15;
+      });
+
+      // 컬럼 너비
+      colWidths.forEach((w,i)=>{ ws.getColumn(i+1).width = w; });
+
+      // 열 자동 필터 (행3 헤더)
+      ws.autoFilter = { from:{row:3,column:1}, to:{row:3+dataRows.length,column:detailCols.length} };
+    }
+
+    // ═══════════════════════════════
     // 시트1: 전체 현황
-    // ──────────────────────────────
+    // ═══════════════════════════════
+    const detailCols  = ['순번','프로젝트명','입고일자','출고일자','장비군','품명','P/N','S/N','총수량','출고','재고','비고'];
+    const detailWidths= [6, 24, 12, 12, 10, 32, 16, 18, 8, 8, 8, 28];
     const allData = activeRows.map((r,i)=>[
-      i+1, r.project_name, r.inbound_date, r.outbound_date,
-      r.equip_group, r.part_name, r.part_number, r.serial_number,
+      i+1, r.project_name||'', r.inbound_date||'', r.outbound_date||'',
+      r.equip_group||'', r.part_name||'', r.part_number||'', r.serial_number||'',
       +r.total_qty||0, +r.out_qty||0, +r.current_stock||0, r.note||''
     ]);
-    const wsAll = XLSX.utils.aoa_to_sheet([
-      [`NOKIA 장비 재고 현황 보고서`, '', '', '', '', `출력일시: ${reportDate}`],
-      [],
-      detailCols,
-      ...allData
-    ]);
-    setMerge(wsAll, [{s:{r:0,c:0}, e:{r:0,c:4}}]);
-    setColWidths(wsAll, [6, 22, 12, 12, 10, 30, 16, 18, 8, 8, 8, 30]);
-    XLSX.utils.book_append_sheet(wb, wsAll, '전체 현황');
+    const wsAll = wb.addWorksheet('전체 현황', {views:[{state:'frozen',xSplit:0,ySplit:3}]});
+    buildDetailSheet(wsAll, '전체 현황', allData, detailCols, detailWidths);
 
-    // ──────────────────────────────
+    // ═══════════════════════════════
     // 시트2: P/N별 통계
-    // ──────────────────────────────
+    // ═══════════════════════════════
+    const statCols   = ['장비군','품명','P/N','총입고','총출고','총현재고'];
+    const statWidths = [12, 34, 18, 10, 10, 10];
     const statMap={};
     activeRows.forEach(r=>{
-      const k=r.part_number+'|'+r.part_name;
-      if(!statMap[k]) statMap[k]={g:r.equip_group,n:r.part_name,p:r.part_number,ti:0,to:0,ts:0};
+      const k=(r.part_number||'')+'|'+(r.part_name||'');
+      if(!statMap[k]) statMap[k]={g:r.equip_group||'',n:r.part_name||'',p:r.part_number||'',ti:0,to:0,ts:0};
       statMap[k].ti+=+r.total_qty||0;
       statMap[k].to+=+r.out_qty||0;
       statMap[k].ts+=+r.current_stock||0;
@@ -1457,51 +1613,67 @@ window.exportExcel = async function(){
     const statData = Object.values(statMap)
       .sort((a,b)=>a.g.localeCompare(b.g)||a.n.localeCompare(b.n))
       .map(s=>[s.g, s.n, s.p, s.ti, s.to, s.ts]);
-    const wsStat = XLSX.utils.aoa_to_sheet([
-      [`NOKIA 장비 P/N별 재고 통계`, '', '', '', `출력일시: ${reportDate}`],
-      [],
-      statCols,
-      ...statData
-    ]);
-    setMerge(wsStat, [{s:{r:0,c:0}, e:{r:0,c:3}}]);
-    setColWidths(wsStat, [10, 32, 18, 10, 10, 10]);
-    XLSX.utils.book_append_sheet(wb, wsStat, 'P_N별 전체 재고');
+    const wsStat = wb.addWorksheet('P_N별 전체 재고', {views:[{state:'frozen',xSplit:0,ySplit:3}]});
 
-    // ──────────────────────────────
+    // 통계 시트 타이틀
+    const sTitleCell = wsStat.getCell('A1');
+    sTitleCell.value = 'NOKIA 장비 P/N별 재고 통계';
+    sTitleCell.font  = TITLE_FONT;
+    sTitleCell.alignment = { horizontal:'left', vertical:'middle' };
+    wsStat.mergeCells('A1:D1');
+    wsStat.getRow(1).height = 24;
+    const sDateCell = wsStat.getCell('F1');
+    sDateCell.value = `출력일시: ${reportDate}`;
+    sDateCell.font  = DATE_FONT;
+    sDateCell.alignment = { horizontal:'right' };
+    wsStat.getRow(2).height = 6;
+    statCols.forEach((h,ci)=>{ const c=wsStat.getCell(3,ci+1); c.value=h; applyHdrStyle(c); });
+    wsStat.getRow(3).height = 18;
+    statData.forEach((row,ri)=>{
+      const eRow = wsStat.getRow(ri+4);
+      row.forEach((val,ci)=>{ const c=eRow.getCell(ci+1); c.value=val; applyDataStyle(c,ci>=3?'center':'left',ri); });
+      eRow.height=15;
+    });
+    statWidths.forEach((w,i)=>{ wsStat.getColumn(i+1).width=w; });
+    wsStat.autoFilter = {from:{row:3,column:1}, to:{row:3+statData.length,column:6}};
+
+    // ═══════════════════════════════
     // 시트3~: 프로젝트별
-    // ──────────────────────────────
+    // ═══════════════════════════════
     const projMap={};
     activeRows.forEach(r=>{
       const p=(r.project_name||'미지정').trim()||'미지정';
       if(!projMap[p]) projMap[p]=[];
       projMap[p].push(r);
     });
-    const usedNames = new Set(['전체 현황','P_N별 전체 재고']);
-    Object.entries(projMap).forEach(([proj, items])=>{
-      let safe = proj.replace(/[\\\/\*\?\[\]\:]/g,'_').slice(0,25)||'미지정';
+    const usedNames=new Set(['전체 현황','P_N별 전체 재고']);
+    Object.entries(projMap).forEach(([proj,items])=>{
+      let safe=proj.replace(/[\\\/\*\?\[\]\:]/g,'_').slice(0,28)||'미지정';
       let n=1; const base=safe;
       while(usedNames.has(safe)){ safe=`${base}_${n++}`; }
       usedNames.add(safe);
-      const prData = items.map((r,i)=>[
-        i+1, r.project_name, r.inbound_date, r.outbound_date,
-        r.equip_group, r.part_name, r.part_number, r.serial_number,
+      const prData=items.map((r,i)=>[
+        i+1, r.project_name||'', r.inbound_date||'', r.outbound_date||'',
+        r.equip_group||'', r.part_name||'', r.part_number||'', r.serial_number||'',
         +r.total_qty||0, +r.out_qty||0, +r.current_stock||0, r.note||''
       ]);
-      const ws2 = XLSX.utils.aoa_to_sheet([
-        [`NOKIA 장비 재고 현황  [${proj}]`, '', '', '', '', `출력일시: ${reportDate}`],
-        [],
-        detailCols,
-        ...prData
-      ]);
-      setMerge(ws2, [{s:{r:0,c:0}, e:{r:0,c:4}}]);
-      setColWidths(ws2, [6, 22, 12, 12, 10, 30, 16, 18, 8, 8, 8, 30]);
-      XLSX.utils.book_append_sheet(wb, ws2, safe);
+      const ws2=wb.addWorksheet(safe, {views:[{state:'frozen',xSplit:0,ySplit:3}]});
+      buildDetailSheet(ws2, proj, prData, detailCols, detailWidths);
     });
 
-    const dt = new Date().toISOString().slice(2,10).replace(/-/g,'');
-    XLSX.writeFile(wb, `재고현황_보고서_${dt}.xlsx`);
-    setStatus(`📤 엑셀 추출 완료 — ${activeRows.length}건`);
-    alert(`엑셀 보고서 추출 완료!\n전체 현황 ${activeRows.length}건 / 프로젝트 ${Object.keys(projMap).length}개 시트`);
+    // ── 다운로드 ──
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob   = new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url    = URL.createObjectURL(blob);
+    const a      = document.createElement('a');
+    a.href=url; a.download=`재고현황_보고서_${dt}.xlsx`; a.click();
+    URL.revokeObjectURL(url);
+
+    setStatus(`📤 엑셀 보고서 추출 완료 — ${activeRows.length}건 / ${Object.keys(projMap).length}개 프로젝트`);
+    alert(`엑셀 보고서 추출 완료!\n✅ 전체 현황: ${activeRows.length}건\n📊 P/N 통계: ${statData.length}종\n📁 프로젝트별: ${Object.keys(projMap).length}개 시트`);
+  } catch(e){
+    console.error(e);
+    alert('엑셀 생성 오류: '+e.message);
   } finally { hideLoading(); }
 };
 
