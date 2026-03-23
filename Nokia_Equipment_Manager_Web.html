@@ -262,32 +262,38 @@ tr.selected  { background: #bbd6f8 !important; }
     </div>
   </div>
 
-  <div class="row g-2">
-    <div class="col-8">
-      <div class="tbl-wrap">
-        <table class="inv-table" id="tbl-inbound">
-          <thead><tr>
-            <th>No</th><th>프로젝트명</th><th>P/N</th><th>품명</th><th>S/N</th><th>수량</th><th>선택</th>
-          </tr></thead>
-          <tbody id="inbound-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="col-12 col-md-4 mt-2 mt-md-0">
-      <fieldset class="section-box" style="border-color:#2e7d32; height:100%;">
-        <legend style="color:#2e7d32;">📊 세션 입고 집계</legend>
-        <div style="overflow:auto; max-height:360px;">
-          <table class="table table-sm table-bordered mb-0" id="tbl-inbound-sum"
-                 style="font-size:12px; min-width:340px;">
-            <thead style="background:#2e7d32;color:#fff;position:sticky;top:0;">
-              <tr><th style="min-width:140px;">P/N</th><th style="min-width:160px;">품명</th><th style="min-width:70px;text-align:center;">총수량</th></tr>
-            </thead>
-            <tbody id="inbound-sum-tbody"></tbody>
-          </table>
-        </div>
-      </fieldset>
-    </div>
+  <!-- 입고 대기 목록 -->
+  <div class="tbl-wrap mb-2" style="max-height:300px;">
+    <table class="inv-table" id="tbl-inbound">
+      <thead><tr>
+        <th style="width:40px;">No</th>
+        <th style="min-width:140px;">프로젝트명</th>
+        <th style="min-width:140px;">P/N</th>
+        <th style="min-width:180px;">품명</th>
+        <th style="min-width:140px;">S/N</th>
+        <th style="width:60px;">수량</th>
+        <th style="width:50px;">선택</th>
+      </tr></thead>
+      <tbody id="inbound-tbody"></tbody>
+    </table>
   </div>
+
+  <!-- 세션 입고 집계 — 별도 행으로 분리, 전체 너비 사용 -->
+  <fieldset class="section-box" style="border-color:#2e7d32;">
+    <legend style="color:#2e7d32;">📊 세션 입고 집계</legend>
+    <div style="overflow-x:auto; overflow-y:auto; max-height:180px;">
+      <table class="inv-table" id="tbl-inbound-sum" style="min-width:500px;">
+        <thead>
+          <tr>
+            <th style="min-width:180px;">P/N</th>
+            <th style="min-width:220px;">품명</th>
+            <th style="min-width:80px; text-align:center;">총수량</th>
+          </tr>
+        </thead>
+        <tbody id="inbound-sum-tbody"></tbody>
+      </table>
+    </div>
+  </fieldset>
 
   <div id="inbound-log" class="mt-2 text-secondary" style="font-size:11px;">▶ 대기열에 스캔을 시작해주세요.</div>
 </div><!-- /tab-inbound -->
@@ -729,7 +735,11 @@ function rowClick(tr){
   tr.querySelector('.row-chk').checked = tr.classList.contains('selected');
 }
 function getSelectedRows(tbodyId){
-  return [...document.querySelectorAll(`#${tbodyId} tr.selected`)];
+  // .selected 클래스 OR 체크박스 checked 둘 다 인식
+  return [...document.querySelectorAll(`#${tbodyId} tr`)].filter(tr=>{
+    const chk = tr.querySelector('.row-chk');
+    return tr.classList.contains('selected') || (chk && chk.checked);
+  });
 }
 
 // ══════════════════════════════════════════════════
@@ -827,10 +837,10 @@ function renderInboundSum(){
   });
   document.getElementById('inbound-sum-tbody').innerHTML =
     Object.values(sumMap).map(s=>`<tr>
-      <td style="word-break:break-all;">${esc(s.pn)}</td>
-      <td style="word-break:break-word;">${esc(s.name)}</td>
-      <td class="text-center fw-bold">${s.qty}개</td>
-    </tr>`).join('');
+      <td>${esc(s.pn)}</td>
+      <td>${esc(s.name)}</td>
+      <td style="text-align:center; font-weight:bold;">${s.qty}개</td>
+    </tr>`).join('') || '<tr><td colspan="3" style="text-align:center;color:#999;padding:8px;">스캔 대기 중...</td></tr>';
 }
 
 window.removeSelectedInbound = function(){
@@ -954,16 +964,18 @@ window.selectProject = function(name){
       <td>${esc(r.note)}</td>
       <td><input type="checkbox" class="form-check-input row-chk"></td>
     </tr>`).join('');
-  // 이벤트 위임으로 클릭 처리 (innerHTML 재렌더 후에도 안전)
+  // 이벤트 위임: 행 클릭 + 체크박스 change 모두 처리
   tbody.onclick = e => {
     const tr = e.target.closest('tr');
     if(!tr) return;
     const chk = tr.querySelector('.row-chk');
-    if(e.target !== chk) {
+    if(e.target.type === 'checkbox') {
+      // 체크박스 직접 클릭 → selected 클래스 동기화
+      tr.classList.toggle('selected', e.target.checked);
+    } else {
+      // 행 클릭 → 체크박스 + selected 토글
       tr.classList.toggle('selected');
       if(chk) chk.checked = tr.classList.contains('selected');
-    } else {
-      tr.classList.toggle('selected', chk.checked);
     }
   };
   setStatus(`📁 프로젝트 선택: ${name} (${rows.length}건)`);
