@@ -9,8 +9,10 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <!-- Bootstrap Icons -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-<!-- SheetJS (Excel) -->
+<!-- SheetJS (Excel 가져오기) -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- ExcelJS (Excel 내보내기 서식) -->
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 
 <style>
 :root {
@@ -323,8 +325,19 @@ tr.selected  { background: #bbd6f8 !important; }
       <div class="tbl-wrap">
         <table class="inv-table" id="tbl-inv">
           <thead><tr>
-            <th>ID</th><th>장비군</th><th>품명</th><th>P/N</th><th>S/N</th>
-            <th>총수량</th><th>출고</th><th>현재고</th><th>입고일자</th><th>출고일자</th><th>프로젝트명</th><th>비고</th><th>선택</th>
+            <th style="width:46px;">ID</th>
+            <th style="cursor:pointer;white-space:nowrap;" onclick="sortInv('equip_group')">장비군 <span id="inv-si-equip_group">⇅</span></th>
+            <th style="cursor:pointer;white-space:nowrap;" onclick="sortInv('part_name')">품명 <span id="inv-si-part_name">⇅</span></th>
+            <th style="cursor:pointer;white-space:nowrap;" onclick="sortInv('part_number')">P/N <span id="inv-si-part_number">⇅</span></th>
+            <th style="cursor:pointer;white-space:nowrap;" onclick="sortInv('serial_number')">S/N <span id="inv-si-serial_number">⇅</span></th>
+            <th style="cursor:pointer;white-space:nowrap;" onclick="sortInv('total_qty')">총수량 <span id="inv-si-total_qty">⇅</span></th>
+            <th style="cursor:pointer;white-space:nowrap;" onclick="sortInv('out_qty')">출고 <span id="inv-si-out_qty">⇅</span></th>
+            <th style="cursor:pointer;white-space:nowrap;" onclick="sortInv('current_stock')">현재고 <span id="inv-si-current_stock">⇅</span></th>
+            <th style="cursor:pointer;white-space:nowrap;" onclick="sortInv('inbound_date')">입고일자 <span id="inv-si-inbound_date">⇅</span></th>
+            <th style="cursor:pointer;white-space:nowrap;" onclick="sortInv('outbound_date')">출고일자 <span id="inv-si-outbound_date">⇅</span></th>
+            <th style="cursor:pointer;white-space:nowrap;" onclick="sortInv('project_name')">프로젝트명 <span id="inv-si-project_name">⇅</span></th>
+            <th>비고</th>
+            <th style="width:42px;">선택</th>
           </tr></thead>
           <tbody id="inv-tbody"></tbody>
         </table>
@@ -342,7 +355,14 @@ tr.selected  { background: #bbd6f8 !important; }
       </div>
       <div class="tbl-wrap">
         <table class="inv-table" id="tbl-stats">
-          <thead><tr><th>장비군</th><th>품명</th><th>P/N</th><th>총입고</th><th>총출고</th><th>총현재고</th></tr></thead>
+          <thead><tr>
+            <th style="cursor:pointer;" onclick="sortStats('equip_group')">장비군 <span id="st-si-equip_group">⇅</span></th>
+            <th style="cursor:pointer;" onclick="sortStats('part_name')">품명 <span id="st-si-part_name">⇅</span></th>
+            <th style="cursor:pointer;" onclick="sortStats('part_number')">P/N <span id="st-si-part_number">⇅</span></th>
+            <th style="cursor:pointer;" onclick="sortStats('ti')">총입고 <span id="st-si-ti">⇅</span></th>
+            <th style="cursor:pointer;" onclick="sortStats('to')">총출고 <span id="st-si-to">⇅</span></th>
+            <th style="cursor:pointer;" onclick="sortStats('ts')">총현재고 <span id="st-si-ts">⇅</span></th>
+          </tr></thead>
           <tbody id="stats-tbody"></tbody>
         </table>
       </div>
@@ -368,14 +388,27 @@ tr.selected  { background: #bbd6f8 !important; }
               <input type="date" id="checkout-date" class="form-control form-control-sm" style="width:140px">
               <label class="fw-bold small mb-0">출고지(비고)</label>
               <input type="text" id="checkout-note" class="form-control form-control-sm" placeholder="출고지 입력" style="width:200px">
-              <button class="btn btn-sm btn-success" onclick="openBulkCheckout()">✅ 선택 장비 일괄 출고 창 열기</button>
+              <div class="ms-auto d-flex gap-2">
+                <button class="btn btn-sm btn-outline-primary" onclick="selectAllProjDetail(true)">☑ 전체선택</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="selectAllProjDetail(false)">☐ 전체해제</button>
+                <button class="btn btn-sm btn-success" onclick="openBulkCheckout()">✅ 선택 장비 일괄 출고 창 열기</button>
+              </div>
             </div>
           </fieldset>
           <div class="tbl-wrap" style="max-height:360px;">
             <table class="inv-table" id="tbl-proj-detail">
               <thead><tr>
-                <th>ID</th><th>장비군</th><th>품명</th><th>P/N</th><th>S/N</th>
-                <th>총수량</th><th>출고</th><th>현재고</th><th>입고일자</th><th>출고일자</th><th>비고</th><th>선택</th>
+                <th style="width:46px;">ID</th>
+                <th style="cursor:pointer;white-space:nowrap;" onclick="sortProjDetail('equip_group')">장비군 <span id="pd-si-equip_group">⇅</span></th>
+                <th style="cursor:pointer;white-space:nowrap;" onclick="sortProjDetail('part_name')">품명 <span id="pd-si-part_name">⇅</span></th>
+                <th style="cursor:pointer;white-space:nowrap;" onclick="sortProjDetail('part_number')">P/N <span id="pd-si-part_number">⇅</span></th>
+                <th style="cursor:pointer;white-space:nowrap;" onclick="sortProjDetail('serial_number')">S/N <span id="pd-si-serial_number">⇅</span></th>
+                <th style="cursor:pointer;white-space:nowrap;" onclick="sortProjDetail('total_qty')">총수량 <span id="pd-si-total_qty">⇅</span></th>
+                <th style="cursor:pointer;white-space:nowrap;" onclick="sortProjDetail('out_qty')">출고 <span id="pd-si-out_qty">⇅</span></th>
+                <th style="cursor:pointer;white-space:nowrap;" onclick="sortProjDetail('current_stock')">현재고 <span id="pd-si-current_stock">⇅</span></th>
+                <th style="cursor:pointer;white-space:nowrap;" onclick="sortProjDetail('inbound_date')">입고일자 <span id="pd-si-inbound_date">⇅</span></th>
+                <th>출고일자</th><th>비고</th>
+                <th style="width:42px;"><input type="checkbox" class="form-check-input" id="proj-chk-all" onclick="selectAllProjDetail(this.checked)" title="전체선택"></th>
               </tr></thead>
               <tbody id="proj-detail-tbody"></tbody>
             </table>
@@ -931,9 +964,34 @@ window.loadInventory = async function(){
   } finally { hideLoading(); }
 };
 
+// ── 전체 재고 정렬 상태 ──
+let invSortKey = '_rowNum', invSortAsc = true;
+
+window.sortInv = function(key){
+  if(invSortKey===key) invSortAsc=!invSortAsc; else { invSortKey=key; invSortAsc=true; }
+  renderInventoryTable();
+};
+
+function updateSortIcons(prefix, key, asc){
+  document.querySelectorAll(`[id^="${prefix}"]`).forEach(el=>{
+    const k = el.id.replace(prefix,'');
+    el.textContent = k===key ? (asc?'▲':'▼') : '⇅';
+  });
+}
+
 function renderInventoryTable(){
   const sn = document.getElementById('search-sn').value.trim().toLowerCase();
-  const rows = sn ? allInventory.filter(r=>(r.serial_number||'').toLowerCase().includes(sn)) : allInventory;
+  let rows = sn ? allInventory.filter(r=>(r.serial_number||'').toLowerCase().includes(sn)) : [...allInventory];
+
+  // 정렬
+  rows.sort((a,b)=>{
+    const va=a[invSortKey]??'', vb=b[invSortKey]??'';
+    const n=parseFloat(va)-parseFloat(vb);
+    if(!isNaN(n)) return invSortAsc?n:-n;
+    return invSortAsc?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));
+  });
+  updateSortIcons('inv-si-', invSortKey, invSortAsc);
+
   document.getElementById('inv-tbody').innerHTML = rows.map(r=>`
     <tr class="${stockClass(r.current_stock)}" data-id="${r.id}" onclick="rowClick(this)">
       <td class="text-center">${r._rowNum}</td><td>${esc(r.equip_group)}</td><td>${esc(r.part_name)}</td>
@@ -946,18 +1004,36 @@ function renderInventoryTable(){
     </tr>`).join('');
 }
 
+// ── P/N 통계 정렬 상태 ──
+let statSortKey = 'equip_group', statSortAsc = true;
+
+window.sortStats = function(key){
+  if(statSortKey===key) statSortAsc=!statSortAsc; else { statSortKey=key; statSortAsc=true; }
+  renderStatsTable();
+};
+
 function renderStatsTable(){
   const q = document.getElementById('search-stats').value.trim().toLowerCase();
   const map = {};
   allInventory.forEach(r=>{
     if(q&&!(r.part_number||'').toLowerCase().includes(q)&&!(r.part_name||'').toLowerCase().includes(q)) return;
-    const k=r.part_number+'|'+r.part_name;
-    if(!map[k]) map[k]={equip_group:r.equip_group,part_name:r.part_name,part_number:r.part_number,ti:0,to:0,ts:0};
+    const k=(r.part_number||'')+'|'+(r.part_name||'');
+    if(!map[k]) map[k]={equip_group:r.equip_group||'',part_name:r.part_name||'',part_number:r.part_number||'',ti:0,to:0,ts:0};
     map[k].ti+=+r.total_qty||0;
     map[k].to+=+r.out_qty||0;
     map[k].ts+=+r.current_stock||0;
   });
-  document.getElementById('stats-tbody').innerHTML = Object.values(map).map(s=>`
+
+  let items = Object.values(map);
+  items.sort((a,b)=>{
+    const va=a[statSortKey]??0, vb=b[statSortKey]??0;
+    const n=parseFloat(va)-parseFloat(vb);
+    if(!isNaN(n)) return statSortAsc?n:-n;
+    return statSortAsc?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));
+  });
+  updateSortIcons('st-si-', statSortKey, statSortAsc);
+
+  document.getElementById('stats-tbody').innerHTML = items.map(s=>`
     <tr class="${stockClass(s.ts)}">
       <td>${esc(s.equip_group)}</td><td>${esc(s.part_name)}</td><td>${esc(s.part_number)}</td>
       <td class="text-center">${s.ti}</td><td class="text-center">${s.to}</td>
@@ -975,14 +1051,40 @@ function renderProjList(){
     </tr>`).join('');
 }
 
-window.selectProject = function(name){
-  selectedProjName = name;
-  const rows = name==='(프로젝트 미지정)'
-    ? allInventory.filter(r=>!r.project_name||r.project_name.trim()===''||r.project_name==='nan')
-    : allInventory.filter(r=>r.project_name===name);
-  currentProjDocs = rows;
+// ── 프로젝트 상세 정렬 상태 ──
+let pdSortKey = null, pdSortAsc = true;
+let currentProjRows = [];  // 현재 프로젝트 행 캐시
+
+window.sortProjDetail = function(key){
+  if(pdSortKey===key) pdSortAsc=!pdSortAsc; else { pdSortKey=key; pdSortAsc=true; }
+  renderProjDetailTable(currentProjRows);
+};
+
+window.selectAllProjDetail = function(checked){
+  document.querySelectorAll('#proj-detail-tbody .row-chk').forEach(chk=>{
+    chk.checked = checked;
+    const tr = chk.closest('tr');
+    if(tr) tr.classList.toggle('selected', checked);
+  });
+  const headerChk = document.getElementById('proj-chk-all');
+  if(headerChk) headerChk.checked = checked;
+};
+
+function renderProjDetailTable(rows){
+  currentProjRows = rows;
+  let sorted = [...rows];
+  if(pdSortKey){
+    sorted.sort((a,b)=>{
+      const va=a[pdSortKey]??'', vb=b[pdSortKey]??'';
+      const n=parseFloat(va)-parseFloat(vb);
+      if(!isNaN(n)) return pdSortAsc?n:-n;
+      return pdSortAsc?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));
+    });
+  }
+  updateSortIcons('pd-si-', pdSortKey||'', pdSortAsc);
+
   const tbody = document.getElementById('proj-detail-tbody');
-  tbody.innerHTML = rows.map(r=>`
+  tbody.innerHTML = sorted.map(r=>`
     <tr class="${stockClass(r.current_stock)}" data-id="${r.id}">
       <td class="text-center">${r._rowNum||''}</td>
       <td>${esc(r.equip_group)}</td><td>${esc(r.part_name)}</td>
@@ -993,20 +1095,31 @@ window.selectProject = function(name){
       <td>${esc(r.note)}</td>
       <td><input type="checkbox" class="form-check-input row-chk"></td>
     </tr>`).join('');
-  // 이벤트 위임: 행 클릭 + 체크박스 change 모두 처리
+
+  // 이벤트 위임
   tbody.onclick = e => {
     const tr = e.target.closest('tr');
     if(!tr) return;
     const chk = tr.querySelector('.row-chk');
-    if(e.target.type === 'checkbox') {
-      // 체크박스 직접 클릭 → selected 클래스 동기화
+    if(e.target.type==='checkbox'){
       tr.classList.toggle('selected', e.target.checked);
     } else {
-      // 행 클릭 → 체크박스 + selected 토글
       tr.classList.toggle('selected');
       if(chk) chk.checked = tr.classList.contains('selected');
     }
   };
+}
+
+window.selectProject = function(name){
+  selectedProjName = name;
+  const rows = name==='(프로젝트 미지정)'
+    ? allInventory.filter(r=>!r.project_name||r.project_name.trim()===''||r.project_name==='nan')
+    : allInventory.filter(r=>r.project_name===name);
+  currentProjDocs = rows;
+  pdSortKey = null;  // 프로젝트 바꾸면 정렬 초기화
+  renderProjDetailTable(rows);
+  const allChk = document.getElementById('proj-chk-all');
+  if(allChk) allChk.checked = false;
   setStatus(`📁 프로젝트 선택: ${name} (${rows.length}건)`);
 };
 
@@ -1499,9 +1612,8 @@ window.exportExcel = async function(){
   if(!allInventory.length){ alert('내보낼 재고 데이터가 없습니다.'); return; }
   showLoading('엑셀 보고서 생성 중...');
   try {
-    const EJS   = window.ExcelJS;
-    if(!EJS){ alert('ExcelJS 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.'); return; }
-    const wb    = new EJS.Workbook();
+    if(typeof ExcelJS === 'undefined'){ alert('ExcelJS 라이브러리를 불러오지 못했습니다.\n인터넷 연결을 확인하고 새로고침 해주세요.'); return; }
+    const wb    = new ExcelJS.Workbook();
     const now   = new Date();
     const reportDate = now.toLocaleString('ko-KR');
     const dt    = now.toISOString().slice(2,10).replace(/-/g,'');
