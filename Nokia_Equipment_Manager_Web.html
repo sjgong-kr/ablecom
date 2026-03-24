@@ -264,8 +264,25 @@ tr.selected  { background: #bbd6f8 !important; }
     </div>
   </div>
 
-  <!-- 입고 대기 목록 -->
-  <div class="tbl-wrap mb-2" style="max-height:300px;">
+  <!-- 세션 입고 집계 — 전체 너비, 스크롤 없이 전체 표시 -->
+  <fieldset class="section-box mb-2" style="border-color:#2e7d32;">
+    <legend style="color:#2e7d32;">📊 세션 입고 집계</legend>
+    <table class="inv-table" id="tbl-inbound-sum" style="width:100%;">
+      <thead>
+        <tr>
+          <th style="width:25%;">P/N</th>
+          <th style="width:60%;">품명</th>
+          <th style="width:15%; text-align:center;">수량</th>
+        </tr>
+      </thead>
+      <tbody id="inbound-sum-tbody">
+        <tr><td colspan="3" style="text-align:center;color:#999;padding:8px;">스캔 대기 중...</td></tr>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <!-- 입고 대기 목록 — 전체 너비 -->
+  <div class="tbl-wrap" style="max-height:300px;">
     <table class="inv-table" id="tbl-inbound">
       <thead><tr>
         <th style="width:40px;">No</th>
@@ -273,29 +290,12 @@ tr.selected  { background: #bbd6f8 !important; }
         <th style="min-width:140px;">P/N</th>
         <th style="min-width:180px;">품명</th>
         <th style="min-width:140px;">S/N</th>
-        <th style="width:60px;">수량</th>
-        <th style="width:50px;">선택</th>
+        <th style="width:58px;">수량</th>
+        <th style="width:44px;">선택</th>
       </tr></thead>
       <tbody id="inbound-tbody"></tbody>
     </table>
   </div>
-
-  <!-- 세션 입고 집계 — 별도 행으로 분리, 전체 너비 사용 -->
-  <fieldset class="section-box" style="border-color:#2e7d32;">
-    <legend style="color:#2e7d32;">📊 세션 입고 집계</legend>
-    <div style="overflow-x:auto; overflow-y:auto; max-height:180px;">
-      <table class="inv-table" id="tbl-inbound-sum" style="min-width:500px;">
-        <thead>
-          <tr>
-            <th style="min-width:180px;">P/N</th>
-            <th style="min-width:220px;">품명</th>
-            <th style="min-width:80px; text-align:center;">총수량</th>
-          </tr>
-        </thead>
-        <tbody id="inbound-sum-tbody"></tbody>
-      </table>
-    </div>
-  </fieldset>
 
   <div id="inbound-log" class="mt-2 text-secondary" style="font-size:11px;">▶ 대기열에 스캔을 시작해주세요.</div>
 </div><!-- /tab-inbound -->
@@ -453,6 +453,38 @@ tr.selected  { background: #bbd6f8 !important; }
       <button class="btn btn-sm btn-outline-warning" onclick="clearMasterInputs()">🧹 입력창 비우기</button>
     </div>
   </fieldset>
+  <!-- 엑셀 Export / Upload 섹션 -->
+  <div class="row g-2 mb-2">
+    <div class="col-12 col-md-6">
+      <fieldset class="section-box h-100" style="border-color:#2e7d32;">
+        <legend style="color:#2e7d32;">📤 마스터 데이터 Excel 내보내기</legend>
+        <p class="small text-secondary mb-2">현재 마스터 DB 전체를 Excel로 내보냅니다.<br>다운로드 → 수정 → 업로드 순서로 사용하세요.</p>
+        <button class="btn btn-sm btn-success w-100" onclick="exportMasterExcel()">
+          📥 제품 마스터 Excel 다운로드
+        </button>
+      </fieldset>
+    </div>
+    <div class="col-12 col-md-6">
+      <fieldset class="section-box h-100" style="border-color:#1a6ea8;">
+        <legend style="color:#1a6ea8;">📥 마스터 데이터 Excel 업로드</legend>
+        <p class="small text-secondary mb-2">Excel 파일을 업로드하면 DB에 반영됩니다.<br>컬럼: <code>장비군</code> / <code>P/N</code> / <code>품명</code></p>
+        <div class="d-flex gap-2 align-items-center mb-2">
+          <label class="small mb-0 fw-bold">중복 P/N 처리:</label>
+          <select id="master-dup-mode" class="form-select form-select-sm" style="width:200px;">
+            <option value="skip">⏭ 건너뛰기 (기존 유지)</option>
+            <option value="overwrite">🔄 덮어쓰기 (업데이트)</option>
+            <option value="append">➕ 모두 추가</option>
+          </select>
+        </div>
+        <label class="btn btn-nokia btn-sm w-100 mb-0">
+          📤 제품 마스터 Excel 업로드
+          <input type="file" id="master-excel-input" accept=".xlsx,.xls,.csv"
+                 style="display:none" onchange="importMasterExcel(this)">
+        </label>
+      </fieldset>
+    </div>
+  </div>
+
   <fieldset class="section-box" style="border-color:#0d6efd;">
     <legend style="color:#0d6efd;">제품명 마스터 DB (입고 시 자동완성 기준)</legend>
     <!-- 검색 + 새로고침 -->
@@ -1365,6 +1397,204 @@ window.sortMaster = function(key){
   if(masterSortKey === key) masterSortAsc = !masterSortAsc;
   else { masterSortKey = key; masterSortAsc = true; }
   renderMasterTable();
+};
+
+
+// ══════════════════════════════════════════════════
+// 마스터 Excel 내보내기 (ExcelJS 서식 적용)
+// ══════════════════════════════════════════════════
+window.exportMasterExcel = async function(){
+  if(!Object.keys(allMaster).length){ alert('내보낼 마스터 데이터가 없습니다.'); return; }
+  showLoading('마스터 Excel 생성 중...');
+  try {
+    if(typeof ExcelJS === 'undefined'){ alert('ExcelJS 라이브러리를 불러오지 못했습니다.\n새로고침 후 다시 시도해주세요.'); return; }
+
+    const wb  = new ExcelJS.Workbook();
+    const ws  = wb.addWorksheet('제품명 마스터');
+    const now = new Date().toLocaleString('ko-KR');
+
+    // 스타일 정의
+    const TITLE_FONT = { name:'맑은 고딕', size:13, bold:true, color:{argb:'FF002060'} };
+    const HDR_FONT   = { name:'맑은 고딕', size:10, bold:true };
+    const DATA_FONT  = { name:'맑은 고딕', size:9 };
+    const HDR_FILL   = { type:'pattern', pattern:'solid', fgColor:{argb:'FFDDEBF7'} };
+    const EVEN_FILL  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFEBF3FB'} };
+    const THIN_B     = { style:'thin', color:{argb:'FFB8CFE8'} };
+    const MED_B      = { style:'medium', color:{argb:'FF1A6EA8'} };
+    const CELL_BDR   = { top:THIN_B, bottom:THIN_B, left:THIN_B, right:THIN_B };
+    const HDR_BDR    = { top:MED_B, bottom:MED_B, left:THIN_B, right:THIN_B };
+
+    ws.properties.defaultRowHeight = 16;
+
+    // 행1: 타이틀
+    const t = ws.getCell('A1');
+    t.value = 'NOKIA 제품명 마스터 DB';
+    t.font  = TITLE_FONT;
+    t.alignment = { horizontal:'left', vertical:'middle' };
+    ws.mergeCells('A1:C1');
+    ws.getCell('D1').value = `출력일시: ${now}`;
+    ws.getCell('D1').font  = { name:'맑은 고딕', size:9, italic:true, color:{argb:'FF595959'} };
+    ws.getCell('D1').alignment = { horizontal:'right' };
+    ws.getRow(1).height = 22;
+
+    // 행2: 공백
+    ws.getRow(2).height = 6;
+
+    // 행3: 헤더
+    const headers = ['장비군', 'P/N (자재번호)', '품명 (Part Name)'];
+    headers.forEach((h,i)=>{
+      const c = ws.getCell(3, i+1);
+      c.value = h;
+      c.font  = HDR_FONT;
+      c.fill  = HDR_FILL;
+      c.border = HDR_BDR;
+      c.alignment = { horizontal:'center', vertical:'middle' };
+    });
+    ws.getRow(3).height = 18;
+
+    // 데이터 (장비군 → P/N 순 정렬)
+    const items = Object.entries(allMaster)
+      .map(([pn,v])=>({pn, name:v.part_name||'', group:v.equip_group||''}))
+      .sort((a,b)=>a.group.localeCompare(b.group)||a.pn.localeCompare(b.pn));
+
+    items.forEach((it,ri)=>{
+      const row = ws.getRow(ri+4);
+      const vals = [it.group, it.pn, it.name];
+      vals.forEach((v,ci)=>{
+        const c = row.getCell(ci+1);
+        c.value = v;
+        c.font  = DATA_FONT;
+        c.border = CELL_BDR;
+        c.fill  = ri%2===1 ? EVEN_FILL : undefined;
+        c.alignment = { horizontal: ci===0 ? 'center' : 'left', vertical:'middle' };
+      });
+      row.height = 15;
+    });
+
+    // 열 너비
+    ws.getColumn(1).width = 14;  // 장비군
+    ws.getColumn(2).width = 22;  // P/N
+    ws.getColumn(3).width = 50;  // 품명
+
+    // 자동 필터
+    ws.autoFilter = { from:{row:3,column:1}, to:{row:3+items.length,column:3} };
+
+    // 다운로드
+    const buf  = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const dt   = new Date().toISOString().slice(2,10).replace(/-/g,'');
+    a.href=url; a.download=`제품마스터_${dt}.xlsx`; a.click();
+    URL.revokeObjectURL(url);
+    setStatus(`📤 마스터 Excel 내보내기 완료 — ${items.length}건`);
+    alert(`마스터 데이터 ${items.length}건을 Excel로 내보냈습니다.`);
+  } catch(e){
+    console.error(e); alert('Excel 생성 오류: '+e.message);
+  } finally { hideLoading(); }
+};
+
+// ══════════════════════════════════════════════════
+// 마스터 Excel 업로드 (SheetJS로 파싱 → Firestore 저장)
+// ══════════════════════════════════════════════════
+window.importMasterExcel = async function(input){
+  if(!input.files.length) return;
+  const file = input.files[0];
+  input.value = '';
+  const mode = document.getElementById('master-dup-mode').value;
+
+  showLoading('마스터 Excel 읽는 중...');
+  let rows = [];
+  try {
+    const buf = await file.arrayBuffer();
+    const wb  = XLSX.read(buf, {type:'array'});
+    const ws  = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+
+    // 헤더 행 탐색 (장비군 또는 P/N 포함된 행)
+    let hdrIdx = 0;
+    for(let i=0; i<Math.min(raw.length,10); i++){
+      const r = raw[i].map(c=>String(c).trim());
+      if(r.some(c=>c==='P/N'||c==='P/N (자재번호)'||c==='장비군')){
+        hdrIdx = i; break;
+      }
+    }
+    const headers = raw[hdrIdx].map(c=>String(c).trim());
+
+    // 컬럼 인덱스 유연하게 탐색
+    const ci = (keys) => {
+      for(const k of keys){
+        const i = headers.findIndex(h=>h===k||h.includes(k));
+        if(i>=0) return i;
+      }
+      return -1;
+    };
+    const colGroup = ci(['장비군']);
+    const colPN    = ci(['P/N (자재번호)', 'P/N', 'PN']);
+    const colName  = ci(['품명 (Part Name)', '품명', 'Part Name', 'PART NAME']);
+
+    if(colPN < 0 || colName < 0){
+      hideLoading();
+      alert(`필수 컬럼을 찾지 못했습니다.\n\n필요 컬럼: 장비군 / P/N / 품명\n실제 헤더: ${headers.join(', ')}`);
+      return;
+    }
+
+    for(let i=hdrIdx+1; i<raw.length; i++){
+      const r   = raw[i];
+      const pn  = String(r[colPN]||'').trim();
+      const nm  = String(r[colName]||'').trim();
+      const grp = colGroup>=0 ? String(r[colGroup]||'').trim() : '';
+      if(!pn||!nm||pn.toLowerCase()==='nan'||nm.toLowerCase()==='nan') continue;
+      rows.push({pn, name:nm, group:grp});
+    }
+  } catch(e){
+    hideLoading();
+    alert('파일 읽기 오류: '+e.message);
+    return;
+  }
+
+  if(!rows.length){
+    hideLoading();
+    alert('처리할 데이터가 없습니다.\n컬럼명(장비군/P/N/품명)을 확인해주세요.');
+    return;
+  }
+
+  // 미리보기 확인 팝업
+  hideLoading();
+  const preview = rows.slice(0,5).map(r=>`  ${r.group||'(없음)'} | ${r.pn} | ${r.name}`).join('\n');
+  const modeLabel = mode==='skip'?'건너뛰기':mode==='overwrite'?'덮어쓰기':'모두 추가';
+  if(!confirm(`총 ${rows.length}건을 마스터에 업로드합니다.\n중복 처리: ${modeLabel}\n\n미리보기 (최대 5건):\n${preview}\n\n계속하시겠습니까?`)) return;
+
+  showLoading(`마스터 업로드 중... (0/${rows.length})`);
+  let ok=0, skip=0, ow=0;
+  try {
+    const ts = new Date().toISOString();
+    for(let i=0; i<rows.length; i++){
+      const {pn, name, group} = rows[i];
+      if(i%50===0) document.getElementById('loading-msg').textContent = `마스터 업로드 중... (${i}/${rows.length})`;
+
+      if(mode==='skip'){
+        if(allMaster[pn]){ skip++; continue; }
+      } else if(mode==='overwrite'){
+        if(allMaster[pn]) ow++;
+      }
+      // append: 중복이어도 항상 저장
+      await setDoc(doc(db,'Nokia_Equipment','data','product_master',pn),
+        {part_name:name, equip_group:group});
+      allMaster[pn] = {part_name:name, equip_group:group};
+      ok++;
+    }
+
+    await loadMaster();
+    const summary = [`✅ 등록/갱신: ${ok}건`];
+    if(skip) summary.push(`⏭ 건너뜀: ${skip}건`);
+    if(ow)   summary.push(`🔄 덮어씀: ${ow}건`);
+    setStatus(`🏷️ 마스터 업로드 완료 — ${summary.join(' / ')}`);
+    alert(`마스터 업로드 완료!\n${summary.join('\n')}`);
+  } catch(e){
+    console.error(e);
+    alert('업로드 중 오류: '+e.message);
+  } finally { hideLoading(); }
 };
 
 window.clearMasterFilter = function(){
