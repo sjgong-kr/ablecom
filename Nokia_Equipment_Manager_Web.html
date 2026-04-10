@@ -841,7 +841,16 @@ function tickClock() {
 }
 setInterval(tickClock, 1000); tickClock();
 
-const todayStr = () => new Date().toISOString().slice(0,10);
+// ── 날짜 초기값 및 유틸 ──
+function getTodayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function getLogTime() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+}
+const todayStr = () => getTodayStr();
 document.getElementById('inbound-date').value  = todayStr();
 document.getElementById('checkout-date').value = todayStr();
 document.getElementById('m-indate').value      = todayStr();
@@ -970,7 +979,7 @@ window.confirmInbound = async function(){
 
   showLoading('입고 처리 중...');
   try {
-    const ts = new Date().toISOString();
+    const ts = getLogTime();
     for(const item of valid) {
       const eRef = await addDoc(collection(db,'Nokia_Equipment','data','equipment'),{
         project_name: item.project, equip_group: item.group,
@@ -1203,7 +1212,7 @@ window.deleteSelectedInv = async function(){
   if(!confirm(`선택한 ${sel.length}건을 삭제하시겠습니까?`)) return;
   showLoading('삭제 중...');
   try {
-    const ts = new Date().toISOString();
+    const ts = getLogTime();
     for(const tr of sel){
       const id = tr.dataset.id;
       // 삭제 전 기존 데이터를 불러와 몇 개가 지워지는지 기록
@@ -1240,7 +1249,7 @@ window.saveInventory = async function(){
     outbound_date: document.getElementById('m-outdate').value,
     note:          document.getElementById('m-note').value.trim(),
   };
-  const ts = new Date().toISOString();
+  const ts = getLogTime();
   showLoading('저장 중...');
   try {
     if(editingDocId) {
@@ -1361,7 +1370,7 @@ window.doCheckout = async function(){
   
   showLoading('출고 처리 중...');
   try {
-    const ts = new Date().toISOString();
+    const ts = getLogTime();
     for(const item of itemsToCheckout){
       const {r, qty, id} = item;
       const newNote = r.note ? `${r.note}\n[${outDate} 출고] ${outNote}` : `[${outDate} 출고] ${outNote}`;
@@ -1479,9 +1488,17 @@ window.loadLogs = async function(){
       if (l.action_type === '재고수정' && l.qty_changed > 0) {
         qtyDisplay = `+${l.qty_changed}개`;
       }
+      
+      // 과거 데이터의 ISO 문자열(T 포함)을 띄어쓰기로 변환하여 깔끔하게 표시
+      let displayTime = esc(l.timestamp || '');
+      if (displayTime.includes('T')) {
+        displayTime = displayTime.replace('T', ' ').slice(0, 19);
+      } else {
+        displayTime = displayTime.slice(0, 19);
+      }
 
       return `<tr style="background:${bg}">
-        <td>${esc(l.timestamp?.slice(0,19))}</td><td>${esc(l.action_type)}</td>
+        <td>${displayTime}</td><td>${esc(l.action_type)}</td>
         <td>${esc(name)}</td><td class="text-center fw-bold text-secondary">${qtyDisplay}</td><td>${esc(l.note)}</td>
       </tr>`;
     }).join('');
@@ -1692,7 +1709,7 @@ async function importLegacySheet(raw, project){
   }
   const headers = raw[hdrIdx].map(h=>String(h).trim().replace('품 명','품명'));
   const col = k => headers.indexOf(k);
-  const ts  = new Date().toISOString();
+  const ts  = getLogTime();
   let cnt=0;
   for(let i=hdrIdx+1;i<raw.length;i++){
     const r    = raw[i];
@@ -1708,7 +1725,7 @@ async function importLegacySheet(raw, project){
     const ref  = await addDoc(collection(db,'Nokia_Equipment','data','equipment'),{
       project_name:project, equip_group:grp, part_name:name, part_number:pn,
       serial_number:sn||'', total_qty:tot, out_qty:out, current_stock:stk,
-      inbound_date:new Date().toISOString().slice(0,10), outbound_date:'', note, created_at:ts
+      inbound_date:getTodayStr(), outbound_date:'', note, created_at:ts
     });
     if(pn&&name&&!allMaster[pn]){
       await setDoc(doc(db,'Nokia_Equipment','data','product_master',pn),{part_name:name,equip_group:grp});
@@ -1728,7 +1745,7 @@ async function importReportFormat(wb, mode){
   // 3행(index 2)이 헤더
   const headers = raw[2].map(h=>String(h).trim());
   const col  = k => headers.indexOf(k);
-  const ts   = new Date().toISOString();
+  const ts   = getLogTime();
   let ok=0, skip=0;
 
   for(let i=3;i<raw.length;i++){
@@ -1746,7 +1763,7 @@ async function importReportFormat(wb, mode){
       if(!v||String(v).trim()===''||String(v).toLowerCase()==='nan') return '';
       try{ return new Date(v).toISOString().slice(0,10); } catch{ return String(v).slice(0,10); }
     };
-    const inDate  = fmtDate(r[col('입고일자')]) || new Date().toISOString().slice(0,10);
+    const inDate  = fmtDate(r[col('입고일자')]) || getTodayStr();
     const outDate = fmtDate(r[col('출고일자')]);
     const tot     = parseInt(r[col('총수량')])||(sn?1:0);
     const out     = parseInt(r[col('출고')])||0;
@@ -1797,7 +1814,7 @@ window.exportExcel = async function(){
     const wb    = new ExcelJS.Workbook();
     const now   = new Date();
     const reportDate = now.toLocaleString('ko-KR');
-    const dt    = now.toISOString().slice(2,10).replace(/-/g,'');
+    const dt    = getTodayStr().replace(/-/g,'').slice(2);
     const activeRows = allInventory.filter(r=>+r.current_stock>0);
 
     // ── 공통 스타일 정의 ──
