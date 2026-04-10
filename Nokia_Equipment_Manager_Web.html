@@ -157,7 +157,7 @@ tr.selected  { background: #bbd6f8 !important; }
 }
 
 /* ══════════════════════════════════════════════════
-   🖨️ [수정] 장비 스티커 인쇄용 CSS (세로 2열x5행 = 10개, 텍스트 축소 방지 적용)
+   🖨️ 장비 스티커 인쇄용 CSS (세로 2열x5행 = 10개, 텍스트 축소 방지 적용)
 ══════════════════════════════════════════════════ */
 @media print {
   @page { size: A4 portrait; margin: 0; }
@@ -841,18 +841,11 @@ function tickClock() {
 }
 setInterval(tickClock, 1000); tickClock();
 
-// ── 날짜 초기값 및 유틸 ──
-function getTodayStr() {
+// ── 날짜 초기값 ──
+const todayStr = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-
-function getLogTime() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
-}
-
-const todayStr = () => getTodayStr();
+};
 document.getElementById('inbound-date').value  = todayStr();
 document.getElementById('checkout-date').value = todayStr();
 document.getElementById('m-indate').value      = todayStr();
@@ -981,7 +974,9 @@ window.confirmInbound = async function(){
 
   showLoading('입고 처리 중...');
   try {
-    const ts = getLogTime();
+    // DB 저장 시 항상 정확한 국제 표준 시간(ISO포맷) 사용 -> 정렬 오류 완벽 해결
+    const ts = new Date().toISOString(); 
+    
     for(const item of valid) {
       const eRef = await addDoc(collection(db,'Nokia_Equipment','data','equipment'),{
         project_name: item.project, equip_group: item.group,
@@ -1214,7 +1209,7 @@ window.deleteSelectedInv = async function(){
   if(!confirm(`선택한 ${sel.length}건을 삭제하시겠습니까?`)) return;
   showLoading('삭제 중...');
   try {
-    const ts = getLogTime();
+    const ts = new Date().toISOString(); // 안전한 시간 저장
     for(const tr of sel){
       const id = tr.dataset.id;
       // 삭제 전 기존 데이터를 불러와 몇 개가 지워지는지 기록
@@ -1222,11 +1217,8 @@ window.deleteSelectedInv = async function(){
       const oldStock = oldItem ? +oldItem.current_stock : 0;
       
       await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
-        ref_equip_id: id,
-        action_type: '재고삭제',
-        qty_changed: -oldStock,
-        note: `관리자 수동 삭제 (삭제 전 재고: ${oldStock}개)`,
-        timestamp: ts
+        ref_equip_id: id, action_type: '재고삭제', qty_changed: -oldStock,
+        note: `관리자 수동 삭제 (삭제 전 재고: ${oldStock}개)`, timestamp: ts
       });
       await deleteDoc(doc(db,'Nokia_Equipment','data','equipment', id));
     }
@@ -1251,7 +1243,8 @@ window.saveInventory = async function(){
     outbound_date: document.getElementById('m-outdate').value,
     note:          document.getElementById('m-note').value.trim(),
   };
-  const ts = getLogTime();
+  
+  const ts = new Date().toISOString();
   showLoading('저장 중...');
   try {
     if(editingDocId) {
@@ -1262,30 +1255,21 @@ window.saveInventory = async function(){
       const diff = newStock - oldStock;
       
       let logNote = `기존 재고: ${oldStock}개 ➔ 변경 후: ${newStock}개`;
-      if (data.note) {
-        logNote += ` (${data.note})`;
-      } else {
-        logNote = `[수동수정] ` + logNote;
-      }
+      if (data.note) { logNote += ` (${data.note})`; } 
+      else { logNote = `[수동수정] ` + logNote; }
 
       await updateDoc(doc(db,'Nokia_Equipment','data','equipment',editingDocId), data);
       await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
-        ref_equip_id: editingDocId,
-        action_type: '재고수정',
-        qty_changed: diff,
-        note: logNote,
-        timestamp: ts
+        ref_equip_id: editingDocId, action_type: '재고수정',
+        qty_changed: diff, note: logNote, timestamp: ts
       });
       setStatus(`✏️ 재고 수정 완료`);
     } else {
       data.created_at = ts;
       const ref = await addDoc(collection(db,'Nokia_Equipment','data','equipment'), data);
       await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
-        ref_equip_id: ref.id,
-        action_type: '수동입력',
-        qty_changed: data.total_qty,
-        note: '관리자 수동 신규 등록',
-        timestamp: ts
+        ref_equip_id: ref.id, action_type: '수동입력',
+        qty_changed: data.total_qty, note: '관리자 수동 신규 등록', timestamp: ts
       });
       setStatus(`✨ 수동 등록 완료 — ${name}`);
     }
@@ -1372,7 +1356,7 @@ window.doCheckout = async function(){
   
   showLoading('출고 처리 중...');
   try {
-    const ts = getLogTime();
+    const ts = new Date().toISOString(); 
     for(const item of itemsToCheckout){
       const {r, qty, id} = item;
       const newNote = r.note ? `${r.note}\n[${outDate} 출고] ${outNote}` : `[${outDate} 출고] ${outNote}`;
@@ -1397,14 +1381,11 @@ window.doCheckout = async function(){
 };
 
 // ══════════════════════════════════════════════════
-// 🖨️ 장비 스티커 인쇄 (A4 세로 2x5 완벽 비율 맞춤 및 글자 잘림 방지)
+// 🖨️ 장비 스티커 인쇄
 // ══════════════════════════════════════════════════
 window.openStickerPreview = function() {
     const sel = getSelectedRows('proj-detail-tbody');
-    if(!sel.length) { 
-        alert('인쇄할 장비를 리스트에서 먼저 체크해주세요.'); 
-        return; 
-    }
+    if(!sel.length) { alert('인쇄할 장비를 리스트에서 먼저 체크해주세요.'); return; }
 
     const items = sel.map(tr => allInventory.find(x => x.id === tr.dataset.id)).filter(Boolean);
 
@@ -1413,11 +1394,9 @@ window.openStickerPreview = function() {
     previewContainer.innerHTML = '';
     printContainer.innerHTML = '';
 
-    // 오늘 날짜 구하기 (YYYY.MM.DD 포맷)
     const now = new Date();
     const todayPrint = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
 
-    // 한 페이지당 10개 (2열 x 5행)
     const ITEMS_PER_PAGE = 10;
     const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
 
@@ -1447,13 +1426,11 @@ window.openStickerPreview = function() {
                 <div class="st-sn">S/N: ${window.esc(snText)}</div>
             `;
 
-            // 미리보기 화면용
             const previewSticker = document.createElement('div');
             previewSticker.className = 'preview-sticker';
             previewSticker.innerHTML = stickerHTML;
             previewPage.appendChild(previewSticker);
 
-            // 실제 인쇄용
             const printSticker = document.createElement('div');
             printSticker.className = 'sticker';
             printSticker.innerHTML = stickerHTML;
@@ -1495,12 +1472,22 @@ window.loadLogs = async function(){
         qtyColor = '#d32f2f'; // 빨간색 (감소)
       }
       
-      // 과거 UTC 시간표시(T 포함) 띄어쓰기로 변환 지원
-      let displayTime = esc(l.timestamp || '');
-      if (displayTime.includes('T')) {
-        displayTime = displayTime.replace('T', ' ').slice(0, 19);
-      } else {
-        displayTime = displayTime.slice(0, 19);
+      // [핵심 버그 수정] 날짜 변환 로직 보강
+      // 기존의 이상한 시간(UTC)이나 띄어쓰기 포맷을 완벽하게 한국 시간으로 복원
+      let displayTime = '';
+      if (l.timestamp) {
+        let dObj = new Date(l.timestamp);
+        // 만약 ISO 형식이 아닌 이전(띄어쓰기) 포맷으로 저장되었던 데이터 호환성 처리
+        if (isNaN(dObj.getTime()) && l.timestamp.includes(' ')) {
+            dObj = new Date(l.timestamp.replace(' ', 'T'));
+        }
+
+        if (!isNaN(dObj.getTime())) {
+            const pad = n => String(n).padStart(2, '0');
+            displayTime = `${dObj.getFullYear()}-${pad(dObj.getMonth()+1)}-${pad(dObj.getDate())} ${pad(dObj.getHours())}:${pad(dObj.getMinutes())}:${pad(dObj.getSeconds())}`;
+        } else {
+            displayTime = esc(l.timestamp); // 파싱 실패 시 원본 표시
+        }
       }
 
       return `<tr style="background:${bg}">
@@ -1673,7 +1660,6 @@ window.importExcel = async function(input){
       const buf  = await file.arrayBuffer();
       const wb   = XLSX.read(buf, {type:'array', cellDates:true});
 
-      // ── 보고서 포맷 감지 ──
       if(wb.SheetNames.includes('전체 현황')) {
         hideLoading();
         const mode = await askDupMode();
@@ -1682,7 +1668,6 @@ window.importExcel = async function(input){
         const [ok, skip] = await importReportFormat(wb, mode);
         totalOk+=ok; totalSkip+=skip;
       } else {
-        // ── 기존 포맷 ──
         showLoading('기존 포맷 가져오기 중...');
         for(const sheetName of wb.SheetNames){
           const ws = wb.Sheets[sheetName];
@@ -1715,7 +1700,7 @@ async function importLegacySheet(raw, project){
   }
   const headers = raw[hdrIdx].map(h=>String(h).trim().replace('품 명','품명'));
   const col = k => headers.indexOf(k);
-  const ts  = getLogTime();
+  const ts  = new Date().toISOString();
   let cnt=0;
   for(let i=hdrIdx+1;i<raw.length;i++){
     const r    = raw[i];
@@ -1731,7 +1716,7 @@ async function importLegacySheet(raw, project){
     const ref  = await addDoc(collection(db,'Nokia_Equipment','data','equipment'),{
       project_name:project, equip_group:grp, part_name:name, part_number:pn,
       serial_number:sn||'', total_qty:tot, out_qty:out, current_stock:stk,
-      inbound_date:getTodayStr(), outbound_date:'', note, created_at:ts
+      inbound_date:todayStr(), outbound_date:'', note, created_at:ts
     });
     if(pn&&name&&!allMaster[pn]){
       await setDoc(doc(db,'Nokia_Equipment','data','product_master',pn),{part_name:name,equip_group:grp});
@@ -1748,10 +1733,9 @@ async function importLegacySheet(raw, project){
 async function importReportFormat(wb, mode){
   const ws   = wb.Sheets['전체 현황'];
   const raw  = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false});
-  // 3행(index 2)이 헤더
   const headers = raw[2].map(h=>String(h).trim());
   const col  = k => headers.indexOf(k);
-  const ts   = getLogTime();
+  const ts   = new Date().toISOString();
   let ok=0, skip=0;
 
   for(let i=3;i<raw.length;i++){
@@ -1769,13 +1753,12 @@ async function importReportFormat(wb, mode){
       if(!v||String(v).trim()===''||String(v).toLowerCase()==='nan') return '';
       try{ return new Date(v).toISOString().slice(0,10); } catch{ return String(v).slice(0,10); }
     };
-    const inDate  = fmtDate(r[col('입고일자')]) || getTodayStr();
+    const inDate  = fmtDate(r[col('입고일자')]) || todayStr();
     const outDate = fmtDate(r[col('출고일자')]);
     const tot     = parseInt(r[col('총수량')])||(sn?1:0);
     const out     = parseInt(r[col('출고')])||0;
     const stk     = parseInt(r[col('재고')])||(tot-out);
 
-    // 중복 판별
     let existId = null;
     if(sn) {
       const q2 = query(collection(db,'Nokia_Equipment','data','equipment'), where('serial_number','==',sn));
@@ -1820,10 +1803,9 @@ window.exportExcel = async function(){
     const wb    = new ExcelJS.Workbook();
     const now   = new Date();
     const reportDate = now.toLocaleString('ko-KR');
-    const dt    = getTodayStr().replace(/-/g,'').slice(2);
+    const dt    = todayStr().replace(/-/g,'').slice(2);
     const activeRows = allInventory.filter(r=>+r.current_stock>0);
 
-    // ── 공통 스타일 정의 ──
     const TITLE_FONT  = { name:'맑은 고딕', size:14, bold:true, color:{argb:'FF002060'} };
     const DATE_FONT   = { name:'맑은 고딕', size:9,  italic:true, color:{argb:'FF595959'} };
     const HDR_FONT    = { name:'맑은 고딕', size:10, bold:true };
@@ -1854,12 +1836,11 @@ window.exportExcel = async function(){
     function buildDetailSheet(ws, sheetTitle, dataRows, detailCols, colWidths){
       ws.properties.defaultRowHeight = 16;
 
-      // 행1: 타이틀 + 출력일시
       const titleCell = ws.getCell('A1');
       titleCell.value = `NOKIA 장비 재고 현황 보고서  [${sheetTitle}]`;
       titleCell.font  = TITLE_FONT;
       titleCell.alignment = { horizontal:'left', vertical:'middle' };
-      const mergeEnd  = String.fromCharCode(64+Math.min(detailCols.length,8));  // 최대 H까지 병합
+      const mergeEnd  = String.fromCharCode(64+Math.min(detailCols.length,8));
       ws.mergeCells(`A1:${mergeEnd}1`);
       ws.getRow(1).height = 24;
 
@@ -1869,10 +1850,8 @@ window.exportExcel = async function(){
       dateCell.font  = DATE_FONT;
       dateCell.alignment = { horizontal:'right' };
 
-      // 행2: 빈 행
       ws.getRow(2).height = 6;
 
-      // 행3: 헤더
       detailCols.forEach((h,ci)=>{
         const cell = ws.getCell(3, ci+1);
         cell.value = h;
@@ -1880,29 +1859,22 @@ window.exportExcel = async function(){
       });
       ws.getRow(3).height = 18;
 
-      // 행4~: 데이터
       dataRows.forEach((row, ri)=>{
         const excelRow = ws.getRow(ri+4);
         row.forEach((val, ci)=>{
           const cell = excelRow.getCell(ci+1);
           cell.value = val;
-          const numCols = [8,9,10];  // 총수량, 출고, 재고 인덱스
+          const numCols = [8,9,10]; 
           const align   = numCols.includes(ci) ? 'center' : 'left';
           applyDataStyle(cell, align, ri);
         });
         excelRow.height = 15;
       });
 
-      // 컬럼 너비
       colWidths.forEach((w,i)=>{ ws.getColumn(i+1).width = w; });
-
-      // 열 자동 필터 (행3 헤더)
       ws.autoFilter = { from:{row:3,column:1}, to:{row:3+dataRows.length,column:detailCols.length} };
     }
 
-    // ═══════════════════════════════
-    // 시트1: 전체 현황
-    // ═══════════════════════════════
     const detailCols  = ['순번','프로젝트명','입고일자','출고일자','장비군','품명','P/N','S/N','총수량','출고','재고','비고'];
     const detailWidths= [6, 24, 12, 12, 10, 32, 16, 18, 8, 8, 8, 28];
     const allData = activeRows.map((r,i)=>[
@@ -1913,9 +1885,6 @@ window.exportExcel = async function(){
     const wsAll = wb.addWorksheet('전체 현황', {views:[{state:'frozen',xSplit:0,ySplit:3}]});
     buildDetailSheet(wsAll, '전체 현황', allData, detailCols, detailWidths);
 
-    // ═══════════════════════════════
-    // 시트2: P/N별 통계
-    // ═══════════════════════════════
     const statCols   = ['장비군','품명','P/N','총입고','총출고','총현재고'];
     const statWidths = [12, 34, 18, 10, 10, 10];
     const statMap={};
@@ -1931,7 +1900,6 @@ window.exportExcel = async function(){
       .map(s=>[s.g, s.n, s.p, s.ti, s.to, s.ts]);
     const wsStat = wb.addWorksheet('P_N별 전체 재고', {views:[{state:'frozen',xSplit:0,ySplit:3}]});
 
-    // 통계 시트 타이틀
     const sTitleCell = wsStat.getCell('A1');
     sTitleCell.value = 'NOKIA 장비 P/N별 재고 통계';
     sTitleCell.font  = TITLE_FONT;
@@ -1953,9 +1921,6 @@ window.exportExcel = async function(){
     statWidths.forEach((w,i)=>{ wsStat.getColumn(i+1).width=w; });
     wsStat.autoFilter = {from:{row:3,column:1}, to:{row:3+statData.length,column:6}};
 
-    // ═══════════════════════════════
-    // 시트3~: 프로젝트별
-    // ═══════════════════════════════
     const projMap={};
     activeRows.forEach(r=>{
       const p=(r.project_name||'미지정').trim()||'미지정';
@@ -1977,7 +1942,6 @@ window.exportExcel = async function(){
       buildDetailSheet(ws2, proj, prData, detailCols, detailWidths);
     });
 
-    // ── 다운로드 ──
     const buffer = await wb.xlsx.writeBuffer();
     const blob   = new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const url    = URL.createObjectURL(blob);
@@ -1993,9 +1957,6 @@ window.exportExcel = async function(){
   } finally { hideLoading(); }
 };
 
-// ══════════════════════════════════════════════════
-// 초기 로딩
-// ══════════════════════════════════════════════════
 (async()=>{
   showLoading('데이터 로딩 중...');
   try {
@@ -2009,7 +1970,6 @@ window.exportExcel = async function(){
   } finally { hideLoading(); }
 })();
 
-// 탭 전환 시 이력/마스터 자동 로드
 document.querySelector('[href="#tab-logs"]').addEventListener('click',()=>loadLogs());
 document.querySelector('[href="#tab-master"]').addEventListener('click',()=>loadMaster());
 
