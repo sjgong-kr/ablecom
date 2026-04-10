@@ -160,10 +160,10 @@ tr.selected  { background: #bbd6f8 !important; }
 }
 
 /* ══════════════════════════════════════════════════
-   🖨️ [수정] 장비 스티커 인쇄용 CSS (스트레치 방지, 위쪽 정렬)
+   🖨️ [수정] 장비 스티커 인쇄용 CSS (세로 방향, 2열 x 6행 배치)
 ══════════════════════════════════════════════════ */
 @media print {
-  @page { size: A4; margin: 0; }
+  @page { size: A4 portrait; margin: 0; }
   /* 인쇄 시 기존 UI 화면 모두 숨김, printArea만 출력 */
   body > *:not(#printArea) { display: none !important; }
   body { background-color: #fff; margin: 0; padding: 0; }
@@ -172,15 +172,14 @@ tr.selected  { background: #bbd6f8 !important; }
   .sticker-page { 
     page-break-after: always; 
     display: grid; 
-    grid-template-columns: repeat(4, 1fr); 
-    /* 1fr 대신 고정 높이를 주어 A4 전체로 늘어나는 현상 방지 */
-    grid-template-rows: repeat(3, 85mm); 
-    gap: 4mm; 
+    grid-template-columns: repeat(2, 1fr); /* 4열 -> 2열로 변경 */
+    grid-template-rows: repeat(6, 1fr);    /* 3행 -> 6행으로 변경 */
+    gap: 5mm; 
     padding: 10mm; 
     width: 210mm; 
     height: 297mm; 
     box-sizing: border-box; 
-    align-content: start; /* 페이지 위쪽부터 차례대로 정렬 */
+    align-content: start; 
   }
   .sticker { 
     border: 1px dashed #666; 
@@ -188,7 +187,7 @@ tr.selected  { background: #bbd6f8 !important; }
     padding: 12px; 
     display: flex; 
     flex-direction: column; 
-    justify-content: flex-start; /* 내부 요소들을 위로 착 밀착시킴 */
+    justify-content: flex-start; 
     font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
     box-sizing: border-box;
     overflow: hidden;
@@ -196,16 +195,15 @@ tr.selected  { background: #bbd6f8 !important; }
   .st-title { font-weight: 900; font-size: 14pt; display: flex; justify-content: space-between; border-bottom: 2px solid #000; margin-bottom: 6px; padding-bottom: 4px; }
   .st-proj { color: #000; font-weight: bold; font-size: 11pt; margin-bottom: 4px;}
   .st-group { font-weight: bold; color: #444; font-size: 10pt; margin-bottom: 2px;}
-  /* flex-grow: 1 삭제하여 텍스트 사이가 벌어지는 현상 방지 */
-  .st-name { font-weight: bold; font-size: 11pt; margin: 4px 0 10px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;}
+  .st-name { font-weight: bold; font-size: 11pt; margin: 4px 0 8px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;}
   .st-pn, .st-sn { font-family: monospace; font-size: 10pt; font-weight: 600; margin-top: 2px;}
 }
 
 /* ── 미리보기 모달용 스티커 디자인 (인쇄와 동일하게 맞춤) ── */
 #stickerPreviewContent { background: #525659; padding: 20px; max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; align-items: center;}
 .preview-page {
-    display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 160px); 
-    gap: 10px; margin-bottom: 20px; background: #fff; padding: 15px; width: 100%; max-width: 900px;
+    display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(6, 125px); /* 2열 6행 */
+    gap: 10px; margin-bottom: 20px; background: #fff; padding: 15px; width: 100%; max-width: 600px; /* 세로형 A4 비율에 맞게 축소 */
     border: 1px solid #dee2e6; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     align-content: start;
 }
@@ -213,7 +211,7 @@ tr.selected  { background: #bbd6f8 !important; }
 .preview-sticker .st-title { font-weight: 900; font-size: 14px; display: flex; justify-content: space-between; border-bottom: 2px solid #000; margin-bottom: 6px; padding-bottom: 4px; }
 .preview-sticker .st-proj { color: #000; font-weight: bold; font-size: 12px; margin-bottom: 4px;}
 .preview-sticker .st-group { font-weight: bold; color: #444; font-size: 11px; margin-bottom: 2px;}
-.preview-sticker .st-name { font-weight: bold; font-size: 12px; margin: 4px 0 10px 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3;}
+.preview-sticker .st-name { font-weight: bold; font-size: 12px; margin: 4px 0 8px 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3;}
 .preview-sticker .st-pn, .preview-sticker .st-sn { font-family: monospace; font-size: 11px; font-weight: 600; margin-top: 2px;}
 </style>
 </head>
@@ -690,17 +688,17 @@ tr.selected  { background: #bbd6f8 !important; }
      모달: 스티커 인쇄 미리보기
 ══════════════════════════════════════════════════ -->
 <div class="modal fade" id="stickerPrintModal" tabindex="-1">
-  <div class="modal-dialog modal-xl modal-dialog-centered">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header" style="background:#212529;">
-        <h5 class="modal-title text-white">🖨️ 장비 스티커 인쇄 미리보기 (A4 자동분할)</h5>
+        <h5 class="modal-title text-white">🖨️ 장비 스티커 인쇄 미리보기 (A4 세로 2열x6행 자동분할)</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1)"></button>
       </div>
       <div class="modal-body" id="stickerPreviewContent">
         <!-- 스티커 미리보기 페이지가 동적으로 렌더링 됩니다. -->
       </div>
       <div class="modal-footer bg-light">
-        <span class="text-muted me-auto small fw-bold">💡 인쇄 설정 팁: 여백 [없음], 배율 [100%], 옵션 [배경 그래픽 체크], [머리글/바닥글 해제]</span>
+        <span class="text-muted me-auto small fw-bold">💡 인쇄 설정 팁: 방향 [세로], 여백 [없음], 배율 [기본], 옵션 [배경 그래픽 체크]</span>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
         <button type="button" class="btn btn-dark" onclick="executeStickerPrint()"><i class="bi bi-printer"></i> 🖨️ 인쇄 실행</button>
       </div>
@@ -1355,6 +1353,7 @@ window.openStickerPreview = function() {
     previewContainer.innerHTML = '';
     printContainer.innerHTML = '';
 
+    // 한 페이지당 12개 (2열 x 6행)
     const ITEMS_PER_PAGE = 12;
     const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
 
