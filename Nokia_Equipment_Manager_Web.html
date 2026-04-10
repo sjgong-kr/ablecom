@@ -160,40 +160,41 @@ tr.selected  { background: #bbd6f8 !important; }
 }
 
 /* ══════════════════════════════════════════════════
-   🖨️ [신규] 장비 스티커 인쇄용 CSS (4x3 배열 A4 자동 분할)
+   🖨️ 장비 스티커 인쇄용 CSS (4x3 배열 A4 자동 분할)
 ══════════════════════════════════════════════════ */
 @media print {
+  @page { size: A4; margin: 0; }
   /* 인쇄 시 기존 UI 화면 모두 숨김, printArea만 출력 */
   body > *:not(#printArea) { display: none !important; }
   body { background-color: #fff; margin: 0; padding: 0; }
-  #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+  #printArea { display: block !important; width: 210mm; margin: 0; padding: 0; }
   
   .sticker-page { 
     page-break-after: always; 
     display: grid; 
     grid-template-columns: repeat(4, 1fr); 
     grid-template-rows: repeat(3, 1fr); 
-    gap: 5mm; 
+    gap: 4mm; 
     padding: 10mm; 
     width: 210mm; 
-    height: 296mm; 
+    height: 297mm; 
     box-sizing: border-box; 
   }
   .sticker { 
-    border: 2px dashed #666; /* 점선 테두리 설정 */
-    border-radius: 8px; 
-    padding: 15px; 
+    border: 1px dashed #666; /* 점선 테두리 설정 */
+    border-radius: 6px; 
+    padding: 12px; 
     display: flex; 
     flex-direction: column; 
     font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
     box-sizing: border-box;
     overflow: hidden;
   }
-  .st-title { font-weight: 900; font-size: 16px; display: flex; justify-content: space-between; border-bottom: 2px solid #000; margin-bottom: 10px; padding-bottom: 5px; }
-  .st-proj { color: #0056b3; font-weight: bold; font-size: 14px; margin-bottom: 5px;}
-  .st-group { font-weight: bold; color: #555; font-size: 13px;}
-  .st-name { flex-grow: 1; font-weight: bold; font-size: 14px; margin: 8px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.4;}
-  .st-pn, .st-sn { font-family: monospace; font-size: 13px; font-weight: 600; margin-top: 3px;}
+  .st-title { font-weight: 900; font-size: 14pt; display: flex; justify-content: space-between; border-bottom: 2px solid #000; margin-bottom: 6px; padding-bottom: 4px; }
+  .st-proj { color: #000; font-weight: bold; font-size: 11pt; margin-bottom: 4px;}
+  .st-group { font-weight: bold; color: #444; font-size: 10pt; margin-bottom: 2px;}
+  .st-name { flex-grow: 1; font-weight: bold; font-size: 11pt; margin: 4px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;}
+  .st-pn, .st-sn { font-family: monospace; font-size: 10pt; font-weight: 600; margin-top: 2px;}
 }
 
 /* ── 미리보기 모달용 스티커 디자인 ── */
@@ -203,13 +204,12 @@ tr.selected  { background: #bbd6f8 !important; }
     gap: 10px; margin-bottom: 20px; background: #fff; padding: 15px; width: 100%; max-width: 900px;
     border: 1px solid #dee2e6; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
-.preview-sticker { border: 2px dashed #666; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; }
-.preview-sticker .st-title { font-weight: 900; font-size: 14px; display: flex; justify-content: space-between; border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 3px; }
-.preview-sticker .st-proj { color: #0056b3; font-weight: bold; font-size: 12px; margin-bottom: 3px;}
-.preview-sticker .st-group { font-weight: bold; color: #555; font-size: 11px;}
-.preview-sticker .st-name { flex-grow: 1; font-weight: bold; font-size: 12px; margin: 3px 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.4;}
+.preview-sticker { border: 1px dashed #666; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; text-align: left; }
+.preview-sticker .st-title { font-weight: 900; font-size: 14px; display: flex; justify-content: space-between; border-bottom: 2px solid #000; margin-bottom: 6px; padding-bottom: 4px; }
+.preview-sticker .st-proj { color: #000; font-weight: bold; font-size: 12px; margin-bottom: 4px;}
+.preview-sticker .st-group { font-weight: bold; color: #444; font-size: 11px; margin-bottom: 2px;}
+.preview-sticker .st-name { flex-grow: 1; font-weight: bold; font-size: 12px; margin: 4px 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3;}
 .preview-sticker .st-pn, .preview-sticker .st-sn { font-family: monospace; font-size: 11px; font-weight: 600; margin-top: 2px;}
-
 </style>
 </head>
 <body>
@@ -279,7 +279,6 @@ tr.selected  { background: #bbd6f8 !important; }
 
 <!-- ══════════════════ 탭1: 입고 ══════════════════ -->
 <div class="tab-pane fade show active" id="tab-inbound">
-
   <fieldset class="section-box">
     <legend>1. 입고 공통 정보</legend>
     <div class="row g-2 align-items-center">
@@ -442,12 +441,12 @@ tr.selected  { background: #bbd6f8 !important; }
               <input type="date" id="checkout-date" class="form-control form-control-sm" style="width:140px">
               <label class="fw-bold small mb-0">출고지(비고)</label>
               <input type="text" id="checkout-note" class="form-control form-control-sm" placeholder="출고지 입력" style="width:200px">
+              <!-- [핵심 추가] 일괄 출고 및 스티커 인쇄 버튼 구역 -->
               <div class="ms-auto d-flex gap-2">
                 <button class="btn btn-sm btn-outline-primary" onclick="selectAllProjDetail(true)">☑ 전체선택</button>
                 <button class="btn btn-sm btn-outline-secondary" onclick="selectAllProjDetail(false)">☐ 전체해제</button>
-                <button class="btn btn-sm btn-success" onclick="openBulkCheckout()">✅ 일괄 출고 창 열기</button>
-                <!-- [신규버튼] 스티커 인쇄 -->
-                <button class="btn btn-sm btn-dark" onclick="openStickerPreview()">🖨️ 선택 스티커 인쇄</button>
+                <button class="btn btn-sm btn-success" onclick="openBulkCheckout()">✅ 선택 장비 일괄 출고 창 열기</button>
+                <button class="btn btn-sm btn-dark" onclick="openStickerPreview()"><i class="bi bi-printer"></i> 🖨️ 선택 스티커 인쇄</button>
               </div>
             </div>
           </fieldset>
@@ -645,7 +644,7 @@ tr.selected  { background: #bbd6f8 !important; }
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     [수정] 모달: 일괄 출고 (input 버그 픽스)
+     모달: 일괄 출고 (input 버그 픽스 적용)
 ══════════════════════════════════════════════════ -->
 <div class="modal fade" id="checkoutModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
@@ -723,7 +722,7 @@ tr.selected  { background: #bbd6f8 !important; }
   </div>
 </div>
 
-<!-- [신규] 실제 인쇄될 숨겨진 프린트 영역 -->
+<!-- 실제 인쇄될 숨겨진 프린트 영역 -->
 <div id="printArea" style="display: none;"></div>
 
 <!-- Bootstrap JS -->
@@ -1114,7 +1113,7 @@ window.selectAllProjDetail = function(checked){
   if(headerChk) headerChk.checked = checked;
 };
 
-// [수정] 프로젝트 리스트 체크박스 추가
+// 프로젝트 상세 테이블 (체크박스 포함)
 function renderProjDetailTable(rows){
   currentProjRows = rows;
   let sorted = [...rows];
@@ -1131,7 +1130,7 @@ function renderProjDetailTable(rows){
   const tbody = document.getElementById('proj-detail-tbody');
   tbody.innerHTML = sorted.map(r=>`
     <tr class="${stockClass(r.current_stock)}" data-id="${r.id}">
-      <td class="text-center"><input type="checkbox" class="form-check-input row-chk sticker-check"></td>
+      <td class="text-center"><input type="checkbox" class="form-check-input row-chk sticker-check" onclick="event.stopPropagation()"></td>
       <td class="text-center">${r._rowNum||''}</td>
       <td>${esc(r.equip_group)}</td><td>${esc(r.part_name)}</td>
       <td>${esc(r.part_number)}</td><td>${esc(r.serial_number)}</td>
@@ -1144,12 +1143,12 @@ function renderProjDetailTable(rows){
   tbody.onclick = e => {
     const tr = e.target.closest('tr');
     if(!tr) return;
-    const chk = tr.querySelector('.row-chk');
-    if(e.target.type==='checkbox'){
-      tr.classList.toggle('selected', e.target.checked);
-    } else {
+    if(e.target.type !== 'checkbox'){
       tr.classList.toggle('selected');
+      const chk = tr.querySelector('.row-chk');
       if(chk) chk.checked = tr.classList.contains('selected');
+    } else {
+      tr.classList.toggle('selected', e.target.checked);
     }
   };
 }
@@ -1157,8 +1156,8 @@ function renderProjDetailTable(rows){
 window.selectProject = function(name){
   selectedProjName = name;
   const rows = name==='(프로젝트 미지정)'
-    ? allInventory.filter(r=>!r.project_name||r.project_name.trim()===''||r.project_name==='nan')
-    : allInventory.filter(r=>r.project_name===name);
+    ? allInventory.filter(r=>!r.project_name||r.project_name.trim()===''||r.project_name.toLowerCase()==='nan')
+    : allInventory.filter(r=>(r.project_name||'').trim()===name.trim());
   currentProjDocs = rows;
   pdSortKey = null; 
   renderProjDetailTable(rows);
@@ -1251,7 +1250,7 @@ window.saveInventory = async function(){
   } finally { hideLoading(); }
 };
 
-// ── 일괄 출고 (버그 픽스 적용) ──
+// ── 일괄 출고 ──
 window.openBulkCheckout = function(){
   const sel = getSelectedRows('proj-detail-tbody');
   if(!sel.length){ alert('출고 처리할 장비를 선택해주세요.'); return; }
@@ -1268,11 +1267,11 @@ window.openBulkCheckout = function(){
     if(!r||+r.current_stock<=0) return;
     checkoutItems.push({...r, checkout_qty:1});
     
-    // [핵심 수정] Input Number 필드를 사용하여 수량 제어 버그 픽스
+    // input type=number 적용 및 rowClick 이벤트 차단(버그 픽스)
     const hasSn = r.serial_number && String(r.serial_number).trim() !== '' && String(r.serial_number).toLowerCase() !== 'none';
     const qtyCellHTML = hasSn 
         ? `1 <input type="hidden" class="bulk-qty-input" data-id="${id}" value="1">`
-        : `<input type="number" class="form-control form-control-sm bulk-qty-input" data-id="${id}" value="1" min="1" max="${r.current_stock}" style="width: 80px; margin: 0 auto; text-align: center;">`;
+        : `<input type="number" class="form-control form-control-sm bulk-qty-input" data-id="${id}" value="1" min="1" max="${r.current_stock}" style="width: 80px; margin: 0 auto; text-align: center;" onclick="event.stopPropagation()">`;
 
     tbody.innerHTML+=`<tr data-id="${id}" onclick="rowClick(this)">
       <td class="text-center">${r._rowNum||''}</td><td>${esc(r.equip_group)}</td><td>${esc(r.part_name)}</td>
@@ -1295,7 +1294,6 @@ window.applyCheckoutQty = function(){
     if(hasSn && qty>1){ alert('S/N이 있는 장비는 1개만 출고 가능합니다.'); return; }
     if(qty>+r.current_stock){ alert(`현재고(${r.current_stock})를 초과할 수 없습니다.`); return; }
     
-    // 선택된 행의 Input 값을 업데이트합니다.
     const inputEl = tr.querySelector('.bulk-qty-input');
     if(inputEl && inputEl.type === 'number') {
         inputEl.value = qty;
@@ -1392,7 +1390,7 @@ window.openStickerPreview = function() {
             const groupText = item.equip_group || '-';
 
             const stickerHTML = `
-                <div class="st-title"><span>NOKIA</span> <span>#${stickerIdx}</span></div>
+                <div class="st-title"><span style="color:#1a6ea8;">NOKIA</span> <span>#${stickerIdx}</span></div>
                 <div class="st-proj">📁 ${window.esc(projText)}</div>
                 <div class="st-group">[${window.esc(groupText)}]</div>
                 <div class="st-name">${window.esc(item.part_name || '')}</div>
