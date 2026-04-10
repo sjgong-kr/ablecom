@@ -157,7 +157,7 @@ tr.selected  { background: #bbd6f8 !important; }
 }
 
 /* ══════════════════════════════════════════════════
-   🖨️ [수정] 장비 스티커 인쇄용 CSS (세로 2열x6행 잘림 방지 최적화)
+   🖨️ [수정] 장비 스티커 인쇄용 CSS (세로 2열x5행 = 10개, 여백 확보)
 ══════════════════════════════════════════════════ */
 @media print {
   @page { size: A4 portrait; margin: 0; }
@@ -169,9 +169,9 @@ tr.selected  { background: #bbd6f8 !important; }
     page-break-after: always; 
     display: grid; 
     grid-template-columns: repeat(2, 1fr); 
-    grid-template-rows: repeat(6, 1fr); 
-    gap: 4mm 6mm; /* 상하 4mm, 좌우 6mm */
-    padding: 10mm; /* A4 용지 상하좌우 여백 */
+    grid-template-rows: repeat(5, 1fr); /* 6 -> 5 로 수정 (공간 넉넉해짐) */
+    gap: 4mm 6mm; 
+    padding: 10mm; 
     width: 210mm; 
     height: 297mm; 
     box-sizing: border-box; 
@@ -180,7 +180,7 @@ tr.selected  { background: #bbd6f8 !important; }
   .sticker { 
     border: 1px dashed #666; 
     border-radius: 6px; 
-    padding: 8px 12px; /* 상하 패딩을 줄여서 내부 공간 확보 */
+    padding: 12px 16px; /* 패딩 여유 있게 조절 */
     display: flex; 
     flex-direction: column; 
     justify-content: flex-start; 
@@ -188,11 +188,12 @@ tr.selected  { background: #bbd6f8 !important; }
     box-sizing: border-box;
     overflow: hidden;
   }
-  .st-title { font-weight: 900; font-size: 13pt; display: flex; justify-content: space-between; border-bottom: 2px solid #000; margin-bottom: 4px; padding-bottom: 2px; }
-  .st-proj { color: #000; font-weight: bold; font-size: 10pt; margin-bottom: 2px;}
-  .st-group { font-weight: bold; color: #444; font-size: 9pt; margin-bottom: 2px;}
-  .st-name { font-weight: bold; font-size: 10.5pt; margin: 2px 0 4px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;}
-  .st-pn, .st-sn { font-family: monospace; font-size: 9pt; font-weight: 600; margin-top: 1px;}
+  /* 폰트 사이즈 전체적으로 약간 상향 */
+  .st-title { font-weight: 900; font-size: 15pt; display: flex; justify-content: space-between; border-bottom: 2px solid #000; margin-bottom: 8px; padding-bottom: 4px; }
+  .st-proj { color: #000; font-weight: bold; font-size: 12pt; margin-bottom: 4px;}
+  .st-group { font-weight: bold; color: #444; font-size: 11pt; margin-bottom: 4px;}
+  .st-name { font-weight: bold; font-size: 12pt; margin: 6px 0 10px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.4;}
+  .st-pn, .st-sn { font-family: monospace; font-size: 11pt; font-weight: 600; margin-top: 3px;}
 }
 
 /* ── 미리보기 모달용 스티커 디자인 (인쇄와 100% 동일한 A4 비율 적용) ── */
@@ -200,7 +201,7 @@ tr.selected  { background: #bbd6f8 !important; }
 .preview-page {
     display: grid; 
     grid-template-columns: repeat(2, 1fr); 
-    grid-template-rows: repeat(6, 1fr); 
+    grid-template-rows: repeat(5, 1fr); /* 6 -> 5 로 수정 */
     gap: 8px 12px; 
     margin-bottom: 20px; 
     background: #fff; 
@@ -211,12 +212,12 @@ tr.selected  { background: #bbd6f8 !important; }
     border: 1px solid #dee2e6; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     align-content: stretch;
 }
-.preview-sticker { border: 1px dashed #666; border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; text-align: left; justify-content: flex-start; overflow: hidden;}
-.preview-sticker .st-title { font-weight: 900; font-size: 13px; display: flex; justify-content: space-between; border-bottom: 2px solid #000; margin-bottom: 4px; padding-bottom: 2px; }
-.preview-sticker .st-proj { color: #000; font-weight: bold; font-size: 11px; margin-bottom: 2px;}
-.preview-sticker .st-group { font-weight: bold; color: #444; font-size: 10px; margin-bottom: 2px;}
-.preview-sticker .st-name { font-weight: bold; font-size: 11.5px; margin: 2px 0 4px 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2;}
-.preview-sticker .st-pn, .preview-sticker .st-sn { font-family: monospace; font-size: 10px; font-weight: 600; margin-top: 1px;}
+.preview-sticker { border: 1px dashed #666; border-radius: 6px; padding: 12px 16px; display: flex; flex-direction: column; text-align: left; justify-content: flex-start; overflow: hidden;}
+.preview-sticker .st-title { font-weight: 900; font-size: 15px; display: flex; justify-content: space-between; border-bottom: 2px solid #000; margin-bottom: 8px; padding-bottom: 4px; }
+.preview-sticker .st-proj { color: #000; font-weight: bold; font-size: 13px; margin-bottom: 4px;}
+.preview-sticker .st-group { font-weight: bold; color: #444; font-size: 12px; margin-bottom: 4px;}
+.preview-sticker .st-name { font-weight: bold; font-size: 13px; margin: 6px 0 10px 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.4;}
+.preview-sticker .st-pn, .preview-sticker .st-sn { font-family: monospace; font-size: 12px; font-weight: 600; margin-top: 3px;}
 </style>
 </head>
 <body>
@@ -688,13 +689,13 @@ tr.selected  { background: #bbd6f8 !important; }
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     모달: 스티커 인쇄 미리보기 (비율 조정 및 스크롤 개선)
+     모달: 스티커 인쇄 미리보기 (2x5 배열로 10개 출력)
 ══════════════════════════════════════════════════ -->
 <div class="modal fade" id="stickerPrintModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header" style="background:#212529;">
-        <h5 class="modal-title text-white">🖨️ 장비 스티커 인쇄 미리보기 (A4 세로 2열x6행 자동분할)</h5>
+        <h5 class="modal-title text-white">🖨️ 장비 스티커 인쇄 미리보기 (A4 세로 2열x5행 자동분할)</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1)"></button>
       </div>
       <div class="modal-body" id="stickerPreviewContent">
@@ -1262,7 +1263,6 @@ window.openBulkCheckout = function(){
     if(!r||+r.current_stock<=0) return;
     checkoutItems.push({...r, checkout_qty:1});
     
-    // [수정] input type=number 추가 
     const hasSn = r.serial_number && String(r.serial_number).trim() !== '' && String(r.serial_number).toLowerCase() !== 'none';
     const qtyCellHTML = hasSn 
         ? `1 <input type="hidden" class="bulk-qty-input" data-id="${id}" value="1">`
@@ -1349,7 +1349,7 @@ window.doCheckout = async function(){
 };
 
 // ══════════════════════════════════════════════════
-// [수정] 스티커 프린트 (A4 분할 자동 맞춤)
+// [수정] 스티커 프린트 (A4 분할 자동 맞춤: 2열 x 5행 = 10개)
 // ══════════════════════════════════════════════════
 window.openStickerPreview = function() {
     const sel = getSelectedRows('proj-detail-tbody');
@@ -1365,8 +1365,8 @@ window.openStickerPreview = function() {
     previewContainer.innerHTML = '';
     printContainer.innerHTML = '';
 
-    // 한 페이지당 12개 (2열 x 6행)
-    const ITEMS_PER_PAGE = 12;
+    // 한 페이지당 10개 (2열 x 5행)
+    const ITEMS_PER_PAGE = 10;
     const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
 
     for (let p = 0; p < totalPages; p++) {
@@ -1553,7 +1553,7 @@ window.updateMaster = async function(){
 
 window.deleteMaster = async function(){
   const pn = document.getElementById('master-pn').value.trim();
-  if(!pn){ alert('삭제할 항목을 선택해주세요.'); return; }
+  if(!pn){ alert('삭제할 항목을 리스트에서 선택해주세요.'); return; }
   if(!confirm(`P/N '${pn}'을 마스터에서 삭제하시겠습니까?`)) return;
   showLoading();
   try {
@@ -1569,7 +1569,6 @@ window.deleteMaster = async function(){
 // 탭5: 엑셀 가져오기/내보내기
 // ══════════════════════════════════════════════════
 
-// 중복 처리 방식 선택 Promise
 function askDupMode(){
   return new Promise(resolve=>{
     dupResolve = resolve;
@@ -1601,7 +1600,6 @@ window.importExcel = async function(input){
       const buf  = await file.arrayBuffer();
       const wb   = XLSX.read(buf, {type:'array', cellDates:true});
 
-      // ── 보고서 포맷 감지 ──
       if(wb.SheetNames.includes('전체 현황')) {
         hideLoading();
         const mode = await askDupMode();
@@ -1610,7 +1608,6 @@ window.importExcel = async function(input){
         const [ok, skip] = await importReportFormat(wb, mode);
         totalOk+=ok; totalSkip+=skip;
       } else {
-        // ── 기존 포맷 ──
         showLoading('기존 포맷 가져오기 중...');
         for(const sheetName of wb.SheetNames){
           const ws = wb.Sheets[sheetName];
@@ -1636,7 +1633,6 @@ window.importExcel = async function(input){
 };
 
 async function importLegacySheet(raw, project){
-  // 헤더 행 탐색
   let hdrIdx = 0;
   for(let i=0;i<Math.min(raw.length,10);i++){
     const r=raw[i].map(String);
@@ -1677,7 +1673,6 @@ async function importLegacySheet(raw, project){
 async function importReportFormat(wb, mode){
   const ws   = wb.Sheets['전체 현황'];
   const raw  = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false});
-  // 3행(index 2)이 헤더
   const headers = raw[2].map(h=>String(h).trim());
   const col  = k => headers.indexOf(k);
   const ts   = new Date().toISOString();
@@ -1704,7 +1699,6 @@ async function importReportFormat(wb, mode){
     const out     = parseInt(r[col('출고')])||0;
     const stk     = parseInt(r[col('재고')])||(tot-out);
 
-    // 중복 판별
     let existId = null;
     if(sn) {
       const q2 = query(collection(db,'Nokia_Equipment','data','equipment'), where('serial_number','==',sn));
@@ -1741,7 +1735,6 @@ async function importReportFormat(wb, mode){
   return [ok, skip];
 }
 
-// ── 엑셀 내보내기 ──
 window.exportExcel = async function(){
   if(!allInventory.length){ alert('내보낼 재고 데이터가 없습니다.'); return; }
   showLoading('엑셀 보고서 생성 중...');
@@ -1753,7 +1746,6 @@ window.exportExcel = async function(){
     const dt    = now.toISOString().slice(2,10).replace(/-/g,'');
     const activeRows = allInventory.filter(r=>+r.current_stock>0);
 
-    // ── 공통 스타일 정의 ──
     const TITLE_FONT  = { name:'맑은 고딕', size:14, bold:true, color:{argb:'FF002060'} };
     const DATE_FONT   = { name:'맑은 고딕', size:9,  italic:true, color:{argb:'FF595959'} };
     const HDR_FONT    = { name:'맑은 고딕', size:10, bold:true };
@@ -1784,12 +1776,11 @@ window.exportExcel = async function(){
     function buildDetailSheet(ws, sheetTitle, dataRows, detailCols, colWidths){
       ws.properties.defaultRowHeight = 16;
 
-      // 행1: 타이틀 + 출력일시
       const titleCell = ws.getCell('A1');
       titleCell.value = `NOKIA 장비 재고 현황 보고서  [${sheetTitle}]`;
       titleCell.font  = TITLE_FONT;
       titleCell.alignment = { horizontal:'left', vertical:'middle' };
-      const mergeEnd  = String.fromCharCode(64+Math.min(detailCols.length,8));  // 최대 H까지 병합
+      const mergeEnd  = String.fromCharCode(64+Math.min(detailCols.length,8));
       ws.mergeCells(`A1:${mergeEnd}1`);
       ws.getRow(1).height = 24;
 
@@ -1799,10 +1790,8 @@ window.exportExcel = async function(){
       dateCell.font  = DATE_FONT;
       dateCell.alignment = { horizontal:'right' };
 
-      // 행2: 빈 행
       ws.getRow(2).height = 6;
 
-      // 행3: 헤더
       detailCols.forEach((h,ci)=>{
         const cell = ws.getCell(3, ci+1);
         cell.value = h;
@@ -1810,29 +1799,22 @@ window.exportExcel = async function(){
       });
       ws.getRow(3).height = 18;
 
-      // 행4~: 데이터
       dataRows.forEach((row, ri)=>{
         const excelRow = ws.getRow(ri+4);
         row.forEach((val, ci)=>{
           const cell = excelRow.getCell(ci+1);
           cell.value = val;
-          const numCols = [8,9,10];  // 총수량, 출고, 재고 인덱스
+          const numCols = [8,9,10]; 
           const align   = numCols.includes(ci) ? 'center' : 'left';
           applyDataStyle(cell, align, ri);
         });
         excelRow.height = 15;
       });
 
-      // 컬럼 너비
       colWidths.forEach((w,i)=>{ ws.getColumn(i+1).width = w; });
-
-      // 열 자동 필터 (행3 헤더)
       ws.autoFilter = { from:{row:3,column:1}, to:{row:3+dataRows.length,column:detailCols.length} };
     }
 
-    // ═══════════════════════════════
-    // 시트1: 전체 현황
-    // ═══════════════════════════════
     const detailCols  = ['순번','프로젝트명','입고일자','출고일자','장비군','품명','P/N','S/N','총수량','출고','재고','비고'];
     const detailWidths= [6, 24, 12, 12, 10, 32, 16, 18, 8, 8, 8, 28];
     const allData = activeRows.map((r,i)=>[
@@ -1843,9 +1825,6 @@ window.exportExcel = async function(){
     const wsAll = wb.addWorksheet('전체 현황', {views:[{state:'frozen',xSplit:0,ySplit:3}]});
     buildDetailSheet(wsAll, '전체 현황', allData, detailCols, detailWidths);
 
-    // ═══════════════════════════════
-    // 시트2: P/N별 통계
-    // ═══════════════════════════════
     const statCols   = ['장비군','품명','P/N','총입고','총출고','총현재고'];
     const statWidths = [12, 34, 18, 10, 10, 10];
     const statMap={};
@@ -1861,7 +1840,6 @@ window.exportExcel = async function(){
       .map(s=>[s.g, s.n, s.p, s.ti, s.to, s.ts]);
     const wsStat = wb.addWorksheet('P_N별 전체 재고', {views:[{state:'frozen',xSplit:0,ySplit:3}]});
 
-    // 통계 시트 타이틀
     const sTitleCell = wsStat.getCell('A1');
     sTitleCell.value = 'NOKIA 장비 P/N별 재고 통계';
     sTitleCell.font  = TITLE_FONT;
@@ -1883,9 +1861,6 @@ window.exportExcel = async function(){
     statWidths.forEach((w,i)=>{ wsStat.getColumn(i+1).width=w; });
     wsStat.autoFilter = {from:{row:3,column:1}, to:{row:3+statData.length,column:6}};
 
-    // ═══════════════════════════════
-    // 시트3~: 프로젝트별
-    // ═══════════════════════════════
     const projMap={};
     activeRows.forEach(r=>{
       const p=(r.project_name||'미지정').trim()||'미지정';
@@ -1907,7 +1882,6 @@ window.exportExcel = async function(){
       buildDetailSheet(ws2, proj, prData, detailCols, detailWidths);
     });
 
-    // ── 다운로드 ──
     const buffer = await wb.xlsx.writeBuffer();
     const blob   = new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const url    = URL.createObjectURL(blob);
@@ -1923,9 +1897,6 @@ window.exportExcel = async function(){
   } finally { hideLoading(); }
 };
 
-// ══════════════════════════════════════════════════
-// 초기 로딩
-// ══════════════════════════════════════════════════
 (async()=>{
   showLoading('데이터 로딩 중...');
   try {
@@ -1939,7 +1910,6 @@ window.exportExcel = async function(){
   } finally { hideLoading(); }
 })();
 
-// 탭 전환 시 이력/마스터 자동 로드
 document.querySelector('[href="#tab-logs"]').addEventListener('click',()=>loadLogs());
 document.querySelector('[href="#tab-master"]').addEventListener('click',()=>loadMaster());
 
