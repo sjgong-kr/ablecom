@@ -1205,8 +1205,19 @@ window.deleteSelectedInv = async function(){
   try {
     const ts = new Date().toISOString();
     for(const tr of sel){
-      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{ref_equip_id:tr.dataset.id,action_type:'재고삭제',qty_changed:0,note:'관리자 수동 삭제',timestamp:ts});
-      await deleteDoc(doc(db,'Nokia_Equipment','data','equipment',tr.dataset.id));
+      const id = tr.dataset.id;
+      // 삭제 전 기존 데이터를 불러와 몇 개가 지워지는지 기록
+      const oldItem = allInventory.find(x => x.id === id);
+      const oldStock = oldItem ? +oldItem.current_stock : 0;
+      
+      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
+        ref_equip_id: id,
+        action_type: '재고삭제',
+        qty_changed: -oldStock,
+        note: `관리자 수동 삭제 (삭제 전 재고: ${oldStock}개)`,
+        timestamp: ts
+      });
+      await deleteDoc(doc(db,'Nokia_Equipment','data','equipment', id));
     }
     setStatus(`🗑️ ${sel.length}건 삭제 완료`);
     await loadInventory();
@@ -1233,13 +1244,38 @@ window.saveInventory = async function(){
   showLoading('저장 중...');
   try {
     if(editingDocId) {
+      // 변경 전 수량과 후 수량을 비교하여 기록 생성
+      const oldItem = allInventory.find(x => x.id === editingDocId);
+      const oldStock = oldItem ? +oldItem.current_stock : 0;
+      const newStock = data.current_stock;
+      const diff = newStock - oldStock;
+      
+      let logNote = `기존 재고: ${oldStock}개 ➔ 변경 후: ${newStock}개`;
+      if (data.note) {
+        logNote += ` (${data.note})`;
+      } else {
+        logNote = `[수동수정] ` + logNote;
+      }
+
       await updateDoc(doc(db,'Nokia_Equipment','data','equipment',editingDocId), data);
-      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{ref_equip_id:editingDocId,action_type:'재고수정',qty_changed:0,note:'관리자 수동 수정',timestamp:ts});
+      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
+        ref_equip_id: editingDocId,
+        action_type: '재고수정',
+        qty_changed: diff,
+        note: logNote,
+        timestamp: ts
+      });
       setStatus(`✏️ 재고 수정 완료`);
     } else {
       data.created_at = ts;
       const ref = await addDoc(collection(db,'Nokia_Equipment','data','equipment'), data);
-      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{ref_equip_id:ref.id,action_type:'수동입력',qty_changed:data.total_qty,note:'관리자 수동 신규 등록',timestamp:ts});
+      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
+        ref_equip_id: ref.id,
+        action_type: '수동입력',
+        qty_changed: data.total_qty,
+        note: '관리자 수동 신규 등록',
+        timestamp: ts
+      });
       setStatus(`✨ 수동 등록 완료 — ${name}`);
     }
     bootstrap.Modal.getInstance(document.getElementById('invModal'))?.hide();
@@ -1437,9 +1473,16 @@ window.loadLogs = async function(){
       const r=allInventory.find(x=>x.id===l.ref_equip_id)||{};
       const name=`[${r.equip_group||''}] ${r.part_name||'(삭제된 장비)'} ${r.serial_number?'(S/N:'+r.serial_number+')':r.part_number?'(P/N:'+r.part_number+')':''}`;
       const bg=logColorMap[l.action_type]||'';
+      
+      // 수량이 증가했을 경우 + 기호를 붙여 가독성을 높임
+      let qtyDisplay = `${l.qty_changed}개`;
+      if (l.action_type === '재고수정' && l.qty_changed > 0) {
+        qtyDisplay = `+${l.qty_changed}개`;
+      }
+
       return `<tr style="background:${bg}">
         <td>${esc(l.timestamp?.slice(0,19))}</td><td>${esc(l.action_type)}</td>
-        <td>${esc(name)}</td><td class="text-center">${l.qty_changed}개</td><td>${esc(l.note)}</td>
+        <td>${esc(name)}</td><td class="text-center fw-bold text-secondary">${qtyDisplay}</td><td>${esc(l.note)}</td>
       </tr>`;
     }).join('');
     setStatus(`🕒 이력 로딩 완료`);
