@@ -846,10 +846,12 @@ function getTodayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
+
 function getLogTime() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
 }
+
 const todayStr = () => getTodayStr();
 document.getElementById('inbound-date').value  = todayStr();
 document.getElementById('checkout-date').value = todayStr();
@@ -1483,13 +1485,17 @@ window.loadLogs = async function(){
       const name=`[${r.equip_group||''}] ${r.part_name||'(삭제된 장비)'} ${r.serial_number?'(S/N:'+r.serial_number+')':r.part_number?'(P/N:'+r.part_number+')':''}`;
       const bg=logColorMap[l.action_type]||'';
       
-      // 수량이 증가했을 경우 + 기호를 붙여 가독성을 높임
+      // 수량이 증가했을 경우 + 기호 및 색상 처리
       let qtyDisplay = `${l.qty_changed}개`;
+      let qtyColor = '#666';
       if (l.action_type === '재고수정' && l.qty_changed > 0) {
         qtyDisplay = `+${l.qty_changed}개`;
+        qtyColor = '#1976d2'; // 파란색 (증가)
+      } else if (l.qty_changed < 0) {
+        qtyColor = '#d32f2f'; // 빨간색 (감소)
       }
       
-      // 과거 데이터의 ISO 문자열(T 포함)을 띄어쓰기로 변환하여 깔끔하게 표시
+      // 과거 UTC 시간표시(T 포함) 띄어쓰기로 변환 지원
       let displayTime = esc(l.timestamp || '');
       if (displayTime.includes('T')) {
         displayTime = displayTime.replace('T', ' ').slice(0, 19);
@@ -1499,7 +1505,7 @@ window.loadLogs = async function(){
 
       return `<tr style="background:${bg}">
         <td>${displayTime}</td><td>${esc(l.action_type)}</td>
-        <td>${esc(name)}</td><td class="text-center fw-bold text-secondary">${qtyDisplay}</td><td>${esc(l.note)}</td>
+        <td>${esc(name)}</td><td class="text-center fw-bold" style="color:${qtyColor};">${qtyDisplay}</td><td>${esc(l.note)}</td>
       </tr>`;
     }).join('');
     setStatus(`🕒 이력 로딩 완료`);
