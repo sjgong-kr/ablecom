@@ -1803,9 +1803,13 @@ window.exportExcel = async function(){
     const wb    = new ExcelJS.Workbook();
     const now   = new Date();
     const reportDate = now.toLocaleString('ko-KR');
-    const dt    = todayStr().replace(/-/g,'').slice(2);
+    const dt    = getTodayStr().replace(/-/g,'').slice(2);
+    
+    // [핵심 변경] P/N 통계용(재고 있음)과 전체/프로젝트용(모든 데이터)을 분리
     const activeRows = allInventory.filter(r=>+r.current_stock>0);
+    const allRows = allInventory; 
 
+    // ── 공통 스타일 정의 ──
     const TITLE_FONT  = { name:'맑은 고딕', size:14, bold:true, color:{argb:'FF002060'} };
     const DATE_FONT   = { name:'맑은 고딕', size:9,  italic:true, color:{argb:'FF595959'} };
     const HDR_FONT    = { name:'맑은 고딕', size:10, bold:true };
@@ -1875,9 +1879,12 @@ window.exportExcel = async function(){
       ws.autoFilter = { from:{row:3,column:1}, to:{row:3+dataRows.length,column:detailCols.length} };
     }
 
+    // ═══════════════════════════════
+    // 시트1: 전체 현황 (allRows 사용 - 출고 완료 데이터 포함)
+    // ═══════════════════════════════
     const detailCols  = ['순번','프로젝트명','입고일자','출고일자','장비군','품명','P/N','S/N','총수량','출고','재고','비고'];
     const detailWidths= [6, 24, 12, 12, 10, 32, 16, 18, 8, 8, 8, 28];
-    const allData = activeRows.map((r,i)=>[
+    const allData = allRows.map((r,i)=>[
       i+1, r.project_name||'', r.inbound_date||'', r.outbound_date||'',
       r.equip_group||'', r.part_name||'', r.part_number||'', r.serial_number||'',
       +r.total_qty||0, +r.out_qty||0, +r.current_stock||0, r.note||''
@@ -1885,6 +1892,9 @@ window.exportExcel = async function(){
     const wsAll = wb.addWorksheet('전체 현황', {views:[{state:'frozen',xSplit:0,ySplit:3}]});
     buildDetailSheet(wsAll, '전체 현황', allData, detailCols, detailWidths);
 
+    // ═══════════════════════════════
+    // 시트2: P/N별 통계 (activeRows 사용 - 현재고 있는 것만)
+    // ═══════════════════════════════
     const statCols   = ['장비군','품명','P/N','총입고','총출고','총현재고'];
     const statWidths = [12, 34, 18, 10, 10, 10];
     const statMap={};
@@ -1921,8 +1931,11 @@ window.exportExcel = async function(){
     statWidths.forEach((w,i)=>{ wsStat.getColumn(i+1).width=w; });
     wsStat.autoFilter = {from:{row:3,column:1}, to:{row:3+statData.length,column:6}};
 
+    // ═══════════════════════════════
+    // 시트3~: 프로젝트별 (allRows 사용 - 출고 완료 데이터 포함)
+    // ═══════════════════════════════
     const projMap={};
-    activeRows.forEach(r=>{
+    allRows.forEach(r=>{
       const p=(r.project_name||'미지정').trim()||'미지정';
       if(!projMap[p]) projMap[p]=[];
       projMap[p].push(r);
@@ -1942,6 +1955,7 @@ window.exportExcel = async function(){
       buildDetailSheet(ws2, proj, prData, detailCols, detailWidths);
     });
 
+    // ── 다운로드 ──
     const buffer = await wb.xlsx.writeBuffer();
     const blob   = new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const url    = URL.createObjectURL(blob);
@@ -1949,30 +1963,16 @@ window.exportExcel = async function(){
     a.href=url; a.download=`재고현황_보고서_${dt}.xlsx`; a.click();
     URL.revokeObjectURL(url);
 
-    setStatus(`📤 엑셀 보고서 추출 완료 — ${activeRows.length}건 / ${Object.keys(projMap).length}개 프로젝트`);
-    alert(`엑셀 보고서 추출 완료!\n✅ 전체 현황: ${activeRows.length}건\n📊 P/N 통계: ${statData.length}종\n📁 프로젝트별: ${Object.keys(projMap).length}개 시트`);
+    setStatus(`📤 엑셀 보고서 추출 완료 — 전체 ${allRows.length}건 / ${Object.keys(projMap).length}개 프로젝트`);
+    alert(`엑셀 보고서 추출 완료!\n✅ 전체 현황 (출고포함): ${allRows.length}건\n📊 P/N 통계 (재고보유): ${statData.length}종\n📁 프로젝트별 (출고포함): ${Object.keys(projMap).length}개 시트`);
   } catch(e){
     console.error(e);
     alert('엑셀 생성 오류: '+e.message);
   } finally { hideLoading(); }
 };
 
-(async()=>{
-  showLoading('데이터 로딩 중...');
-  try {
-    await fetchMasterCache();
-    await loadInventory();
-    await loadMaster();
-    setStatus('✅ 준비됨');
-  } catch(e){
-    console.error(e);
-    setStatus('❌ Firebase 연결 오류 — 콘솔을 확인하세요');
-  } finally { hideLoading(); }
-})();
-
-document.querySelector('[href="#tab-logs"]').addEventListener('click',()=>loadLogs());
-document.querySelector('[href="#tab-master"]').addEventListener('click',()=>loadMaster());
-
+// ══════════════════════════════════════════════════
+// 초기 로딩
 </script>
 </body>
 </html>
