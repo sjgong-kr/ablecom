@@ -66,6 +66,10 @@ tr.in-stock  { background: var(--in-stock-bg) !important; color: var(--in-stock-
 tr.zero-stock { background: var(--zero-stock-bg) !important; color: var(--zero-stock-fg); }
 tr.selected  { background: #bbd6f8 !important; }
 
+/* ── 프로젝트 목록 드래그 앤 드롭 시각효과 ── */
+tr.dragging { opacity: 0.5; background-color: #e9ecef !important; }
+tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
+
 /* ── 버튼 그룹 ── */
 .btn-sm { font-size: 12px; }
 .btn-nokia { background: var(--nokia-header); color: #fff; border: none; }
@@ -157,7 +161,7 @@ tr.selected  { background: #bbd6f8 !important; }
 }
 
 /* ══════════════════════════════════════════════════
-   🖨️ 장비 스티커 인쇄용 CSS (세로 2열x5행 = 10개)
+   🖨️ 장비 스티커 인쇄용 CSS (세로 2열x5행 = 10개, 텍스트 축소 방지 적용)
 ══════════════════════════════════════════════════ */
 @media print {
   @page { size: A4 portrait; margin: 0; }
@@ -171,7 +175,7 @@ tr.selected  { background: #bbd6f8 !important; }
     grid-template-columns: repeat(2, 1fr); 
     grid-template-rows: repeat(5, 1fr); 
     gap: 6mm 8mm; 
-    padding: 12mm 10mm; /* A4 용지 상하좌우 여백 */
+    padding: 12mm 10mm; 
     width: 210mm; 
     height: 297mm; 
     box-sizing: border-box; 
@@ -429,19 +433,21 @@ tr.selected  { background: #bbd6f8 !important; }
       </div>
     </div>
 
-    <!-- 프로젝트별 출고 -->
+    <!-- 프로젝트별 출고 (드래그 정렬 적용) -->
     <div class="tab-pane fade" id="inv-project">
       <div class="row g-2" style="min-height:460px;">
         <div class="col-3">
           <div class="d-flex justify-content-between align-items-center mb-1">
             <div class="fw-bold small" style="color:#1a5276;">[ 프로젝트명 ]</div>
-            <select id="proj-sort-select" class="form-select form-select-sm" style="width: 120px; font-size: 11px; padding: 2px 20px 2px 8px; min-height: 24px;" onchange="renderProjList()">
-              <option value="date_desc" selected>최신 입고순</option>
+            <!-- [수정] 콤보박스에 '수동 정렬'을 기본값으로 추가 -->
+            <select id="proj-sort-select" class="form-select form-select-sm" style="width: 140px; font-size: 11px; padding: 2px 20px 2px 8px; min-height: 24px;" onchange="renderProjList()">
+              <option value="custom" selected>수동 정렬(드래그)</option>
+              <option value="date_desc">최신 입고순</option>
               <option value="stock_desc">재고 많은순</option>
               <option value="name_asc">이름순 (가나다)</option>
             </select>
           </div>
-          <div class="tbl-wrap" style="max-height:440px;">
+          <div class="tbl-wrap" style="max-height:440px; overflow-x: hidden;">
             <table class="inv-table" id="tbl-proj-list">
               <tbody id="proj-list-tbody"></tbody>
             </table>
@@ -657,7 +663,7 @@ tr.selected  { background: #bbd6f8 !important; }
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     모달: 일괄 출고 (NSN 부자재 처리 버그 완벽 수정)
+     모달: 일괄 출고
 ══════════════════════════════════════════════════ -->
 <div class="modal fade" id="checkoutModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
@@ -876,6 +882,75 @@ window.getSelectedRows = function(tbodyId){
   });
 }
 
+// ══════════════════════════════════════════════════
+// [신규] 드래그 앤 드롭 함수 (수동 정렬용)
+// ══════════════════════════════════════════════════
+let draggedProj = null;
+
+window.handleDragStart = function(e, projName) {
+    draggedProj = projName;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', projName);
+    e.target.closest('tr').classList.add('dragging');
+};
+
+window.handleDragOver = function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const targetRow = e.target.closest('tr');
+    if (targetRow && targetRow.getAttribute('data-proj') !== draggedProj) {
+        targetRow.classList.add('drag-over');
+    }
+};
+
+window.handleDragLeave = function(e) {
+    const targetRow = e.target.closest('tr');
+    if (targetRow) {
+        targetRow.classList.remove('drag-over');
+    }
+};
+
+window.handleDrop = function(e, targetProj) {
+    e.preventDefault();
+    const targetRow = e.target.closest('tr');
+    if (targetRow) targetRow.classList.remove('drag-over');
+
+    if (!draggedProj || draggedProj === targetProj) return;
+
+    // 드래그 발생 시 콤보박스를 'custom(수동 정렬)'으로 자동 변경
+    const select = document.getElementById('proj-sort-select');
+    if (select.value !== 'custom') {
+        select.value = 'custom';
+    }
+
+    // localStorage에서 기존 순서를 불러옴
+    let order = JSON.parse(localStorage.getItem('nokia_proj_order') || '[]');
+    
+    // 만약 order 배열에 없는 프로젝트라면 배열 끝에 추가 (방어코드)
+    if (!order.includes(draggedProj)) order.push(draggedProj);
+    if (!order.includes(targetProj)) order.push(targetProj);
+
+    const fromIdx = order.indexOf(draggedProj);
+    const toIdx = order.indexOf(targetProj);
+
+    // 배열 순서 재배치
+    order.splice(fromIdx, 1);
+    order.splice(toIdx, 0, draggedProj);
+
+    // 변경된 순서를 다시 localStorage에 저장
+    localStorage.setItem('nokia_proj_order', JSON.stringify(order));
+    
+    // 화면 다시 그리기
+    window.renderProjList();
+};
+
+window.handleDragEnd = function(e) {
+    e.target.closest('tr').classList.remove('dragging');
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    draggedProj = null;
+};
+
+
 async function fetchMasterCache() {
   const snap = await getDocs(collection(db,'Nokia_Equipment','data','product_master'));
   allMaster = {};
@@ -984,7 +1059,7 @@ window.confirmInbound = async function(){
 
   showLoading('입고 처리 중...');
   try {
-    const ts = new Date().toISOString();
+    const ts = window.getLogTime();
     for(const item of valid) {
       const eRef = await addDoc(collection(db,'Nokia_Equipment','data','equipment'),{
         project_name: item.project, equip_group: item.group,
@@ -1099,10 +1174,12 @@ function renderStatsTable(){
 }
 window.loadStats = function(){ renderStatsTable(); };
 
-function renderProjList(){
-  const sortType = document.getElementById('proj-sort-select') ? document.getElementById('proj-sort-select').value : 'date_desc';
+// ══════════════════════════════════════════════════
+// [수정] 드래그 앤 드롭을 지원하는 프로젝트 리스트 렌더링
+// ══════════════════════════════════════════════════
+window.renderProjList = function(){
+  const sortType = document.getElementById('proj-sort-select') ? document.getElementById('proj-sort-select').value : 'custom';
   
-  // 프로젝트별 집계 (이름, 최신 입고일, 총 현재고)
   const projStats = {};
   allInventory.forEach(r => {
       const pName = (r.project_name || '(프로젝트 미지정)').trim() || '(프로젝트 미지정)';
@@ -1117,9 +1194,22 @@ function renderProjList(){
 
   let projArray = Object.values(projStats);
 
-  // 정렬 로직
+  // 로컬 스토리지에서 커스텀 오더를 불러옵니다.
+  let customOrder = JSON.parse(localStorage.getItem('nokia_proj_order') || '[]');
+
+  // DB에는 있지만 customOrder에는 없는 새로운 프로젝트를 배열 끝에 추가해줍니다.
+  projArray.forEach(p => {
+      if (!customOrder.includes(p.name)) {
+          customOrder.push(p.name);
+      }
+  });
+  localStorage.setItem('nokia_proj_order', JSON.stringify(customOrder));
+
+  // 정렬 로직 (수동 정렬 포함)
   projArray.sort((a, b) => {
-      if (sortType === 'date_desc') {
+      if (sortType === 'custom') {
+          return customOrder.indexOf(a.name) - customOrder.indexOf(b.name);
+      } else if (sortType === 'date_desc') {
           if (a.maxDate !== b.maxDate) return b.maxDate.localeCompare(a.maxDate);
           return a.name.localeCompare(b.name);
       } else if (sortType === 'stock_desc') {
@@ -1131,13 +1221,26 @@ function renderProjList(){
   });
 
   document.getElementById('proj-list-tbody').innerHTML = projArray.map(p => `
-    <tr onclick="selectProject('${esc(p.name)}')" style="cursor:pointer;" class="${selectedProjName === p.name ? 'selected' : ''}">
+    <tr onclick="selectProject('${esc(p.name)}')" 
+        style="cursor:pointer;" 
+        class="${selectedProjName === p.name ? 'selected' : ''}"
+        data-proj="${esc(p.name)}"
+        draggable="true"
+        ondragstart="handleDragStart(event, '${esc(p.name)}')"
+        ondragover="handleDragOver(event)"
+        ondragleave="handleDragLeave(event)"
+        ondrop="handleDrop(event, '${esc(p.name)}')"
+        ondragend="handleDragEnd(event)">
       <td class="d-flex justify-content-between align-items-center">
-        <span class="text-truncate" style="max-width: 150px;" title="${esc(p.name)}">${esc(p.name)}</span>
+        <div>
+          <!-- 드래그 손잡이 아이콘 -->
+          <i class="bi bi-grip-vertical text-secondary me-1" style="cursor:grab; font-size: 14px;" title="이곳을 잡고 위아래로 끌어서 정렬하세요"></i>
+          <span class="text-truncate d-inline-block align-middle" style="max-width: 130px;" title="${esc(p.name)}">${esc(p.name)}</span>
+        </div>
         <span class="badge ${p.totalStock > 0 ? 'bg-success' : 'bg-secondary'}" style="font-size: 10px;">${p.totalStock}</span>
       </td>
     </tr>`).join('');
-}
+};
 
 let pdSortKey = null, pdSortAsc = true;
 let currentProjRows = [];
@@ -1208,7 +1311,6 @@ window.selectProject = function(name){
   if(allChk) allChk.checked = false;
   setStatus(`📁 프로젝트 선택: ${name} (${rows.length}건)`);
   
-  // 좌측 리스트에 하이라이트(선택 표시) 적용을 위해 다시 렌더링
   renderProjList(); 
 };
 
@@ -1336,7 +1438,6 @@ window.openBulkCheckout = function(){
     if(!r||+r.current_stock<=0) return;
     checkoutItems.push({...r, checkout_qty:1});
     
-    // [NSN 예외 처리 완벽 적용] NSN, N/A, 빈칸, None 모두 부자재로 인식
     const snClean = String(r.serial_number).trim().toLowerCase();
     const hasSn = snClean !== '' && snClean !== 'none' && snClean !== 'nsn' && snClean !== 'n/a';
     
@@ -1362,7 +1463,6 @@ window.applyCheckoutQty = function(){
     const r = checkoutItems.find(x=>x.id===id);
     if(!r) return;
     
-    // [NSN 예외 처리 완벽 적용]
     const snClean = String(r.serial_number).trim().toLowerCase();
     const hasSn = snClean !== '' && snClean !== 'none' && snClean !== 'nsn' && snClean !== 'n/a';
     
@@ -1462,7 +1562,6 @@ window.openStickerPreview = function() {
 
         pageItems.forEach((item, index) => {
             const snClean = String(item.serial_number).trim().toLowerCase();
-            // [스티커 NSN 예외 처리] NSN이면 라벨에 깔끔하게 N/A 로 표시되도록 적용
             const snText = snClean !== 'none' && snClean !== '' && snClean !== 'nsn' && snClean !== 'n/a' ? item.serial_number : 'N/A';
             const projText = item.project_name || '미지정';
             const groupText = item.equip_group || '-';
@@ -1709,6 +1808,7 @@ window.importExcel = async function(input){
       const buf  = await file.arrayBuffer();
       const wb   = XLSX.read(buf, {type:'array', cellDates:true});
 
+      // ── 보고서 포맷 감지 ──
       if(wb.SheetNames.includes('전체 현황')) {
         hideLoading();
         const mode = await askDupMode();
@@ -1717,6 +1817,7 @@ window.importExcel = async function(input){
         const [ok, skip] = await importReportFormat(wb, mode);
         totalOk+=ok; totalSkip+=skip;
       } else {
+        // ── 기존 포맷 ──
         showLoading('기존 포맷 가져오기 중...');
         for(const sheetName of wb.SheetNames){
           const ws = wb.Sheets[sheetName];
@@ -1782,6 +1883,7 @@ async function importLegacySheet(raw, project){
 async function importReportFormat(wb, mode){
   const ws   = wb.Sheets['전체 현황'];
   const raw  = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false});
+  // 3행(index 2)이 헤더
   const headers = raw[2].map(h=>String(h).trim());
   const col  = k => headers.indexOf(k);
   const ts   = window.getLogTime();
