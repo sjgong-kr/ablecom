@@ -1194,18 +1194,16 @@ function updateSortIcons(prefix, key, asc){
   });
 }
 
-// ── [버그 수정 1] 전체 개별 장비 현황 탭 통합검색 프리징 완벽 방지 ──
 function renderInventoryTable(){
   const q = document.getElementById('search-sn').value.trim().toLowerCase();
 
-  // 숫자형 P/N이나 S/N이 섞여 있을 때 발생하는 toLowerCase() 에러를 방지하기 위해 모두 String()으로 래핑
+  // [핵심 수정] 숫자형 데이터 에러 방지 및 S/N, P/N, 품명 통합 필터링 적용
   let rows = q ? allInventory.filter(r => 
       String(r.serial_number || '').toLowerCase().includes(q) || 
       String(r.part_number || '').toLowerCase().includes(q) || 
       String(r.part_name || '').toLowerCase().includes(q)
   ) : [...allInventory];
 
-  // 숫자 정렬 시 NaN 회피 로직 강화
   rows.sort((a,b)=>{
     const va=a[invSortKey]??'', vb=b[invSortKey]??'';
     const numA = parseFloat(va);
@@ -1235,46 +1233,16 @@ window.sortStats = function(key){
   renderStatsTable();
 };
 
-window.showStatDetails = function(tr) {
-  const pn = tr.getAttribute('data-pn');
-  const name = tr.getAttribute('data-name');
-  
-  const filtered = allInventory.filter(r => (r.part_number||'') === pn && (r.part_name||'') === name);
-  
-  document.getElementById('statDetailModalLabel').textContent = `📊 상세 내역 - [${pn}] ${name} (총 ${filtered.length}건 추적됨)`;
-  
-  const tbody = document.getElementById('stat-detail-tbody');
-  tbody.innerHTML = filtered.map(r => `
-    <tr class="${stockClass(r.current_stock)}">
-      <td class="text-center">${r._rowNum}</td>
-      <td>${esc(r.project_name)}</td>
-      <td>${esc(r.equip_group)}</td>
-      <td>${esc(r.part_name)}</td>
-      <td>${esc(r.part_number)}</td>
-      <td>${esc(r.serial_number)}</td>
-      <td class="text-center">${r.total_qty}</td>
-      <td class="text-center">${r.out_qty}</td>
-      <td class="text-center fw-bold">${r.current_stock}</td>
-      <td>${esc(r.inbound_date)}</td>
-      <td>${esc(r.outbound_date)}</td>
-      <td>${esc(r.note)}</td>
-    </tr>
-  `).join('');
-  
-  new bootstrap.Modal(document.getElementById('statDetailModal')).show();
-};
-
-// ── [버그 수정 2] 통계 탭 통합검색 프리징 완벽 방지 ──
 function renderStatsTable(){
   const q = document.getElementById('search-stats').value.trim().toLowerCase();
   const map = {};
   allInventory.forEach(r=>{
-    // 숫자 데이터 필터링 에러 방지용 String() 래핑 적용
+    // [핵심 수정] 숫자형 데이터 에러 방지 및 P/N, 품명 통합 필터링
     const pnStr = String(r.part_number || '').toLowerCase();
     const nameStr = String(r.part_name || '').toLowerCase();
     
     if(q && !pnStr.includes(q) && !nameStr.includes(q)) return;
-    
+
     const k=(r.part_number||'')+'|'+(r.part_name||'');
     if(!map[k]) map[k]={equip_group:r.equip_group||'',part_name:r.part_name||'',part_number:r.part_number||'',ti:0,to:0,ts:0};
     map[k].ti+=+r.total_qty||0;
@@ -1413,7 +1381,7 @@ function renderProjDetailTable(rows){
 
 window.selectProject = function(name){
   selectedProjName = name;
-  // [버그 수정 3] 숫자만 있는 프로젝트명 에러 방지용 String() 래핑 적용
+  // [핵심 수정] 숫자형 프로젝트명 에러 방지
   const rows = name==='(프로젝트 미지정)'
     ? allInventory.filter(r=>!r.project_name||String(r.project_name).trim()===''||String(r.project_name).toLowerCase()==='nan')
     : allInventory.filter(r=>String(r.project_name||'').trim()===name.trim());
@@ -1423,10 +1391,9 @@ window.selectProject = function(name){
   const allChk = document.getElementById('proj-chk-all');
   if(allChk) allChk.checked = false;
   setStatus(`📁 프로젝트 선택: ${name} (${rows.length}건)`);
-  
-  renderProjList(); 
 };
 
+// ── 재고 수동 입력/수정 ──
 window.openInventoryModal = function(docId){
   editingDocId = docId;
   document.getElementById('inv-modal-title').textContent = docId?'✏️ 재고 변경':'✨ 재고 수동 입력';
@@ -1812,9 +1779,10 @@ window.renderMasterTable = function(){
     pn, name: v.part_name||'', group: v.equip_group||''
   }));
 
-  if(fg) items = items.filter(i=>i.group.toLowerCase().includes(fg));
-  if(fp) items = items.filter(i=>i.pn.toLowerCase().includes(fp));
-  if(fn) items = items.filter(i=>i.name.toLowerCase().includes(fn));
+  // [핵심 수정] 숫자 검색 시 발생하는 에러 방지 (String 래핑)
+  if(fg) items = items.filter(i=>String(i.group).toLowerCase().includes(fg));
+  if(fp) items = items.filter(i=>String(i.pn).toLowerCase().includes(fp));
+  if(fn) items = items.filter(i=>String(i.name).toLowerCase().includes(fn));
 
   items.sort((a,b)=>{
     const va = a[masterSortKey]||'';
