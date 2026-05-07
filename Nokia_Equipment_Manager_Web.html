@@ -161,7 +161,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
 }
 
 /* ══════════════════════════════════════════════════
-   🖨️ 장비 스티커 인쇄용 CSS (세로 2열x5행 = 10개, 텍스트 축소 방지 적용)
+   🖨️ 장비 스티커 인쇄용 CSS
 ══════════════════════════════════════════════════ */
 @media print {
   @page { size: A4 portrait; margin: 0; }
@@ -433,19 +433,14 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
       </div>
     </div>
 
-    <!-- 프로젝트별 출고 (드래그 정렬 적용) -->
+    <!-- 프로젝트별 출고 (이름 변경 기능, 정렬 콤보박스 제거) -->
     <div class="tab-pane fade" id="inv-project">
       <div class="row g-2" style="min-height:460px;">
         <div class="col-3">
           <div class="d-flex justify-content-between align-items-center mb-1">
             <div class="fw-bold small" style="color:#1a5276;">[ 프로젝트명 ]</div>
-            <!-- [수정] 콤보박스에 '수동 정렬'을 기본값으로 추가 -->
-            <select id="proj-sort-select" class="form-select form-select-sm" style="width: 140px; font-size: 11px; padding: 2px 20px 2px 8px; min-height: 24px;" onchange="renderProjList()">
-              <option value="custom" selected>수동 정렬(드래그)</option>
-              <option value="date_desc">최신 입고순</option>
-              <option value="stock_desc">재고 많은순</option>
-              <option value="name_asc">이름순 (가나다)</option>
-            </select>
+            <!-- [신규] 콤보박스 대신 프로젝트 이름 변경 버튼 배치 -->
+            <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 11px;" onclick="editProjectName()">✏️ 이름 수정</button>
           </div>
           <div class="tbl-wrap" style="max-height:440px; overflow-x: hidden;">
             <table class="inv-table" id="tbl-proj-list">
@@ -701,7 +696,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     모달: 스티커 인쇄 미리보기 (2x5 배열로 10개 출력)
+     모달: 스티커 인쇄 미리보기
 ══════════════════════════════════════════════════ -->
 <div class="modal fade" id="stickerPrintModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -883,7 +878,7 @@ window.getSelectedRows = function(tbodyId){
 }
 
 // ══════════════════════════════════════════════════
-// [신규] 드래그 앤 드롭 함수 (수동 정렬용)
+// 드래그 앤 드롭 함수 (수동 정렬 전용)
 // ══════════════════════════════════════════════════
 let draggedProj = null;
 
@@ -917,30 +912,18 @@ window.handleDrop = function(e, targetProj) {
 
     if (!draggedProj || draggedProj === targetProj) return;
 
-    // 드래그 발생 시 콤보박스를 'custom(수동 정렬)'으로 자동 변경
-    const select = document.getElementById('proj-sort-select');
-    if (select.value !== 'custom') {
-        select.value = 'custom';
-    }
-
-    // localStorage에서 기존 순서를 불러옴
     let order = JSON.parse(localStorage.getItem('nokia_proj_order') || '[]');
     
-    // 만약 order 배열에 없는 프로젝트라면 배열 끝에 추가 (방어코드)
     if (!order.includes(draggedProj)) order.push(draggedProj);
     if (!order.includes(targetProj)) order.push(targetProj);
 
     const fromIdx = order.indexOf(draggedProj);
     const toIdx = order.indexOf(targetProj);
 
-    // 배열 순서 재배치
     order.splice(fromIdx, 1);
     order.splice(toIdx, 0, draggedProj);
 
-    // 변경된 순서를 다시 localStorage에 저장
     localStorage.setItem('nokia_proj_order', JSON.stringify(order));
-    
-    // 화면 다시 그리기
     window.renderProjList();
 };
 
@@ -948,6 +931,61 @@ window.handleDragEnd = function(e) {
     e.target.closest('tr').classList.remove('dragging');
     document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
     draggedProj = null;
+};
+
+// ══════════════════════════════════════════════════
+// [신규] 프로젝트 이름 변경 로직
+// ══════════════════════════════════════════════════
+window.editProjectName = async function() {
+    if (!selectedProjName || selectedProjName === '(프로젝트 미지정)') {
+        alert('이름을 변경할 프로젝트를 왼쪽 목록에서 먼저 선택해주세요.\\n(※ 미지정 항목은 변경할 수 없습니다.)');
+        return;
+    }
+
+    const newName = prompt(`'${selectedProjName}'의 새로운 이름을 입력하세요:`, selectedProjName);
+    if (!newName || newName.trim() === '' || newName === selectedProjName) {
+        return; 
+    }
+
+    const trimmedNewName = newName.trim();
+
+    if (!confirm(`정말로 프로젝트명을 '${trimmedNewName}'(으)로 변경하시겠습니까?\\n해당 프로젝트에 속한 모든 장비 정보가 함께 업데이트됩니다.`)) {
+        return;
+    }
+
+    showLoading('프로젝트명 일괄 업데이트 중...');
+    try {
+        const q = query(collection(db, 'Nokia_Equipment', 'data', 'equipment'), where('project_name', '==', selectedProjName));
+        const snap = await getDocs(q);
+
+        const updatePromises = [];
+        snap.forEach(docSnap => {
+            updatePromises.push(updateDoc(doc(db, 'Nokia_Equipment', 'data', 'equipment', docSnap.id), {
+                project_name: trimmedNewName
+            }));
+        });
+        await Promise.all(updatePromises);
+
+        let customOrder = JSON.parse(localStorage.getItem('nokia_proj_order') || '[]');
+        const idx = customOrder.indexOf(selectedProjName);
+        if (idx !== -1) {
+            customOrder[idx] = trimmedNewName;
+            localStorage.setItem('nokia_proj_order', JSON.stringify(customOrder));
+        }
+
+        setStatus(`✅ 프로젝트명 변경 완료: ${selectedProjName} ➔ ${trimmedNewName}`);
+        selectedProjName = trimmedNewName; 
+
+        await loadInventory();
+        selectProject(trimmedNewName); 
+        
+        alert('프로젝트명이 성공적으로 변경되었습니다.');
+    } catch (e) {
+        console.error(e);
+        alert('프로젝트명 변경 중 오류가 발생했습니다: ' + e.message);
+    } finally {
+        hideLoading();
+    }
 };
 
 
@@ -1089,9 +1127,6 @@ window.confirmInbound = async function(){
   } finally { hideLoading(); }
 };
 
-// ══════════════════════════════════════════════════
-// 탭2: 재고
-// ══════════════════════════════════════════════════
 window.loadInventory = async function(){
   showLoading('재고 로딩 중...');
   try {
@@ -1174,12 +1209,7 @@ function renderStatsTable(){
 }
 window.loadStats = function(){ renderStatsTable(); };
 
-// ══════════════════════════════════════════════════
-// [수정] 드래그 앤 드롭을 지원하는 프로젝트 리스트 렌더링
-// ══════════════════════════════════════════════════
 window.renderProjList = function(){
-  const sortType = document.getElementById('proj-sort-select') ? document.getElementById('proj-sort-select').value : 'custom';
-  
   const projStats = {};
   allInventory.forEach(r => {
       const pName = (r.project_name || '(프로젝트 미지정)').trim() || '(프로젝트 미지정)';
@@ -1193,11 +1223,8 @@ window.renderProjList = function(){
   });
 
   let projArray = Object.values(projStats);
-
-  // 로컬 스토리지에서 커스텀 오더를 불러옵니다.
   let customOrder = JSON.parse(localStorage.getItem('nokia_proj_order') || '[]');
 
-  // DB에는 있지만 customOrder에는 없는 새로운 프로젝트를 배열 끝에 추가해줍니다.
   projArray.forEach(p => {
       if (!customOrder.includes(p.name)) {
           customOrder.push(p.name);
@@ -1205,19 +1232,8 @@ window.renderProjList = function(){
   });
   localStorage.setItem('nokia_proj_order', JSON.stringify(customOrder));
 
-  // 정렬 로직 (수동 정렬 포함)
   projArray.sort((a, b) => {
-      if (sortType === 'custom') {
-          return customOrder.indexOf(a.name) - customOrder.indexOf(b.name);
-      } else if (sortType === 'date_desc') {
-          if (a.maxDate !== b.maxDate) return b.maxDate.localeCompare(a.maxDate);
-          return a.name.localeCompare(b.name);
-      } else if (sortType === 'stock_desc') {
-          if (a.totalStock !== b.totalStock) return b.totalStock - a.totalStock;
-          return a.name.localeCompare(b.name);
-      } else {
-          return a.name.localeCompare(b.name);
-      }
+      return customOrder.indexOf(a.name) - customOrder.indexOf(b.name);
   });
 
   document.getElementById('proj-list-tbody').innerHTML = projArray.map(p => `
@@ -1233,7 +1249,6 @@ window.renderProjList = function(){
         ondragend="handleDragEnd(event)">
       <td class="d-flex justify-content-between align-items-center" style="white-space: normal !important; word-break: break-all; padding: 8px 10px;">
         <div style="line-height: 1.4; padding-right: 5px;">
-          <!-- 드래그 손잡이 아이콘 -->
           <i class="bi bi-grip-vertical text-secondary me-1" style="cursor:grab; font-size: 14px;" title="이곳을 잡고 위아래로 끌어서 정렬하세요"></i>
           <span class="d-inline align-middle">${esc(p.name)}</span>
         </div>
@@ -1314,7 +1329,6 @@ window.selectProject = function(name){
   renderProjList(); 
 };
 
-// ── 재고 수동 입력/수정 ──
 window.openInventoryModal = function(docId){
   editingDocId = docId;
   document.getElementById('inv-modal-title').textContent = docId?'✏️ 재고 변경':'✨ 재고 수동 입력';
@@ -1421,7 +1435,6 @@ window.saveInventory = async function(){
   } finally { hideLoading(); }
 };
 
-// ── 일괄 출고 ──
 window.openBulkCheckout = function(){
   const sel = getSelectedRows('proj-detail-tbody');
   if(!sel.length){ alert('출고 처리할 장비를 선택해주세요.'); return; }
@@ -1528,9 +1541,6 @@ window.doCheckout = async function(){
   } finally { hideLoading(); }
 };
 
-// ══════════════════════════════════════════════════
-// 🖨️ 장비 스티커 인쇄
-// ══════════════════════════════════════════════════
 window.openStickerPreview = function() {
     const sel = getSelectedRows('proj-detail-tbody');
     if(!sel.length) { 
@@ -1600,9 +1610,6 @@ window.executeStickerPrint = function() {
     window.print();
 };
 
-// ══════════════════════════════════════════════════
-// 탭3: 이력
-// ══════════════════════════════════════════════════
 window.loadLogs = async function(){
   showLoading('이력 로딩 중...');
   try {
@@ -1647,9 +1654,6 @@ window.loadLogs = async function(){
   } finally { hideLoading(); }
 };
 
-// ══════════════════════════════════════════════════
-// 탭4: 마스터
-// ══════════════════════════════════════════════════
 let masterSortKey = 'group'; 
 let masterSortAsc = true;
 
@@ -1773,10 +1777,6 @@ window.deleteMaster = async function(){
   } finally { hideLoading(); }
 };
 
-// ══════════════════════════════════════════════════
-// 탭5: 엑셀 가져오기/내보내기
-// ══════════════════════════════════════════════════
-
 function askDupMode(){
   return new Promise(resolve=>{
     dupResolve = resolve;
@@ -1808,7 +1808,6 @@ window.importExcel = async function(input){
       const buf  = await file.arrayBuffer();
       const wb   = XLSX.read(buf, {type:'array', cellDates:true});
 
-      // ── 보고서 포맷 감지 ──
       if(wb.SheetNames.includes('전체 현황')) {
         hideLoading();
         const mode = await askDupMode();
@@ -1817,7 +1816,6 @@ window.importExcel = async function(input){
         const [ok, skip] = await importReportFormat(wb, mode);
         totalOk+=ok; totalSkip+=skip;
       } else {
-        // ── 기존 포맷 ──
         showLoading('기존 포맷 가져오기 중...');
         for(const sheetName of wb.SheetNames){
           const ws = wb.Sheets[sheetName];
@@ -1883,7 +1881,6 @@ async function importLegacySheet(raw, project){
 async function importReportFormat(wb, mode){
   const ws   = wb.Sheets['전체 현황'];
   const raw  = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false});
-  // 3행(index 2)이 헤더
   const headers = raw[2].map(h=>String(h).trim());
   const col  = k => headers.indexOf(k);
   const ts   = window.getLogTime();
