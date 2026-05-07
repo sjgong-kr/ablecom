@@ -387,6 +387,13 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
         <input type="text" id="search-sn" class="form-control form-control-sm" placeholder="S/N, P/N, 품명 입력" style="width:200px" oninput="renderInventoryTable()">
         <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('search-sn').value='';renderInventoryTable()">✕ 초기화</button>
         <div class="ms-auto d-flex gap-2">
+          <!-- [신규] 전체 개별 장비 현황에도 인쇄 옵션 및 버튼 추가 -->
+          <select id="bulk-print-option-detail" class="form-select form-select-sm border-dark" style="width: 155px; font-size: 11px; padding: 2px 20px 2px 8px; min-height: 26px;">
+            <option value="single" selected>부자재: 1장만(수량표기)</option>
+            <option value="multi">부자재: 수량만큼 개별인쇄</option>
+          </select>
+          <button class="btn btn-sm btn-dark" onclick="openStickerPreview('inv-tbody', 'bulk-print-option-detail')"><i class="bi bi-printer"></i> 🖨️ 선택 스티커 인쇄</button>
+          
           <button class="btn btn-sm btn-nokia" onclick="openInventoryModal(null)">✨ 재고 수동 입력</button>
           <button class="btn btn-sm btn-outline-info" onclick="editSelectedInv()">✏️ 선택 변경</button>
           <button class="btn btn-sm btn-outline-danger" onclick="deleteSelectedInv()">🗑️ 선택 삭제</button>
@@ -465,11 +472,11 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
                 <button class="btn btn-sm btn-outline-primary" onclick="selectAllProjDetail(true)">☑ 전체선택</button>
                 <button class="btn btn-sm btn-outline-secondary" onclick="selectAllProjDetail(false)">☐ 전체해제</button>
                 <button class="btn btn-sm btn-success" onclick="openBulkCheckout()">✅ 선택 장비 일괄 출고 창 열기</button>
-                <select id="bulk-print-option" class="form-select form-select-sm border-dark" style="width: 155px; font-size: 11px; padding: 2px 20px 2px 8px; min-height: 26px;">
+                <select id="bulk-print-option-proj" class="form-select form-select-sm border-dark" style="width: 155px; font-size: 11px; padding: 2px 20px 2px 8px; min-height: 26px;">
                   <option value="single" selected>부자재: 1장만(수량표기)</option>
                   <option value="multi">부자재: 수량만큼 개별인쇄</option>
                 </select>
-                <button class="btn btn-sm btn-dark" onclick="openStickerPreview()"><i class="bi bi-printer"></i> 🖨️ 선택 스티커 인쇄</button>
+                <button class="btn btn-sm btn-dark" onclick="openStickerPreview('proj-detail-tbody', 'bulk-print-option-proj')"><i class="bi bi-printer"></i> 🖨️ 선택 스티커 인쇄</button>
               </div>
             </div>
           </fieldset>
@@ -1713,22 +1720,22 @@ window.executeStickerPrint = function() {
 };
 
 // ══════════════════════════════════════════════════
-// 탭3: 이력
+// 🖨️ 장비 스티커 인쇄
 // ══════════════════════════════════════════════════
-window.loadLogs = async function(){
-  showLoading('이력 로딩 중...');
-  try {
-    const snap = await getDocs(query(collection(db,'Nokia_Equipment','data','daily_logs'),orderBy('timestamp','desc'),limit(200)));
-    const logColorMap = {'입고':'#e3f2fd','출고':'#fff8e1','재고삭제':'#ffebee','재고수정':'#f3e5f5'};
-    document.getElementById('logs-tbody').innerHTML = snap.docs.map(d=>{
-      const l=d.data();
-      const r=allInventory.find(x=>x.id===l.ref_equip_id)||{};
-      const name=`[${r.equip_group||''}] ${r.part_name||'(삭제된 장비)'} ${r.serial_number?'(S/N:'+r.serial_number+')':r.part_number?'(P/N:'+r.part_number+')':''}`;
-      const bg=logColorMap[l.action_type]||'';
-      
-      let qtyDisplay = `${l.qty_changed}개`;
-      let qtyColor = '#666';
-      if (l.action_type === '재고수정' && l.qty_changed > 0) {
+window.openStickerPreview = function(tbodyId = 'proj-detail-tbody', optionId = 'bulk-print-option-proj') {
+    const sel = getSelectedRows(tbodyId);
+    if(!sel.length) { 
+        alert('인쇄할 장비를 리스트에서 먼저 체크해주세요.'); 
+        return; 
+    }
+
+    const rawItems = sel.map(tr => allInventory.find(x => x.id === tr.dataset.id)).filter(Boolean);
+    const bulkOptionElement = document.getElementById(optionId);
+    const bulkOption = bulkOptionElement ? bulkOptionElement.value : 'single'; 
+    
+    const finalItems = [];
+
+    rawItems.forEach(item => {
         qtyDisplay = `+${l.qty_changed}개`;
         qtyColor = '#1976d2'; 
       } else if (l.qty_changed < 0) {
