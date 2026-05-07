@@ -157,7 +157,7 @@ tr.selected  { background: #bbd6f8 !important; }
 }
 
 /* ══════════════════════════════════════════════════
-   🖨️ 장비 스티커 인쇄용 CSS (세로 2열x5행 = 10개, 텍스트 축소 방지 적용)
+   🖨️ 장비 스티커 인쇄용 CSS (세로 2열x5행 = 10개)
 ══════════════════════════════════════════════════ */
 @media print {
   @page { size: A4 portrait; margin: 0; }
@@ -183,13 +183,12 @@ tr.selected  { background: #bbd6f8 !important; }
     padding: 12px 16px; 
     display: flex; 
     flex-direction: column; 
-    justify-content: center; /* 세로 중앙 정렬 */
+    justify-content: center; 
     font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
     box-sizing: border-box;
     overflow: hidden;
     height: 100%;
   }
-  /* flex-shrink: 0 적용으로 글자가 공간 부족으로 투명화(잘림)되는 현상 원천 차단 */
   .st-title { font-weight: 900; font-size: 14pt; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; margin-bottom: 6px; padding-bottom: 4px; flex-shrink: 0; }
   .st-proj { color: #000; font-weight: bold; font-size: 11.5pt; margin-bottom: 3px; flex-shrink: 0; }
   .st-group { font-weight: bold; color: #444; font-size: 10.5pt; margin-bottom: 3px; flex-shrink: 0; }
@@ -197,7 +196,7 @@ tr.selected  { background: #bbd6f8 !important; }
   .st-pn, .st-sn { font-family: monospace; font-size: 10.5pt; font-weight: 600; margin-top: 2px; flex-shrink: 0; }
 }
 
-/* ── 미리보기 모달용 스티커 디자인 (인쇄와 100% 동일하게 매칭) ── */
+/* ── 미리보기 모달용 스티커 디자인 ── */
 #stickerPreviewContent { background: #525659; padding: 20px; max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; align-items: center;}
 .preview-page {
     display: grid; 
@@ -209,7 +208,7 @@ tr.selected  { background: #bbd6f8 !important; }
     padding: 25px 20px; 
     width: 100%; 
     max-width: 650px; 
-    aspect-ratio: 1 / 1.414; /* A4 용지와 완벽하게 동일한 비율 적용 */
+    aspect-ratio: 1 / 1.414; 
     border: 1px solid #dee2e6; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     align-content: stretch;
 }
@@ -434,10 +433,16 @@ tr.selected  { background: #bbd6f8 !important; }
     <div class="tab-pane fade" id="inv-project">
       <div class="row g-2" style="min-height:460px;">
         <div class="col-3">
-          <div class="fw-bold mb-1 small" style="color:#1a5276;">[ 프로젝트명 ]</div>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="fw-bold small" style="color:#1a5276;">[ 프로젝트명 ]</div>
+            <select id="proj-sort-select" class="form-select form-select-sm" style="width: 120px; font-size: 11px; padding: 2px 20px 2px 8px; min-height: 24px;" onchange="renderProjList()">
+              <option value="date_desc" selected>최신 입고순</option>
+              <option value="stock_desc">재고 많은순</option>
+              <option value="name_asc">이름순 (가나다)</option>
+            </select>
+          </div>
           <div class="tbl-wrap" style="max-height:440px;">
             <table class="inv-table" id="tbl-proj-list">
-              <thead><tr><th>프로젝트명</th></tr></thead>
               <tbody id="proj-list-tbody"></tbody>
             </table>
           </div>
@@ -652,7 +657,7 @@ tr.selected  { background: #bbd6f8 !important; }
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     모달: 일괄 출고
+     모달: 일괄 출고 (NSN 부자재 처리 버그 완벽 수정)
 ══════════════════════════════════════════════════ -->
 <div class="modal fade" id="checkoutModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
@@ -841,8 +846,6 @@ function tickClock() {
 }
 setInterval(tickClock, 1000); tickClock();
 
-// ── 날짜 초기값 및 유틸 ──
-// [버그 수정] 전역에서 접근 가능한 함수로 변경 (엑셀 오류 방지)
 window.getTodayStr = function() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1097,10 +1100,42 @@ function renderStatsTable(){
 window.loadStats = function(){ renderStatsTable(); };
 
 function renderProjList(){
-  const projects = [...new Set(allInventory.map(r=>r.project_name||'(프로젝트 미지정)'))].sort();
-  document.getElementById('proj-list-tbody').innerHTML = projects.map(p=>`
-    <tr onclick="selectProject('${esc(p)}')" style="cursor:pointer;">
-      <td>${esc(p)}</td>
+  const sortType = document.getElementById('proj-sort-select') ? document.getElementById('proj-sort-select').value : 'date_desc';
+  
+  // 프로젝트별 집계 (이름, 최신 입고일, 총 현재고)
+  const projStats = {};
+  allInventory.forEach(r => {
+      const pName = (r.project_name || '(프로젝트 미지정)').trim() || '(프로젝트 미지정)';
+      if(!projStats[pName]) {
+          projStats[pName] = { name: pName, maxDate: '', totalStock: 0 };
+      }
+      if(r.inbound_date && r.inbound_date > projStats[pName].maxDate) {
+          projStats[pName].maxDate = r.inbound_date;
+      }
+      projStats[pName].totalStock += (+r.current_stock || 0);
+  });
+
+  let projArray = Object.values(projStats);
+
+  // 정렬 로직
+  projArray.sort((a, b) => {
+      if (sortType === 'date_desc') {
+          if (a.maxDate !== b.maxDate) return b.maxDate.localeCompare(a.maxDate);
+          return a.name.localeCompare(b.name);
+      } else if (sortType === 'stock_desc') {
+          if (a.totalStock !== b.totalStock) return b.totalStock - a.totalStock;
+          return a.name.localeCompare(b.name);
+      } else {
+          return a.name.localeCompare(b.name);
+      }
+  });
+
+  document.getElementById('proj-list-tbody').innerHTML = projArray.map(p => `
+    <tr onclick="selectProject('${esc(p.name)}')" style="cursor:pointer;" class="${selectedProjName === p.name ? 'selected' : ''}">
+      <td class="d-flex justify-content-between align-items-center">
+        <span class="text-truncate" style="max-width: 150px;" title="${esc(p.name)}">${esc(p.name)}</span>
+        <span class="badge ${p.totalStock > 0 ? 'bg-success' : 'bg-secondary'}" style="font-size: 10px;">${p.totalStock}</span>
+      </td>
     </tr>`).join('');
 }
 
@@ -1138,7 +1173,7 @@ function renderProjDetailTable(rows){
   const tbody = document.getElementById('proj-detail-tbody');
   tbody.innerHTML = sorted.map(r=>`
     <tr class="${stockClass(r.current_stock)}" data-id="${r.id}">
-      <td class="text-center"><input type="checkbox" class="form-check-input row-chk" onclick="event.stopPropagation()"></td>
+      <td class="text-center"><input type="checkbox" class="form-check-input row-chk sticker-check" onclick="event.stopPropagation()"></td>
       <td class="text-center">${r._rowNum||''}</td>
       <td>${esc(r.equip_group)}</td><td>${esc(r.part_name)}</td>
       <td>${esc(r.part_number)}</td><td>${esc(r.serial_number)}</td>
@@ -1172,6 +1207,9 @@ window.selectProject = function(name){
   const allChk = document.getElementById('proj-chk-all');
   if(allChk) allChk.checked = false;
   setStatus(`📁 프로젝트 선택: ${name} (${rows.length}건)`);
+  
+  // 좌측 리스트에 하이라이트(선택 표시) 적용을 위해 다시 렌더링
+  renderProjList(); 
 };
 
 // ── 재고 수동 입력/수정 ──
@@ -1298,7 +1336,10 @@ window.openBulkCheckout = function(){
     if(!r||+r.current_stock<=0) return;
     checkoutItems.push({...r, checkout_qty:1});
     
-    const hasSn = r.serial_number && String(r.serial_number).trim() !== '' && String(r.serial_number).toLowerCase() !== 'none';
+    // [NSN 예외 처리 완벽 적용] NSN, N/A, 빈칸, None 모두 부자재로 인식
+    const snClean = String(r.serial_number).trim().toLowerCase();
+    const hasSn = snClean !== '' && snClean !== 'none' && snClean !== 'nsn' && snClean !== 'n/a';
+    
     const qtyCellHTML = hasSn 
         ? `1 <input type="hidden" class="bulk-qty-input" data-id="${id}" value="1">`
         : `<input type="number" class="form-control form-control-sm bulk-qty-input" data-id="${id}" value="1" min="1" max="${r.current_stock}" style="width: 80px; margin: 0 auto; text-align: center;" onclick="event.stopPropagation()">`;
@@ -1320,7 +1361,11 @@ window.applyCheckoutQty = function(){
     const id = tr.dataset.id;
     const r = checkoutItems.find(x=>x.id===id);
     if(!r) return;
-    const hasSn = r.serial_number && String(r.serial_number).trim() !== '' && String(r.serial_number).toLowerCase() !== 'none';
+    
+    // [NSN 예외 처리 완벽 적용]
+    const snClean = String(r.serial_number).trim().toLowerCase();
+    const hasSn = snClean !== '' && snClean !== 'none' && snClean !== 'nsn' && snClean !== 'n/a';
+    
     if(hasSn && qty>1){ alert('S/N이 있는 장비는 1개만 출고 가능합니다.'); return; }
     if(qty>+r.current_stock){ alert(`현재고(${r.current_stock})를 초과할 수 없습니다.`); return; }
     
@@ -1384,7 +1429,7 @@ window.doCheckout = async function(){
 };
 
 // ══════════════════════════════════════════════════
-// 🖨️ 장비 스티커 인쇄 (A4 세로 2x5 완벽 비율 맞춤 및 글자 잘림 방지)
+// 🖨️ 장비 스티커 인쇄
 // ══════════════════════════════════════════════════
 window.openStickerPreview = function() {
     const sel = getSelectedRows('proj-detail-tbody');
@@ -1400,11 +1445,9 @@ window.openStickerPreview = function() {
     previewContainer.innerHTML = '';
     printContainer.innerHTML = '';
 
-    // 오늘 날짜 구하기 (YYYY.MM.DD 포맷)
     const now = new Date();
     const todayPrint = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
 
-    // 한 페이지당 10개 (2열 x 5행)
     const ITEMS_PER_PAGE = 10;
     const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
 
@@ -1418,7 +1461,9 @@ window.openStickerPreview = function() {
         printPage.className = 'sticker-page';
 
         pageItems.forEach((item, index) => {
-            const snText = item.serial_number && String(item.serial_number).trim().toLowerCase() !== 'none' && String(item.serial_number).trim() !== '' ? item.serial_number : 'N/A';
+            const snClean = String(item.serial_number).trim().toLowerCase();
+            // [스티커 NSN 예외 처리] NSN이면 라벨에 깔끔하게 N/A 로 표시되도록 적용
+            const snText = snClean !== 'none' && snClean !== '' && snClean !== 'nsn' && snClean !== 'n/a' ? item.serial_number : 'N/A';
             const projText = item.project_name || '미지정';
             const groupText = item.equip_group || '-';
 
@@ -1434,13 +1479,11 @@ window.openStickerPreview = function() {
                 <div class="st-sn">S/N: ${window.esc(snText)}</div>
             `;
 
-            // 미리보기 화면용
             const previewSticker = document.createElement('div');
             previewSticker.className = 'preview-sticker';
             previewSticker.innerHTML = stickerHTML;
             previewPage.appendChild(previewSticker);
 
-            // 실제 인쇄용
             const printSticker = document.createElement('div');
             printSticker.className = 'sticker';
             printSticker.innerHTML = stickerHTML;
@@ -1472,21 +1515,18 @@ window.loadLogs = async function(){
       const name=`[${r.equip_group||''}] ${r.part_name||'(삭제된 장비)'} ${r.serial_number?'(S/N:'+r.serial_number+')':r.part_number?'(P/N:'+r.part_number+')':''}`;
       const bg=logColorMap[l.action_type]||'';
       
-      // 수량이 증가했을 경우 + 기호 및 색상 처리
       let qtyDisplay = `${l.qty_changed}개`;
       let qtyColor = '#666';
       if (l.action_type === '재고수정' && l.qty_changed > 0) {
         qtyDisplay = `+${l.qty_changed}개`;
-        qtyColor = '#1976d2'; // 파란색 (증가)
+        qtyColor = '#1976d2'; 
       } else if (l.qty_changed < 0) {
-        qtyColor = '#d32f2f'; // 빨간색 (감소)
+        qtyColor = '#d32f2f'; 
       }
       
-      // 과거 UTC 시간표시(T 포함) 띄어쓰기로 변환 지원
       let displayTime = '';
       if (l.timestamp) {
         let dObj = new Date(l.timestamp);
-        // 만약 ISO 형식이 아닌 이전(띄어쓰기) 포맷으로 저장되었던 데이터 호환성 처리
         if (isNaN(dObj.getTime()) && l.timestamp.includes(' ')) {
             dObj = new Date(l.timestamp.replace(' ', 'T'));
         }
@@ -1495,7 +1535,7 @@ window.loadLogs = async function(){
             const pad = n => String(n).padStart(2, '0');
             displayTime = `${dObj.getFullYear()}-${pad(dObj.getMonth()+1)}-${pad(dObj.getDate())} ${pad(dObj.getHours())}:${pad(dObj.getMinutes())}:${pad(dObj.getSeconds())}`;
         } else {
-            displayTime = esc(l.timestamp); // 파싱 실패 시 원본 표시
+            displayTime = esc(l.timestamp); 
         }
       }
 
@@ -1669,7 +1709,6 @@ window.importExcel = async function(input){
       const buf  = await file.arrayBuffer();
       const wb   = XLSX.read(buf, {type:'array', cellDates:true});
 
-      // ── 보고서 포맷 감지 ──
       if(wb.SheetNames.includes('전체 현황')) {
         hideLoading();
         const mode = await askDupMode();
@@ -1678,7 +1717,6 @@ window.importExcel = async function(input){
         const [ok, skip] = await importReportFormat(wb, mode);
         totalOk+=ok; totalSkip+=skip;
       } else {
-        // ── 기존 포맷 ──
         showLoading('기존 포맷 가져오기 중...');
         for(const sheetName of wb.SheetNames){
           const ws = wb.Sheets[sheetName];
@@ -1744,7 +1782,6 @@ async function importLegacySheet(raw, project){
 async function importReportFormat(wb, mode){
   const ws   = wb.Sheets['전체 현황'];
   const raw  = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false});
-  // 3행(index 2)이 헤더
   const headers = raw[2].map(h=>String(h).trim());
   const col  = k => headers.indexOf(k);
   const ts   = window.getLogTime();
@@ -1817,11 +1854,9 @@ window.exportExcel = async function(){
     const reportDate = now.toLocaleString('ko-KR');
     const dt    = window.getTodayStr().replace(/-/g,'').slice(2);
     
-    // P/N 통계용(재고 있음)과 전체/프로젝트용(모든 데이터)을 분리
     const activeRows = allInventory.filter(r=>+r.current_stock>0);
     const allRows = allInventory; 
 
-    // ── 공통 스타일 정의 ──
     const TITLE_FONT  = { name:'맑은 고딕', size:14, bold:true, color:{argb:'FF002060'} };
     const DATE_FONT   = { name:'맑은 고딕', size:9,  italic:true, color:{argb:'FF595959'} };
     const HDR_FONT    = { name:'맑은 고딕', size:10, bold:true };
@@ -1833,9 +1868,7 @@ window.exportExcel = async function(){
     const CELL_BORDER = { top:THIN_BORDER, bottom:THIN_BORDER, left:THIN_BORDER, right:THIN_BORDER };
     const HDR_BORDER  = { top:THICK_BORDER, bottom:THICK_BORDER, left:THIN_BORDER, right:THIN_BORDER };
 
-    function applyBorder(cell, isBold=false){
-      cell.border = isBold ? HDR_BORDER : CELL_BORDER;
-    }
+    function applyBorder(cell, isBold=false){ cell.border = isBold ? HDR_BORDER : CELL_BORDER; }
     function applyHdrStyle(cell){
       cell.font      = HDR_FONT;
       cell.fill      = HDR_FILL;
@@ -1851,7 +1884,6 @@ window.exportExcel = async function(){
 
     function buildDetailSheet(ws, sheetTitle, dataRows, detailCols, colWidths){
       ws.properties.defaultRowHeight = 16;
-
       const titleCell = ws.getCell('A1');
       titleCell.value = `NOKIA 장비 재고 현황 보고서  [${sheetTitle}]`;
       titleCell.font  = TITLE_FONT;
@@ -1867,7 +1899,6 @@ window.exportExcel = async function(){
       dateCell.alignment = { horizontal:'right' };
 
       ws.getRow(2).height = 6;
-
       detailCols.forEach((h,ci)=>{
         const cell = ws.getCell(3, ci+1);
         cell.value = h;
@@ -1891,9 +1922,6 @@ window.exportExcel = async function(){
       ws.autoFilter = { from:{row:3,column:1}, to:{row:3+dataRows.length,column:detailCols.length} };
     }
 
-    // ═══════════════════════════════
-    // 시트1: 전체 현황 (allRows 사용 - 출고 완료 데이터 포함)
-    // ═══════════════════════════════
     const detailCols  = ['순번','프로젝트명','입고일자','출고일자','장비군','품명','P/N','S/N','총수량','출고','재고','비고'];
     const detailWidths= [6, 24, 12, 12, 10, 32, 16, 18, 8, 8, 8, 28];
     const allData = allRows.map((r,i)=>[
@@ -1904,9 +1932,6 @@ window.exportExcel = async function(){
     const wsAll = wb.addWorksheet('전체 현황', {views:[{state:'frozen',xSplit:0,ySplit:3}]});
     buildDetailSheet(wsAll, '전체 현황', allData, detailCols, detailWidths);
 
-    // ═══════════════════════════════
-    // 시트2: P/N별 통계 (activeRows 사용 - 현재고 있는 것만)
-    // ═══════════════════════════════
     const statCols   = ['장비군','품명','P/N','총입고','총출고','총현재고'];
     const statWidths = [12, 34, 18, 10, 10, 10];
     const statMap={};
@@ -1943,9 +1968,6 @@ window.exportExcel = async function(){
     statWidths.forEach((w,i)=>{ wsStat.getColumn(i+1).width=w; });
     wsStat.autoFilter = {from:{row:3,column:1}, to:{row:3+statData.length,column:6}};
 
-    // ═══════════════════════════════
-    // 시트3~: 프로젝트별 (allRows 사용 - 출고 완료 데이터 포함)
-    // ═══════════════════════════════
     const projMap={};
     allRows.forEach(r=>{
       const p=(r.project_name||'미지정').trim()||'미지정';
@@ -1967,7 +1989,6 @@ window.exportExcel = async function(){
       buildDetailSheet(ws2, proj, prData, detailCols, detailWidths);
     });
 
-    // ── 다운로드 ──
     const buffer = await wb.xlsx.writeBuffer();
     const blob   = new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const url    = URL.createObjectURL(blob);
@@ -1983,9 +2004,6 @@ window.exportExcel = async function(){
   } finally { hideLoading(); }
 };
 
-// ══════════════════════════════════════════════════
-// 초기 로딩
-// ══════════════════════════════════════════════════
 (async()=>{
   showLoading('데이터 로딩 중...');
   try {
@@ -1999,7 +2017,6 @@ window.exportExcel = async function(){
   } finally { hideLoading(); }
 })();
 
-// 탭 전환 시 이력/마스터 자동 로드
 document.querySelector('[href="#tab-logs"]').addEventListener('click',()=>loadLogs());
 document.querySelector('[href="#tab-master"]').addEventListener('click',()=>loadMaster());
 
