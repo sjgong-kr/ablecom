@@ -161,7 +161,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
 }
 
 /* ══════════════════════════════════════════════════
-   🖨️ 장비 스티커 인쇄용 CSS
+   🖨️ 장비 스티커 인쇄용 CSS (세로 2열x5행 = 10개)
 ══════════════════════════════════════════════════ */
 @media print {
   @page { size: A4 portrait; margin: 0; }
@@ -193,6 +193,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
     overflow: hidden;
     height: 100%;
   }
+  /* flex-shrink: 0 적용으로 글자가 공간 부족으로 투명화(잘림)되는 현상 차단 */
   .st-title { font-weight: 900; font-size: 14pt; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; margin-bottom: 6px; padding-bottom: 4px; flex-shrink: 0; }
   .st-proj { color: #000; font-weight: bold; font-size: 11.5pt; margin-bottom: 3px; flex-shrink: 0; }
   .st-group { font-weight: bold; color: #444; font-size: 10.5pt; margin-bottom: 3px; flex-shrink: 0; }
@@ -235,24 +236,19 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
-      <input type="text" id="login-id" class="form-control"
-             placeholder="ID를 입력하세요" autocomplete="username">
+      <input type="text" id="login-id" class="form-control" placeholder="ID를 입력하세요" autocomplete="username">
     </div>
     <div class="mb-3 text-start">
       <label class="form-label" for="login-pw">비밀번호</label>
       <div class="input-group">
-        <input type="password" id="login-pw" class="form-control"
-               placeholder="Password를 입력하세요" autocomplete="current-password">
-        <button class="btn btn-outline-secondary btn-sm" type="button" id="pw-toggle"
-                onclick="togglePwView()" tabindex="-1">
+        <input type="password" id="login-pw" class="form-control" placeholder="Password를 입력하세요" autocomplete="current-password">
+        <button class="btn btn-outline-secondary btn-sm" type="button" id="pw-toggle" onclick="togglePwView()" tabindex="-1">
           <i class="bi bi-eye" id="pw-eye"></i>
         </button>
       </div>
     </div>
-
     <button id="login-btn" onclick="doLogin()">🔐 로그인</button>
     <div id="login-err"></div>
-
     <div class="login-footer">
       Created by pokarekong@naver.com 2026-03<br>
       <span style="color:#ccc;">https://sjgong-kr.github.io/ablecom/</span>
@@ -433,13 +429,12 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
       </div>
     </div>
 
-    <!-- 프로젝트별 출고 (이름 변경 기능, 정렬 콤보박스 제거) -->
+    <!-- 프로젝트별 출고 -->
     <div class="tab-pane fade" id="inv-project">
       <div class="row g-2" style="min-height:460px;">
         <div class="col-3">
           <div class="d-flex justify-content-between align-items-center mb-1">
             <div class="fw-bold small" style="color:#1a5276;">[ 프로젝트명 ]</div>
-            <!-- [신규] 콤보박스 대신 프로젝트 이름 변경 버튼 배치 -->
             <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 11px;" onclick="editProjectName()">✏️ 이름 수정</button>
           </div>
           <div class="tbl-wrap" style="max-height:440px; overflow-x: hidden;">
@@ -456,10 +451,16 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
               <input type="date" id="checkout-date" class="form-control form-control-sm" style="width:140px">
               <label class="fw-bold small mb-0">출고지(비고)</label>
               <input type="text" id="checkout-note" class="form-control form-control-sm" placeholder="출고지 입력" style="width:200px">
-              <div class="ms-auto d-flex gap-2">
+              
+              <!-- 스티커 인쇄 옵션 콤보박스 및 일괄 출고 버튼 -->
+              <div class="ms-auto d-flex gap-2 align-items-center">
                 <button class="btn btn-sm btn-outline-primary" onclick="selectAllProjDetail(true)">☑ 전체선택</button>
                 <button class="btn btn-sm btn-outline-secondary" onclick="selectAllProjDetail(false)">☐ 전체해제</button>
                 <button class="btn btn-sm btn-success" onclick="openBulkCheckout()">✅ 선택 장비 일괄 출고 창 열기</button>
+                <select id="bulk-print-option" class="form-select form-select-sm border-dark" style="width: 155px; font-size: 11px; padding: 2px 20px 2px 8px; min-height: 26px;">
+                  <option value="single" selected>부자재: 1장만(수량표기)</option>
+                  <option value="multi">부자재: 수량만큼 개별인쇄</option>
+                </select>
                 <button class="btn btn-sm btn-dark" onclick="openStickerPreview()"><i class="bi bi-printer"></i> 🖨️ 선택 스티커 인쇄</button>
               </div>
             </div>
@@ -658,7 +659,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     모달: 일괄 출고
+     모달: 일괄 출고 (NSN 부자재 처리 버그 픽스 적용)
 ══════════════════════════════════════════════════ -->
 <div class="modal fade" id="checkoutModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
@@ -696,7 +697,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     모달: 스티커 인쇄 미리보기
+     모달: 스티커 인쇄 미리보기 (2x5 배열 단일/복수 콤보박스 적용)
 ══════════════════════════════════════════════════ -->
 <div class="modal fade" id="stickerPrintModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -736,9 +737,6 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
   </div>
 </div>
 
-<!-- 실제 인쇄될 숨겨진 프린트 영역 -->
-<div id="printArea" style="display: none;"></div>
-
 <!-- ══════════════════════════════════════════════════
      모달: P/N 통계 상세 내역 보기
 ══════════════════════════════════════════════════ -->
@@ -777,6 +775,9 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
     </div>
   </div>
 </div>
+
+<!-- 실제 인쇄될 숨겨진 프린트 영역 -->
+<div id="printArea" style="display: none;"></div>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -916,65 +917,7 @@ window.getSelectedRows = function(tbodyId){
   });
 }
 
-// ══════════════════════════════════════════════════
-// 드래그 앤 드롭 함수 (수동 정렬 전용)
-// ══════════════════════════════════════════════════
-let draggedProj = null;
-
-window.handleDragStart = function(e, projName) {
-    draggedProj = projName;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', projName);
-    e.target.closest('tr').classList.add('dragging');
-};
-
-window.handleDragOver = function(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    const targetRow = e.target.closest('tr');
-    if (targetRow && targetRow.getAttribute('data-proj') !== draggedProj) {
-        targetRow.classList.add('drag-over');
-    }
-};
-
-window.handleDragLeave = function(e) {
-    const targetRow = e.target.closest('tr');
-    if (targetRow) {
-        targetRow.classList.remove('drag-over');
-    }
-};
-
-window.handleDrop = function(e, targetProj) {
-    e.preventDefault();
-    const targetRow = e.target.closest('tr');
-    if (targetRow) targetRow.classList.remove('drag-over');
-
-    if (!draggedProj || draggedProj === targetProj) return;
-
-    let order = JSON.parse(localStorage.getItem('nokia_proj_order') || '[]');
-    
-    if (!order.includes(draggedProj)) order.push(draggedProj);
-    if (!order.includes(targetProj)) order.push(targetProj);
-
-    const fromIdx = order.indexOf(draggedProj);
-    const toIdx = order.indexOf(targetProj);
-
-    order.splice(fromIdx, 1);
-    order.splice(toIdx, 0, draggedProj);
-
-    localStorage.setItem('nokia_proj_order', JSON.stringify(order));
-    window.renderProjList();
-};
-
-window.handleDragEnd = function(e) {
-    e.target.closest('tr').classList.remove('dragging');
-    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-    draggedProj = null;
-};
-
-// ══════════════════════════════════════════════════
-// [신규] 프로젝트 이름 변경 로직
-// ══════════════════════════════════════════════════
+// ── 프로젝트명 수정 기능 ──
 window.editProjectName = async function() {
     if (!selectedProjName || selectedProjName === '(프로젝트 미지정)') {
         alert('이름을 변경할 프로젝트를 왼쪽 목록에서 먼저 선택해주세요.\\n(※ 미지정 항목은 변경할 수 없습니다.)');
@@ -1027,6 +970,59 @@ window.editProjectName = async function() {
     }
 };
 
+// ── 드래그 앤 드롭 함수 (수동 정렬 전용) ──
+let draggedProj = null;
+
+window.handleDragStart = function(e, projName) {
+    draggedProj = projName;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', projName);
+    e.target.closest('tr').classList.add('dragging');
+};
+
+window.handleDragOver = function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const targetRow = e.target.closest('tr');
+    if (targetRow && targetRow.getAttribute('data-proj') !== draggedProj) {
+        targetRow.classList.add('drag-over');
+    }
+};
+
+window.handleDragLeave = function(e) {
+    const targetRow = e.target.closest('tr');
+    if (targetRow) {
+        targetRow.classList.remove('drag-over');
+    }
+};
+
+window.handleDrop = function(e, targetProj) {
+    e.preventDefault();
+    const targetRow = e.target.closest('tr');
+    if (targetRow) targetRow.classList.remove('drag-over');
+
+    if (!draggedProj || draggedProj === targetProj) return;
+
+    let order = JSON.parse(localStorage.getItem('nokia_proj_order') || '[]');
+    
+    if (!order.includes(draggedProj)) order.push(draggedProj);
+    if (!order.includes(targetProj)) order.push(targetProj);
+
+    const fromIdx = order.indexOf(draggedProj);
+    const toIdx = order.indexOf(targetProj);
+
+    order.splice(fromIdx, 1);
+    order.splice(toIdx, 0, draggedProj);
+
+    localStorage.setItem('nokia_proj_order', JSON.stringify(order));
+    window.renderProjList();
+};
+
+window.handleDragEnd = function(e) {
+    e.target.closest('tr').classList.remove('dragging');
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    draggedProj = null;
+};
 
 async function fetchMasterCache() {
   const snap = await getDocs(collection(db,'Nokia_Equipment','data','product_master'));
@@ -1218,43 +1214,12 @@ window.sortStats = function(key){
   if(statSortKey===key) statSortAsc=!statSortAsc; else { statSortKey=key; statSortAsc=true; }
   renderStatsTable();
 };
-function renderStatsTable(){
-  const q = document.getElementById('search-stats').value.trim().toLowerCase();
-  const map = {};
-  allInventory.forEach(r=>{
-    if(q&&!(r.part_number||'').toLowerCase().includes(q)&&!(r.part_name||'').toLowerCase().includes(q)) return;
-    const k=(r.part_number||'')+'|'+(r.part_name||'');
-    if(!map[k]) map[k]={equip_group:r.equip_group||'',part_name:r.part_name||'',part_number:r.part_number||'',ti:0,to:0,ts:0};
-    map[k].ti+=+r.total_qty||0;
-    map[k].to+=+r.out_qty||0;
-    map[k].ts+=+r.current_stock||0;
-  });
 
-  let items = Object.values(map);
-  items.sort((a,b)=>{
-    const va=a[statSortKey]??0, vb=b[statSortKey]??0;
-    const n=parseFloat(va)-parseFloat(vb);
-    if(!isNaN(n)) return statSortAsc?n:-n;
-    return statSortAsc?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));
-  });
-  updateSortIcons('st-si-', statSortKey, statSortAsc);
-
-  // [수정] 통계 행에 마우스 오버 효과 및 클릭(상세보기) 이벤트 추가
-  document.getElementById('stats-tbody').innerHTML = items.map(s=>`
-    <tr class="${stockClass(s.ts)}" style="cursor:pointer;" data-pn="${esc(s.part_number)}" data-name="${esc(s.part_name)}" onclick="showStatDetails(this)" title="클릭하여 상세 내역 보기">
-      <td>${esc(s.equip_group)}</td><td>${esc(s.part_name)}</td><td>${esc(s.part_number)}</td>
-      <td class="text-center">${s.ti}</td><td class="text-center">${s.to}</td>
-      <td class="text-center fw-bold">${s.ts}</td>
-    </tr>`).join('');
-}
-window.loadStats = function(){ renderStatsTable(); };
-
-// [신규] 통계 상세 내역 보기 팝업 함수
+# ── 통계 상세 내역 열기 ──
 window.showStatDetails = function(tr) {
   const pn = tr.getAttribute('data-pn');
   const name = tr.getAttribute('data-name');
   
-  // P/N과 품명이 일치하는 모든 재고 내역 필터링
   const filtered = allInventory.filter(r => (r.part_number||'') === pn && (r.part_name||'') === name);
   
   document.getElementById('statDetailModalLabel').textContent = `📊 상세 내역 - [${pn}] ${name} (총 ${filtered.length}건 추적됨)`;
@@ -1280,7 +1245,38 @@ window.showStatDetails = function(tr) {
   new bootstrap.Modal(document.getElementById('statDetailModal')).show();
 };
 
-function renderProjList(){
+function renderStatsTable(){
+  const q = document.getElementById('search-stats').value.trim().toLowerCase();
+  const map = {};
+  allInventory.forEach(r=>{
+    if(q&&!(r.part_number||'').toLowerCase().includes(q)&&!(r.part_name||'').toLowerCase().includes(q)) return;
+    const k=(r.part_number||'')+'|'+(r.part_name||'');
+    if(!map[k]) map[k]={equip_group:r.equip_group||'',part_name:r.part_name||'',part_number:r.part_number||'',ti:0,to:0,ts:0};
+    map[k].ti+=+r.total_qty||0;
+    map[k].to+=+r.out_qty||0;
+    map[k].ts+=+r.current_stock||0;
+  });
+
+  let items = Object.values(map);
+  items.sort((a,b)=>{
+    const va=a[statSortKey]??0, vb=b[statSortKey]??0;
+    const n=parseFloat(va)-parseFloat(vb);
+    if(!isNaN(n)) return statSortAsc?n:-n;
+    return statSortAsc?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));
+  });
+  updateSortIcons('st-si-', statSortKey, statSortAsc);
+
+  document.getElementById('stats-tbody').innerHTML = items.map(s=>`
+    <tr class="${stockClass(s.ts)}" style="cursor:pointer;" data-pn="${esc(s.part_number)}" data-name="${esc(s.part_name)}" onclick="showStatDetails(this)" title="클릭하여 상세 내역 보기">
+      <td>${esc(s.equip_group)}</td><td>${esc(s.part_name)}</td><td>${esc(s.part_number)}</td>
+      <td class="text-center">${s.ti}</td><td class="text-center">${s.to}</td>
+      <td class="text-center fw-bold">${s.ts}</td>
+    </tr>`).join('');
+}
+window.loadStats = function(){ renderStatsTable(); };
+
+// ── 수동 정렬 지원 (드래그 앤 드롭) ──
+window.renderProjList = function(){
   const projStats = {};
   allInventory.forEach(r => {
       const pName = (r.project_name || '(프로젝트 미지정)').trim() || '(프로젝트 미지정)';
@@ -1506,6 +1502,7 @@ window.saveInventory = async function(){
   } finally { hideLoading(); }
 };
 
+// ── 일괄 출고 ──
 window.openBulkCheckout = function(){
   const sel = getSelectedRows('proj-detail-tbody');
   if(!sel.length){ alert('출고 처리할 장비를 선택해주세요.'); return; }
@@ -1584,14 +1581,21 @@ window.doCheckout = async function(){
       itemsToCheckout.push({r, qty, id});
   }
 
-  if(!confirm(`${itemsToCheckout.length}건 장비를 출고 처리하시겠습니까?`)) return;
+  if(!confirm(`${itemsToCheckout.length}건 장비를 출고 처리하시겠습니까?\n(※ 기존 비고 내용 밑에 새 이력이 누적 저장됩니다.)`)) return;
   
   showLoading('출고 처리 중...');
   try {
     const ts = window.getLogTime(); 
     for(const item of itemsToCheckout){
       const {r, qty, id} = item;
-      const newNote = r.note ? `${r.note}\n[${outDate} 출고] ${outNote}` : `[${outDate} 출고] ${outNote}`;
+      
+      const snClean = String(r.serial_number).trim().toLowerCase();
+      const hasSn = snClean !== '' && snClean !== 'none' && snClean !== 'nsn' && snClean !== 'n/a';
+      
+      const existing_note = r.note || "";
+      let new_history = `[${outDate} 출고] ${outNote}`.trim();
+      if(!hasSn) new_history += ` (수량: ${qty}개)`;
+      const newNote = existing_note ? `${existing_note}\n${new_history}` : new_history;
       
       await updateDoc(doc(db,'Nokia_Equipment','data','equipment',id),{
         current_stock: +r.current_stock-qty,
@@ -1612,6 +1616,9 @@ window.doCheckout = async function(){
   } finally { hideLoading(); }
 };
 
+// ══════════════════════════════════════════════════
+// 🖨️ 장비 스티커 인쇄
+// ══════════════════════════════════════════════════
 window.openStickerPreview = function() {
     const sel = getSelectedRows('proj-detail-tbody');
     if(!sel.length) { 
@@ -1619,7 +1626,28 @@ window.openStickerPreview = function() {
         return; 
     }
 
-    const items = sel.map(tr => allInventory.find(x => x.id === tr.dataset.id)).filter(Boolean);
+    const rawItems = sel.map(tr => allInventory.find(x => x.id === tr.dataset.id)).filter(Boolean);
+    const bulkOption = document.getElementById('bulk-print-option').value; 
+    
+    const finalItems = [];
+
+    rawItems.forEach(item => {
+        const snClean = String(item.serial_number).trim().toLowerCase();
+        const hasSn = snClean !== 'none' && snClean !== '' && snClean !== 'nsn' && snClean !== 'n/a';
+        const stock = parseInt(item.current_stock) || 0;
+
+        if (!hasSn && stock > 1) {
+            if (bulkOption === 'multi') {
+                for(let i=0; i<stock; i++) {
+                    finalItems.push({...item, print_qty_label: false});
+                }
+            } else {
+                finalItems.push({...item, print_qty_label: true, label_qty: stock});
+            }
+        } else {
+            finalItems.push({...item, print_qty_label: false});
+        }
+    });
 
     const previewContainer = document.getElementById('stickerPreviewContent');
     const printContainer = document.getElementById('printArea');
@@ -1630,10 +1658,10 @@ window.openStickerPreview = function() {
     const todayPrint = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
 
     const ITEMS_PER_PAGE = 10;
-    const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(finalItems.length / ITEMS_PER_PAGE);
 
     for (let p = 0; p < totalPages; p++) {
-        const pageItems = items.slice(p * ITEMS_PER_PAGE, (p + 1) * ITEMS_PER_PAGE);
+        const pageItems = finalItems.slice(p * ITEMS_PER_PAGE, (p + 1) * ITEMS_PER_PAGE);
 
         const previewPage = document.createElement('div');
         previewPage.className = 'preview-page';
@@ -1644,6 +1672,12 @@ window.openStickerPreview = function() {
         pageItems.forEach((item, index) => {
             const snClean = String(item.serial_number).trim().toLowerCase();
             const snText = snClean !== 'none' && snClean !== '' && snClean !== 'nsn' && snClean !== 'n/a' ? item.serial_number : 'N/A';
+            
+            let snHtml = window.esc(snText);
+            if (item.print_qty_label) {
+                snHtml = `<span style="color:#e53935; font-weight:bold;">N/A (총 ${item.label_qty}개)</span>`;
+            }
+            
             const projText = item.project_name || '미지정';
             const groupText = item.equip_group || '-';
 
@@ -1656,7 +1690,7 @@ window.openStickerPreview = function() {
                 <div class="st-group">[${window.esc(groupText)}]</div>
                 <div class="st-name" title="${window.esc(item.part_name || '')}">${window.esc(item.part_name || '')}</div>
                 <div class="st-pn">P/N: ${window.esc(item.part_number || '')}</div>
-                <div class="st-sn">S/N: ${window.esc(snText)}</div>
+                <div class="st-sn">S/N: ${snHtml}</div>
             `;
 
             const previewSticker = document.createElement('div');
@@ -1681,6 +1715,9 @@ window.executeStickerPrint = function() {
     window.print();
 };
 
+// ══════════════════════════════════════════════════
+// 탭3: 이력
+// ══════════════════════════════════════════════════
 window.loadLogs = async function(){
   showLoading('이력 로딩 중...');
   try {
@@ -1725,6 +1762,9 @@ window.loadLogs = async function(){
   } finally { hideLoading(); }
 };
 
+// ══════════════════════════════════════════════════
+// 탭4: 마스터
+// ══════════════════════════════════════════════════
 let masterSortKey = 'group'; 
 let masterSortAsc = true;
 
@@ -1847,6 +1887,10 @@ window.deleteMaster = async function(){
     await loadMaster();
   } finally { hideLoading(); }
 };
+
+// ══════════════════════════════════════════════════
+// 탭5: 엑셀 가져오기/내보내기
+// ══════════════════════════════════════════════════
 
 function askDupMode(){
   return new Promise(resolve=>{
