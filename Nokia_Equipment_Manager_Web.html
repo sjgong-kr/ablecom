@@ -383,8 +383,8 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
       <div class="d-flex gap-2 align-items-center mb-2 flex-wrap">
         <button class="btn btn-sm btn-outline-info" onclick="loadInventory()">🔄 새로고침</button>
         <span class="ms-2">🔍 통합 검색</span>
-        <!-- [핵심 수정] 글자 입력 시마다 버벅이는 oninput 제거, Enter 키 입력 시에만 동작하도록 onkeydown 적용 -->
-        <input type="text" id="search-sn" class="form-control form-control-sm" placeholder="S/N, P/N, 품명 입력 후 Enter" style="width:200px" onkeydown="if(event.key==='Enter') renderInventoryTable()">
+        <!-- [복구] 빠르고 프리징 없는 실시간 검색으로 되돌림 -->
+        <input type="text" id="search-sn" class="form-control form-control-sm" placeholder="S/N, P/N, 품명 입력" style="width:200px" oninput="renderInventoryTable()">
         <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('search-sn').value='';renderInventoryTable()">✕ 초기화</button>
         <div class="ms-auto d-flex gap-2">
           <button class="btn btn-sm btn-nokia" onclick="openInventoryModal(null)">✨ 재고 수동 입력</button>
@@ -420,8 +420,8 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
       <div class="d-flex gap-2 align-items-center mb-2">
         <button class="btn btn-sm btn-outline-info" onclick="loadStats()">🔄 새로고침</button>
         <span>🔍 P/N·품명 검색</span>
-        <!-- [핵심 수정] Enter 키 입력 시에만 동작하도록 onkeydown 적용 -->
-        <input type="text" id="search-stats" class="form-control form-control-sm" placeholder="검색어 입력 후 Enter" style="width:200px" onkeydown="if(event.key==='Enter') renderStatsTable()">
+        <!-- [복구] 실시간 검색으로 되돌림 -->
+        <input type="text" id="search-stats" class="form-control form-control-sm" placeholder="검색어 입력" style="width:200px" oninput="renderStatsTable()">
         <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('search-stats').value='';renderStatsTable()">✕ 초기화</button>
       </div>
       <div class="tbl-wrap">
@@ -537,16 +537,16 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
       <button class="btn btn-sm btn-outline-info" onclick="loadMaster()">🔄 새로고침</button>
       <div class="input-group input-group-sm" style="width:180px;">
         <span class="input-group-text">🔍</span>
-        <!-- [핵심 수정] 마스터 관리 탭의 필터들도 모두 Enter 키 동작으로 통일 -->
-        <input type="text" id="master-filter-group" class="form-control" placeholder="장비군 (Enter)" onkeydown="if(event.key==='Enter') renderMasterTable()">
+        <!-- [복구] 마스터 탭 필터도 모두 실시간으로 복원 -->
+        <input type="text" id="master-filter-group" class="form-control" placeholder="장비군 필터" oninput="renderMasterTable()">
       </div>
       <div class="input-group input-group-sm" style="width:200px;">
         <span class="input-group-text">🔍</span>
-        <input type="text" id="master-filter-pn" class="form-control" placeholder="P/N 필터 (Enter)" onkeydown="if(event.key==='Enter') renderMasterTable()">
+        <input type="text" id="master-filter-pn" class="form-control" placeholder="P/N 필터" oninput="renderMasterTable()">
       </div>
       <div class="input-group input-group-sm" style="width:240px;">
         <span class="input-group-text">🔍</span>
-        <input type="text" id="master-filter-name" class="form-control" placeholder="품명 필터 (Enter)" onkeydown="if(event.key==='Enter') renderMasterTable()">
+        <input type="text" id="master-filter-name" class="form-control" placeholder="품명 필터" oninput="renderMasterTable()">
       </div>
       <button class="btn btn-sm btn-outline-secondary" onclick="clearMasterFilter()">✕ 필터 초기화</button>
       <span id="master-count" class="text-secondary small ms-2"></span>
@@ -1195,10 +1195,11 @@ function updateSortIcons(prefix, key, asc){
   });
 }
 
-function renderInventoryTable(){
+// [핵심 수정] HTML의 oninput에서 함수를 찾을 수 있도록 브라우저 전역(window) 객체에 확실하게 바인딩
+window.renderInventoryTable = function(){
   const q = document.getElementById('search-sn').value.trim().toLowerCase();
 
-  // [핵심 수정] 숫자형 데이터 에러 방지 및 S/N, P/N, 품명 통합 필터링 적용
+  // 숫자형 데이터 에러 방지 및 S/N, P/N, 품명 통합 필터링 적용
   let rows = q ? allInventory.filter(r => 
       String(r.serial_number || '').toLowerCase().includes(q) || 
       String(r.part_number || '').toLowerCase().includes(q) || 
@@ -1234,11 +1235,12 @@ window.sortStats = function(key){
   renderStatsTable();
 };
 
-function renderStatsTable(){
+// [핵심 수정] 통계 테이블 렌더링 함수도 전역(window)에 등록하여 HTML에서 호출 가능하도록 패치
+window.renderStatsTable = function(){
   const q = document.getElementById('search-stats').value.trim().toLowerCase();
   const map = {};
   allInventory.forEach(r=>{
-    // [핵심 수정] 숫자형 데이터 에러 방지 및 P/N, 품명 통합 필터링
+    // 숫자형 데이터 에러 방지 및 P/N, 품명 통합 필터링
     const pnStr = String(r.part_number || '').toLowerCase();
     const nameStr = String(r.part_name || '').toLowerCase();
     
