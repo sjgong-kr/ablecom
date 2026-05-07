@@ -1231,13 +1231,13 @@ window.renderProjList = function(){
         ondragleave="handleDragLeave(event)"
         ondrop="handleDrop(event, '${esc(p.name)}')"
         ondragend="handleDragEnd(event)">
-      <td class="d-flex justify-content-between align-items-center">
-        <div>
+      <td class="d-flex justify-content-between align-items-center" style="white-space: normal !important; word-break: break-all; padding: 8px 10px;">
+        <div style="line-height: 1.4; padding-right: 5px;">
           <!-- 드래그 손잡이 아이콘 -->
           <i class="bi bi-grip-vertical text-secondary me-1" style="cursor:grab; font-size: 14px;" title="이곳을 잡고 위아래로 끌어서 정렬하세요"></i>
-          <span class="text-truncate d-inline-block align-middle" style="max-width: 130px;" title="${esc(p.name)}">${esc(p.name)}</span>
+          <span class="d-inline align-middle">${esc(p.name)}</span>
         </div>
-        <span class="badge ${p.totalStock > 0 ? 'bg-success' : 'bg-secondary'}" style="font-size: 10px;">${p.totalStock}</span>
+        <span class="badge ${p.totalStock > 0 ? 'bg-success' : 'bg-secondary'} flex-shrink-0" style="font-size: 10px;">${p.totalStock}</span>
       </td>
     </tr>`).join('');
 };
