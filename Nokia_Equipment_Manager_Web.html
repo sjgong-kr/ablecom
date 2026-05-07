@@ -739,6 +739,45 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
 <!-- 실제 인쇄될 숨겨진 프린트 영역 -->
 <div id="printArea" style="display: none;"></div>
 
+<!-- ══════════════════════════════════════════════════
+     모달: P/N 통계 상세 내역 보기
+══════════════════════════════════════════════════ -->
+<div class="modal fade" id="statDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1a6ea8;">
+        <h6 class="modal-title text-white" id="statDetailModalLabel">📊 장비 상세 내역</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1)"></button>
+      </div>
+      <div class="modal-body">
+        <div class="tbl-wrap" style="max-height:60vh; overflow-y:auto;">
+          <table class="inv-table">
+            <thead><tr>
+              <th style="width:46px;">ID</th>
+              <th>프로젝트명</th>
+              <th>장비군</th>
+              <th>품명</th>
+              <th>P/N</th>
+              <th>S/N</th>
+              <th>총수량</th>
+              <th>출고</th>
+              <th>현재고</th>
+              <th>입고일자</th>
+              <th>출고일자</th>
+              <th>비고</th>
+            </tr></thead>
+            <tbody id="stat-detail-tbody"></tbody>
+          </table>
+        </div>
+        <div class="mt-2 text-secondary" style="font-size:11px;">※ 연녹색 = 현재고 보유 항목 / 빨강 = 재고 0 (출고완료) 항목</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -1200,8 +1239,9 @@ function renderStatsTable(){
   });
   updateSortIcons('st-si-', statSortKey, statSortAsc);
 
+  // [수정] 통계 행에 마우스 오버 효과 및 클릭(상세보기) 이벤트 추가
   document.getElementById('stats-tbody').innerHTML = items.map(s=>`
-    <tr class="${stockClass(s.ts)}">
+    <tr class="${stockClass(s.ts)}" style="cursor:pointer;" data-pn="${esc(s.part_number)}" data-name="${esc(s.part_name)}" onclick="showStatDetails(this)" title="클릭하여 상세 내역 보기">
       <td>${esc(s.equip_group)}</td><td>${esc(s.part_name)}</td><td>${esc(s.part_number)}</td>
       <td class="text-center">${s.ti}</td><td class="text-center">${s.to}</td>
       <td class="text-center fw-bold">${s.ts}</td>
@@ -1209,7 +1249,38 @@ function renderStatsTable(){
 }
 window.loadStats = function(){ renderStatsTable(); };
 
-window.renderProjList = function(){
+// [신규] 통계 상세 내역 보기 팝업 함수
+window.showStatDetails = function(tr) {
+  const pn = tr.getAttribute('data-pn');
+  const name = tr.getAttribute('data-name');
+  
+  // P/N과 품명이 일치하는 모든 재고 내역 필터링
+  const filtered = allInventory.filter(r => (r.part_number||'') === pn && (r.part_name||'') === name);
+  
+  document.getElementById('statDetailModalLabel').textContent = `📊 상세 내역 - [${pn}] ${name} (총 ${filtered.length}건 추적됨)`;
+  
+  const tbody = document.getElementById('stat-detail-tbody');
+  tbody.innerHTML = filtered.map(r => `
+    <tr class="${stockClass(r.current_stock)}">
+      <td class="text-center">${r._rowNum}</td>
+      <td>${esc(r.project_name)}</td>
+      <td>${esc(r.equip_group)}</td>
+      <td>${esc(r.part_name)}</td>
+      <td>${esc(r.part_number)}</td>
+      <td>${esc(r.serial_number)}</td>
+      <td class="text-center">${r.total_qty}</td>
+      <td class="text-center">${r.out_qty}</td>
+      <td class="text-center fw-bold">${r.current_stock}</td>
+      <td>${esc(r.inbound_date)}</td>
+      <td>${esc(r.outbound_date)}</td>
+      <td>${esc(r.note)}</td>
+    </tr>
+  `).join('');
+  
+  new bootstrap.Modal(document.getElementById('statDetailModal')).show();
+};
+
+function renderProjList(){
   const projStats = {};
   allInventory.forEach(r => {
       const pName = (r.project_name || '(프로젝트 미지정)').trim() || '(프로젝트 미지정)';
