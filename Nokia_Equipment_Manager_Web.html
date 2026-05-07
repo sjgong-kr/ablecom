@@ -379,9 +379,9 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
     <div class="tab-pane fade show active" id="inv-detail">
       <div class="d-flex gap-2 align-items-center mb-2 flex-wrap">
         <button class="btn btn-sm btn-outline-info" onclick="loadInventory()">🔄 새로고침</button>
-        <span class="ms-2">🔍 S/N 검색</span>
-        <input type="text" id="search-sn" class="form-control form-control-sm" placeholder="S/N 입력" style="width:180px" oninput="loadInventory()">
-        <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('search-sn').value='';loadInventory()">✕ 초기화</button>
+        <span class="ms-2">🔍 통합 검색</span>
+        <input type="text" id="search-sn" class="form-control form-control-sm" placeholder="S/N, P/N, 품명 입력" style="width:200px" oninput="renderInventoryTable()">
+        <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('search-sn').value='';renderInventoryTable()">✕ 초기화</button>
         <div class="ms-auto d-flex gap-2">
           <button class="btn btn-sm btn-nokia" onclick="openInventoryModal(null)">✨ 재고 수동 입력</button>
           <button class="btn btn-sm btn-outline-info" onclick="editSelectedInv()">✏️ 선택 변경</button>
@@ -1191,8 +1191,14 @@ function updateSortIcons(prefix, key, asc){
   });
 }
 function renderInventoryTable(){
-  const sn = document.getElementById('search-sn').value.trim().toLowerCase();
-  let rows = sn ? allInventory.filter(r=>(r.serial_number||'').toLowerCase().includes(sn)) : [...allInventory];
+  const q = document.getElementById('search-sn').value.trim().toLowerCase();
+  
+  // S/N, P/N, 품명 중 하나라도 포함되면 필터링 (통합 검색)
+  let rows = q ? allInventory.filter(r => 
+      (r.serial_number || '').toLowerCase().includes(q) || 
+      (r.part_number || '').toLowerCase().includes(q) || 
+      (r.part_name || '').toLowerCase().includes(q)
+  ) : [...allInventory];
 
   rows.sort((a,b)=>{
     const va=a[invSortKey]??'', vb=b[invSortKey]??'';
