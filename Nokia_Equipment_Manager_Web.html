@@ -1194,10 +1194,11 @@ function renderInventoryTable(){
   const q = document.getElementById('search-sn').value.trim().toLowerCase();
   
   // S/N, P/N, 품명 중 하나라도 포함되면 필터링 (통합 검색)
+  // [버그 수정] 숫자형 데이터가 들어왔을 때 에러(프리징)를 뱉지 않도록 String()으로 강제 변환
   let rows = q ? allInventory.filter(r => 
-      (r.serial_number || '').toLowerCase().includes(q) || 
-      (r.part_number || '').toLowerCase().includes(q) || 
-      (r.part_name || '').toLowerCase().includes(q)
+      String(r.serial_number || '').toLowerCase().includes(q) || 
+      String(r.part_number || '').toLowerCase().includes(q) || 
+      String(r.part_name || '').toLowerCase().includes(q)
   ) : [...allInventory];
 
   rows.sort((a,b)=>{
@@ -1260,7 +1261,8 @@ function renderStatsTable(){
   const q = document.getElementById('search-stats').value.trim().toLowerCase();
   const map = {};
   allInventory.forEach(r=>{
-    if(q&&!(r.part_number||'').toLowerCase().includes(q)&&!(r.part_name||'').toLowerCase().includes(q)) return;
+    // [버그 수정] 숫자형 데이터 에러 방지
+    if(q && !String(r.part_number || '').toLowerCase().includes(q) && !String(r.part_name || '').toLowerCase().includes(q)) return;
     const k=(r.part_number||'')+'|'+(r.part_name||'');
     if(!map[k]) map[k]={equip_group:r.equip_group||'',part_name:r.part_name||'',part_number:r.part_number||'',ti:0,to:0,ts:0};
     map[k].ti+=+r.total_qty||0;
@@ -1394,9 +1396,10 @@ function renderProjDetailTable(rows){
 
 window.selectProject = function(name){
   selectedProjName = name;
+  // [버그 수정] 숫자형 프로젝트명 에러 방지
   const rows = name==='(프로젝트 미지정)'
-    ? allInventory.filter(r=>!r.project_name||r.project_name.trim()===''||r.project_name.toLowerCase()==='nan')
-    : allInventory.filter(r=>(r.project_name||'').trim()===name.trim());
+    ? allInventory.filter(r=>!r.project_name||String(r.project_name).trim()===''||String(r.project_name).toLowerCase()==='nan')
+    : allInventory.filter(r=>String(r.project_name||'').trim()===name.trim());
   currentProjDocs = rows;
   pdSortKey = null; 
   renderProjDetailTable(rows);
