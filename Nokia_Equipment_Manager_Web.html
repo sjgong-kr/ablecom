@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.6.0</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.6.1</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -230,7 +230,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.6.0</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.6.1</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -240,12 +240,12 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
       <label class="form-label" for="login-pw">비밀번호</label>
       <div class="input-group">
         <input type="password" id="login-pw" class="form-control" placeholder="Password를 입력하세요" autocomplete="current-password">
-        <button class="btn btn-outline-secondary btn-sm" type="button" id="pw-toggle" onclick="togglePwView()" tabindex="-1">
+        <button class="btn btn-outline-secondary btn-sm" type="button" id="pw-toggle" onclick="window.togglePwView()" tabindex="-1">
           <i class="bi bi-eye" id="pw-eye"></i>
         </button>
       </div>
     </div>
-    <button id="login-btn" onclick="doLogin()">🔐 로그인</button>
+    <button id="login-btn" onclick="window.doLogin()">🔐 로그인</button>
     <div id="login-err"></div>
     <div class="login-footer">
       Created by pokarekong@naver.com 2026-05<br>
@@ -265,7 +265,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.6.0 (안정화 완료)</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.6.1 (안정화 완료)</span></h1>
   <div id="clock"></div>
 </div>
 </div>
@@ -292,8 +292,6 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
       <div class="col-auto"><input type="date" id="inbound-date" class="form-control form-control-sm" style="width:140px"></div>
       <div class="col-auto"><label class="form-label mb-0">프로젝트명:</label></div>
       <div class="col-auto"><input type="text" id="inbound-project" class="form-control form-control-sm" placeholder="프로젝트명" style="width:220px"></div>
-      <div class="col-auto"><label class="form-label mb-0">구매처(P/O):</label></div>
-      <div class="col-auto"><input type="text" id="inbound-vendor" class="form-control form-control-sm" style="width:220px"></div>
     </div>
   </fieldset>
 
@@ -373,8 +371,8 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
     <div class="tab-pane fade show active" id="inv-detail">
       <div class="d-flex gap-2 align-items-center mb-2 flex-wrap">
         <button class="btn btn-sm btn-outline-info" onclick="window.loadInventory()">🔄 새로고침</button>
-        <span class="ms-2">🔍 S/N 실시간 검색:</span>
-        <input type="text" id="search-sn" class="form-control form-control-sm" placeholder="S/N, P/N, 품명 입력" style="width:200px" oninput="window.renderInventoryTable()" onkeydown="if(event.key==='Enter') window.renderInventoryTable()">
+        <span class="ms-2">🔍 S/N, P/N, 품명 통합검색:</span>
+        <input type="text" id="search-sn" class="form-control form-control-sm" placeholder="검색어 입력 후 Enter" style="width:200px" onkeydown="if(event.key==='Enter') window.renderInventoryTable()">
         <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('search-sn').value='';window.renderInventoryTable()">✕ 초기화</button>
         
         <div class="ms-auto d-flex gap-2 align-items-center">
@@ -417,7 +415,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
       <div class="d-flex gap-2 align-items-center mb-2">
         <button class="btn btn-sm btn-outline-info" onclick="window.loadInventory()">🔄 새로고침</button>
         <span>🔍 P/N·품명 검색:</span>
-        <input type="text" id="search-stats" class="form-control form-control-sm" placeholder="검색어 입력" style="width:200px" oninput="window.renderStatsTable()" onkeydown="if(event.key==='Enter') window.renderStatsTable()">
+        <input type="text" id="search-stats" class="form-control form-control-sm" placeholder="검색어 입력 후 Enter" style="width:200px" onkeydown="if(event.key==='Enter') window.renderStatsTable()">
         <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('search-stats').value='';window.renderStatsTable()">✕ 초기화</button>
       </div>
       <div class="tbl-wrap" style="max-height: 500px;">
@@ -499,7 +497,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
 <div class="tab-pane fade" id="tab-logs">
   <div class="d-flex gap-2 align-items-center mb-2">
     <button class="btn btn-sm btn-outline-info" onclick="window.loadLogs()">🔄 이력 새로고침</button>
-    <span class="text-secondary small">(※ 안정성을 위해 최근 3,000건만 화면에 표시되며, 모든 이력은 데이터베이스에 영구 보존됩니다)</span>
+    <span class="text-secondary small">(※ 안정성을 위해 최근 15,000건만 화면에 표시되며, 모든 이력은 데이터베이스에 보존됩니다)</span>
   </div>
   <div class="tbl-wrap" style="max-height: 500px;">
     <table class="inv-table" id="tbl-logs">
@@ -534,15 +532,15 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
       <button class="btn btn-sm btn-outline-info" onclick="window.loadMaster()">🔄 새로고침</button>
       <div class="input-group input-group-sm" style="width:180px;">
         <span class="input-group-text">🔍</span>
-        <input type="text" id="master-filter-group" class="form-control" placeholder="장비군 필터" oninput="window.renderMasterTable()" onkeydown="if(event.key==='Enter') window.renderMasterTable()">
+        <input type="text" id="master-filter-group" class="form-control" placeholder="장비군 필터" onkeydown="if(event.key==='Enter') window.renderMasterTable()">
       </div>
       <div class="input-group input-group-sm" style="width:200px;">
         <span class="input-group-text">🔍</span>
-        <input type="text" id="master-filter-pn" class="form-control" placeholder="P/N 필터" oninput="window.renderMasterTable()" onkeydown="if(event.key==='Enter') window.renderMasterTable()">
+        <input type="text" id="master-filter-pn" class="form-control" placeholder="P/N 필터" onkeydown="if(event.key==='Enter') window.renderMasterTable()">
       </div>
       <div class="input-group input-group-sm" style="width:240px;">
         <span class="input-group-text">🔍</span>
-        <input type="text" id="master-filter-name" class="form-control" placeholder="품명 필터" oninput="window.renderMasterTable()" onkeydown="if(event.key==='Enter') window.renderMasterTable()">
+        <input type="text" id="master-filter-name" class="form-control" placeholder="품명 필터" onkeydown="if(event.key==='Enter') window.renderMasterTable()">
       </div>
       <button class="btn btn-sm btn-outline-secondary" onclick="window.clearMasterFilter()">✕ 필터 초기화</button>
       <span id="master-count" class="text-secondary small ms-2"></span>
@@ -602,28 +600,28 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
     <div class="col-12 col-md-6">
       <fieldset class="section-box h-100" style="border-color:#2e7d32;">
         <legend style="color:#2e7d32;">📤 데이터 엑셀 내보내기</legend>
-        <p class="small text-secondary mb-3">전체 재고를 하나의 파일 안에 보고서 형식으로 추출합니다.<br>P/N별 통계 시트 + 전체 현황 시트 + 프로젝트별 시트로 자동 분리됩니다.</p>
-        <button class="btn btn-success btn-sm w-100" onclick="window.exportExcel()">📤 전체 재고 현황 보고서(Excel) 로 추출</button>
+        <p class="small text-secondary mb-3">전체 재고를 하나의 파일 안에 보고서 형식(제목, 서식 자동맞춤)으로 깔끔하게 추출합니다.</p>
+        <button class="btn btn-success btn-sm w-100" onclick="window.exportExcel_multi_sheet()">📤 전체 재고 현황 보고서(Excel)로 추출</button>
       </fieldset>
     </div>
   </div>
 </div>
 
 </div><!-- /tab-content -->
-</div><!-- /container -->
 </div><!-- /main-wrap -->
 
 <!-- 상태바 -->
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-05 | Nokia Equipment Manager Web Ver.6.0 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-05 | Nokia Equipment Manager Web Ver.6.1 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     모달: 재고 수동 입력/수정
+     모달 영역 (수동입력, 출고, 스티커, 통계상세 등)
 ══════════════════════════════════════════════════ -->
+<!-- 수동입력 -->
 <div class="modal fade" id="invModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -654,9 +652,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════
-     모달: 일괄 출고
-══════════════════════════════════════════════════ -->
+<!-- 일괄 출고 -->
 <div class="modal fade" id="checkoutModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
@@ -692,9 +688,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════
-     모달: 스티커 인쇄 미리보기
-══════════════════════════════════════════════════ -->
+<!-- 스티커 인쇄 미리보기 -->
 <div class="modal fade" id="stickerPrintModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
@@ -712,7 +706,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
   </div>
 </div>
 
-<!-- 중복 처리 모달 -->
+<!-- 중복 처리 -->
 <div class="modal fade" id="dupModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -795,6 +789,7 @@ function togglePwView() {
 });
 if (sessionStorage.getItem(SESSION_KEY) === '1') { showMainApp(); }
 else { window.addEventListener('DOMContentLoaded', () => { document.getElementById('login-id').focus(); }); }
+
 window.doLogin = doLogin;
 window.togglePwView = togglePwView;
 </script>
@@ -834,7 +829,7 @@ let statSortKey = 'equip_group', statSortAsc = true;
 let pdSortKey = null, pdSortAsc = true;
 let masterSortKey = 'group', masterSortAsc = true;
 
-// ── 유틸리티 전역 바인딩 (모듈 스코프 충돌 원천 차단) ──
+// ── 유틸리티 전역 바인딩 ──
 window.showLoading = function(msg='처리 중...') {
   document.getElementById('loading-msg').textContent = msg;
   document.getElementById('loading-overlay').classList.add('show');
@@ -853,23 +848,25 @@ window.getLogTime = function() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
 };
-window.esc = function(s){ 
-  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); 
-};
-window.stockClass = function(stock){ 
-  return +stock>0?'in-stock':stock===0||stock==='0'?'zero-stock':''; 
-};
-window.rowClick = function(tr){
+
+// [안정성] 내부/외부 공통 사용 함수
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+window.esc = esc;
+function stockClass(stock){ return +stock>0?'in-stock':stock===0||stock==='0'?'zero-stock':''; }
+window.stockClass = stockClass;
+function rowClick(tr){
   tr.classList.toggle('selected');
   const chk = tr.querySelector('.row-chk');
   if(chk) chk.checked = tr.classList.contains('selected');
-};
-window.getSelectedRows = function(tbodyId){
+}
+window.rowClick = rowClick;
+function getSelectedRows(tbodyId){
   return [...document.querySelectorAll(`#${tbodyId} tr`)].filter(tr=>{
     const chk = tr.querySelector('.row-chk');
     return tr.classList.contains('selected') || (chk && chk.checked);
   });
-};
+}
+window.getSelectedRows = getSelectedRows;
 
 setInterval(()=>{
   const now = new Date();
@@ -906,15 +903,15 @@ window.loadInventory = async function(){
 window.loadLogs = async function(){
   window.showLoading('이력 로딩 중...');
   try {
-    // [핵심 수정] 2만건 로딩은 브라우저 렌더링 한계를 초과하여 강제 종료(Freezing)를 유발하므로 3000건으로 최적화
-    const snap = await getDocs(query(collection(db,'Nokia_Equipment','data','daily_logs'),orderBy('timestamp','desc'),limit(3000)));
+    const snap = await getDocs(query(collection(db,'Nokia_Equipment','data','daily_logs'),orderBy('timestamp','desc'),limit(15000)));
     const logColorMap = {'입고':'#e3f2fd','출고':'#fff8e1','재고삭제':'#ffebee','재고수정':'#f3e5f5'};
     
-    document.getElementById('logs-tbody').innerHTML = snap.docs.map(d=>{
-      const l=d.data();
-      const r=allInventory.find(x=>x.id===l.ref_equip_id)||{};
-      const name=`[${r.equip_group||''}] ${r.part_name||'(삭제된 장비)'} ${r.serial_number?'(S/N:'+r.serial_number+')':r.part_number?'(P/N:'+r.part_number+')':''}`;
-      const bg=logColorMap[l.action_type]||'';
+    let htmlContent = '';
+    snap.forEach(d => {
+      const l = d.data();
+      const r = allInventory.find(x=>x.id===l.ref_equip_id)||{};
+      const name = `[${r.equip_group||''}] ${r.part_name||'(삭제된 장비)'} ${r.serial_number?'(S/N:'+r.serial_number+')':r.part_number?'(P/N:'+r.part_number+')':''}`;
+      const bg = logColorMap[l.action_type]||'';
       
       let qtyDisplay = `${l.qty_changed}개`;
       let qtyColor = '#666';
@@ -932,21 +929,22 @@ window.loadLogs = async function(){
         if (isNaN(dObj.getTime()) && tsStr.includes(' ')) {
             dObj = new Date(tsStr.replace(' ', 'T'));
         }
-
         if (!isNaN(dObj.getTime())) {
             const pad = n => String(n).padStart(2, '0');
             displayTime = `${dObj.getFullYear()}-${pad(dObj.getMonth()+1)}-${pad(dObj.getDate())} ${pad(dObj.getHours())}:${pad(dObj.getMinutes())}:${pad(dObj.getSeconds())}`;
         } else {
-            displayTime = window.esc(tsStr); 
+            displayTime = esc(tsStr); 
         }
       }
 
-      return `<tr style="background:${bg}">
-        <td>${displayTime}</td><td>${window.esc(l.action_type)}</td>
-        <td>${window.esc(name)}</td><td class="text-center fw-bold" style="color:${qtyColor};">${qtyDisplay}</td><td>${window.esc(l.note)}</td>
+      htmlContent += `<tr style="background:${bg}">
+        <td>${displayTime}</td><td>${esc(l.action_type)}</td>
+        <td>${esc(name)}</td><td class="text-center fw-bold" style="color:${qtyColor};">${qtyDisplay}</td><td>${esc(l.note)}</td>
       </tr>`;
-    }).join('');
-    window.setStatus(`🕒 이력 로딩 완료 (최근 3000건)`);
+    });
+    
+    document.getElementById('logs-tbody').innerHTML = htmlContent;
+    window.setStatus(`🕒 이력 로딩 완료 (최근 15,000건)`);
   } catch(e) {
     console.error(e);
     alert("이력 데이터를 불러오는 중 오류가 발생했습니다.\n(인터넷 연결 상태를 확인해주세요.)");
@@ -974,8 +972,6 @@ window.updateSortIcons = function(prefix, key, asc){
 window.renderInventoryTable = function(){
   try {
     const q = document.getElementById('search-sn').value.trim().toLowerCase();
-
-    // [핵심 수정] 숫자/문자 혼용에 의한 에러 원천 차단
     let rows = q ? allInventory.filter(r => 
         String(r.serial_number || '').toLowerCase().includes(q) || 
         String(r.part_number || '').toLowerCase().includes(q) || 
@@ -994,22 +990,20 @@ window.renderInventoryTable = function(){
     window.updateSortIcons('inv-si-', invSortKey, invSortAsc);
 
     document.getElementById('inv-tbody').innerHTML = rows.map(r=>`
-      <tr class="${window.stockClass(r.current_stock)}" data-id="${r.id}" onclick="window.rowClick(this)">
+      <tr class="${stockClass(r.current_stock)}" data-id="${r.id}" onclick="window.rowClick(this)">
         <td class="text-center">${r._rowNum}</td>
-        <td>${window.esc(r.project_name)}</td>
-        <td>${window.esc(r.equip_group)}</td>
-        <td>${window.esc(r.part_name)}</td>
-        <td>${window.esc(r.part_number)}</td>
-        <td>${window.esc(r.serial_number)}</td>
+        <td>${esc(r.project_name)}</td>
+        <td>${esc(r.equip_group)}</td>
+        <td>${esc(r.part_name)}</td>
+        <td>${esc(r.part_number)}</td>
+        <td>${esc(r.serial_number)}</td>
         <td class="text-center">${r.total_qty}</td><td class="text-center">${r.out_qty}</td>
         <td class="text-center fw-bold">${r.current_stock}</td>
-        <td>${window.esc(r.inbound_date)}</td><td>${window.esc(r.outbound_date)}</td>
-        <td>${window.esc(r.note)}</td>
+        <td>${esc(r.inbound_date)}</td><td>${esc(r.outbound_date)}</td>
+        <td>${esc(r.note)}</td>
         <td><input type="checkbox" class="form-check-input row-chk" onclick="event.stopPropagation()"></td>
       </tr>`).join('');
-  } catch(e) {
-    console.error("renderInventoryTable error", e);
-  }
+  } catch(e) { console.error("renderInventoryTable error", e); }
 };
 
 window.renderStatsTable = function(){
@@ -1019,7 +1013,6 @@ window.renderStatsTable = function(){
     allInventory.forEach(r=>{
       const pnStr = String(r.part_number || '').toLowerCase();
       const nameStr = String(r.part_name || '').toLowerCase();
-      
       if(q && !pnStr.includes(q) && !nameStr.includes(q)) return;
 
       const k=(r.part_number||'')+'|'+(r.part_name||'');
@@ -1042,14 +1035,12 @@ window.renderStatsTable = function(){
     window.updateSortIcons('st-si-', statSortKey, statSortAsc);
 
     document.getElementById('stats-tbody').innerHTML = items.map(s=>`
-      <tr class="${window.stockClass(s.ts)}" style="cursor:pointer;" data-pn="${window.esc(s.part_number)}" data-name="${window.esc(s.part_name)}" onclick="window.showStatDetails(this)" title="클릭하여 상세 내역 보기">
-        <td>${window.esc(s.equip_group)}</td><td>${window.esc(s.part_name)}</td><td>${window.esc(s.part_number)}</td>
+      <tr class="${stockClass(s.ts)}" style="cursor:pointer;" data-pn="${esc(s.part_number)}" data-name="${esc(s.part_name)}" onclick="window.showStatDetails(this)" title="클릭하여 상세 내역 보기">
+        <td>${esc(s.equip_group)}</td><td>${esc(s.part_name)}</td><td>${esc(s.part_number)}</td>
         <td class="text-center">${s.ti}</td><td class="text-center">${s.to}</td>
         <td class="text-center fw-bold">${s.ts}</td>
       </tr>`).join('');
-  } catch(e) {
-    console.error("renderStatsTable error", e);
-  }
+  } catch(e) { console.error("renderStatsTable error", e); }
 };
 
 window.renderProjList = function(){
@@ -1080,19 +1071,18 @@ window.renderProjList = function(){
         return customOrder.indexOf(a.name) - customOrder.indexOf(b.name);
     });
 
-    // [핵심 수정] HTML 속성 내에서 esc 적용하여 특수문자 충돌 원천 차단 및 명시적 window 바인딩
     document.getElementById('proj-list-tbody').innerHTML = projArray.map(p => {
-      const safeName = window.esc(p.name);
+      const safeName = esc(p.name);
       return `
-      <tr onclick="window.selectProject(this.getAttribute('data-proj'))" 
+      <tr onclick="window.selectProject('${safeName}')" 
           style="cursor:pointer;" 
           class="${selectedProjName === p.name ? 'selected' : ''}"
           data-proj="${safeName}"
           draggable="true"
-          ondragstart="window.handleDragStart(event, this.getAttribute('data-proj'))"
+          ondragstart="window.handleDragStart(event, '${safeName}')"
           ondragover="window.handleDragOver(event)"
           ondragleave="window.handleDragLeave(event)"
-          ondrop="window.handleDrop(event, this.getAttribute('data-proj'))"
+          ondrop="window.handleDrop(event, '${safeName}')"
           ondragend="window.handleDragEnd(event)">
         <td class="d-flex justify-content-between align-items-center" style="white-space: normal !important; word-break: break-all; padding: 8px 10px;">
           <div style="line-height: 1.4; padding-right: 5px;">
@@ -1103,9 +1093,7 @@ window.renderProjList = function(){
         </td>
       </tr>`;
     }).join('');
-  } catch(e) {
-    console.error("renderProjList error", e);
-  }
+  } catch(e) { console.error("renderProjList error", e); }
 };
 
 window.renderProjDetailTable = function(rows){
@@ -1127,15 +1115,15 @@ window.renderProjDetailTable = function(rows){
 
     const tbody = document.getElementById('proj-detail-tbody');
     tbody.innerHTML = sorted.map(r=>`
-      <tr class="${window.stockClass(r.current_stock)}" data-id="${r.id}">
+      <tr class="${stockClass(r.current_stock)}" data-id="${r.id}">
         <td class="text-center"><input type="checkbox" class="form-check-input row-chk sticker-check" onclick="event.stopPropagation()"></td>
         <td class="text-center">${r._rowNum||''}</td>
-        <td>${window.esc(r.equip_group)}</td><td>${window.esc(r.part_name)}</td>
-        <td>${window.esc(r.part_number)}</td><td>${window.esc(r.serial_number)}</td>
+        <td>${esc(r.equip_group)}</td><td>${esc(r.part_name)}</td>
+        <td>${esc(r.part_number)}</td><td>${esc(r.serial_number)}</td>
         <td class="text-center">${r.total_qty}</td><td class="text-center">${r.out_qty}</td>
         <td class="text-center fw-bold">${r.current_stock}</td>
-        <td>${window.esc(r.inbound_date)}</td><td>${window.esc(r.outbound_date)}</td>
-        <td>${window.esc(r.note)}</td>
+        <td>${esc(r.inbound_date)}</td><td>${esc(r.outbound_date)}</td>
+        <td>${esc(r.note)}</td>
       </tr>`).join('');
 
     tbody.onclick = e => {
@@ -1149,9 +1137,7 @@ window.renderProjDetailTable = function(rows){
         tr.classList.toggle('selected', e.target.checked);
       }
     };
-  } catch(e) {
-    console.error("renderProjDetailTable error", e);
-  }
+  } catch(e) { console.error("renderProjDetailTable error", e); }
 };
 
 window.renderMasterTable = function(){
@@ -1182,23 +1168,19 @@ window.renderMasterTable = function(){
     document.getElementById('master-tbody').innerHTML = items.length
       ? items.map((it,i)=>`
         <tr style="background:${i%2===0?'#fff':'#f0f6ff'}; cursor:pointer;"
-            onclick="window.selectMaster(this.getAttribute('data-pn'), this.getAttribute('data-name'), this.getAttribute('data-group'))"
-            data-pn="${window.esc(it.pn)}" data-name="${window.esc(it.name)}" data-group="${window.esc(it.group)}">
-          <td>${window.esc(it.group)}</td>
-          <td><span class="badge" style="background:#e3f0ff;color:#1a4fa8;font-weight:600;font-size:11.5px;">${window.esc(it.pn)}</span></td>
-          <td>${window.esc(it.name)}</td>
+            onclick="window.selectMaster('${esc(it.pn)}', '${esc(it.name)}', '${esc(it.group)}')">
+          <td>${esc(it.group)}</td>
+          <td><span class="badge" style="background:#e3f0ff;color:#1a4fa8;font-weight:600;font-size:11.5px;">${esc(it.pn)}</span></td>
+          <td>${esc(it.name)}</td>
         </tr>`)
         .join('')
       : '<tr><td colspan="3" class="text-center text-secondary py-3">검색 결과가 없습니다.</td></tr>';
 
     const total = Object.keys(allMaster).length;
     const shown = items.length;
-    document.getElementById('master-count').textContent =
-      shown === total ? `총 ${total}건` : `${shown}건 표시 / 전체 ${total}건`;
+    document.getElementById('master-count').textContent = shown === total ? `총 ${total}건` : `${shown}건 표시 / 전체 ${total}건`;
     window.setStatus(`🏷️ 마스터 ${shown}건 표시`);
-  } catch(e) {
-    console.error("renderMasterTable error", e);
-  }
+  } catch(e) { console.error("renderMasterTable error", e); }
 };
 
 // ── 정렬/선택/인터랙션 함수 ──
@@ -1251,24 +1233,22 @@ window.showStatDetails = function(tr) {
   const name = tr.getAttribute('data-name');
   
   const filtered = allInventory.filter(r => (r.part_number||'') === pn && (r.part_name||'') === name);
-  
   document.getElementById('statDetailModalLabel').textContent = `📊 상세 내역 - [${pn}] ${name} (총 ${filtered.length}건 추적됨)`;
   
-  const tbody = document.getElementById('stat-detail-tbody');
-  tbody.innerHTML = filtered.map(r => `
-    <tr class="${window.stockClass(r.current_stock)}">
+  document.getElementById('stat-detail-tbody').innerHTML = filtered.map(r => `
+    <tr class="${stockClass(r.current_stock)}">
       <td class="text-center">${r._rowNum}</td>
-      <td>${window.esc(r.project_name)}</td>
-      <td>${window.esc(r.equip_group)}</td>
-      <td>${window.esc(r.part_name)}</td>
-      <td>${window.esc(r.part_number)}</td>
-      <td>${window.esc(r.serial_number)}</td>
+      <td>${esc(r.project_name)}</td>
+      <td>${esc(r.equip_group)}</td>
+      <td>${esc(r.part_name)}</td>
+      <td>${esc(r.part_number)}</td>
+      <td>${esc(r.serial_number)}</td>
       <td class="text-center">${r.total_qty}</td>
       <td class="text-center">${r.out_qty}</td>
       <td class="text-center fw-bold">${r.current_stock}</td>
-      <td>${window.esc(r.inbound_date)}</td>
-      <td>${window.esc(r.outbound_date)}</td>
-      <td>${window.esc(r.note)}</td>
+      <td>${esc(r.inbound_date)}</td>
+      <td>${esc(r.outbound_date)}</td>
+      <td>${esc(r.note)}</td>
     </tr>
   `).join('');
   
@@ -1294,14 +1274,87 @@ window.clearMasterInputs = function(){
   document.getElementById('master-pn').focus();
 };
 
-// ── 입고 ──
-document.getElementById('pn-scan-input').addEventListener('keydown', async e => {
-  if(e.key==='Enter') window.lookup_product_master();
-});
-document.getElementById('sn-scan-input').addEventListener('keydown', e => {
-  if(e.key==='Enter') window.add_to_inbound_pending();
-});
+// ── 프로젝트 드래그 앤 드롭 ──
+let draggedProj = null;
+window.handleDragStart = function(e, projName) {
+    draggedProj = projName;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', projName);
+    e.target.closest('tr').classList.add('dragging');
+};
+window.handleDragOver = function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const targetRow = e.target.closest('tr');
+    if (targetRow && targetRow.getAttribute('data-proj') !== draggedProj) {
+        targetRow.classList.add('drag-over');
+    }
+};
+window.handleDragLeave = function(e) {
+    const targetRow = e.target.closest('tr');
+    if (targetRow) targetRow.classList.remove('drag-over');
+};
+window.handleDrop = function(e, targetProj) {
+    e.preventDefault();
+    const targetRow = e.target.closest('tr');
+    if (targetRow) targetRow.classList.remove('drag-over');
+    if (!draggedProj || draggedProj === targetProj) return;
 
+    let order = JSON.parse(localStorage.getItem('nokia_proj_order') || '[]');
+    if (!order.includes(draggedProj)) order.push(draggedProj);
+    if (!order.includes(targetProj)) order.push(targetProj);
+    const fromIdx = order.indexOf(draggedProj);
+    const toIdx = order.indexOf(targetProj);
+    order.splice(fromIdx, 1);
+    order.splice(toIdx, 0, draggedProj);
+    localStorage.setItem('nokia_proj_order', JSON.stringify(order));
+    window.renderProjList();
+};
+window.handleDragEnd = function(e) {
+    e.target.closest('tr').classList.remove('dragging');
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    draggedProj = null;
+};
+
+// ── 프로젝트 이름 변경 ──
+window.editProjectName = async function() {
+    if (!selectedProjName || selectedProjName === '(프로젝트 미지정)') {
+        alert('이름을 변경할 프로젝트를 왼쪽 목록에서 먼저 선택해주세요.\n(※ 미지정 항목은 변경할 수 없습니다.)');
+        return;
+    }
+    const newName = prompt(`'${selectedProjName}'의 새로운 이름을 입력하세요:`, selectedProjName);
+    if (!newName || newName.trim() === '' || newName === selectedProjName) return; 
+
+    const trimmedNewName = newName.trim();
+    if (!confirm(`정말로 프로젝트명을 '${trimmedNewName}'(으)로 변경하시겠습니까?\n해당 프로젝트에 속한 모든 장비 정보가 함께 업데이트됩니다.`)) return;
+
+    window.showLoading('프로젝트명 일괄 업데이트 중...');
+    try {
+        const q = query(collection(db, 'Nokia_Equipment', 'data', 'equipment'), where('project_name', '==', selectedProjName));
+        const snap = await getDocs(q);
+        const updatePromises = [];
+        snap.forEach(docSnap => {
+            updatePromises.push(updateDoc(doc(db, 'Nokia_Equipment', 'data', 'equipment', docSnap.id), { project_name: trimmedNewName }));
+        });
+        await Promise.all(updatePromises);
+
+        let customOrder = JSON.parse(localStorage.getItem('nokia_proj_order') || '[]');
+        const idx = customOrder.indexOf(selectedProjName);
+        if (idx !== -1) {
+            customOrder[idx] = trimmedNewName;
+            localStorage.setItem('nokia_proj_order', JSON.stringify(customOrder));
+        }
+        window.setStatus(`✅ 프로젝트명 변경 완료: ${selectedProjName} ➔ ${trimmedNewName}`);
+        selectedProjName = trimmedNewName; 
+        await window.loadInventory();
+        window.selectProject(trimmedNewName); 
+        alert('프로젝트명이 성공적으로 변경되었습니다.');
+    } catch (e) {
+        alert('프로젝트명 변경 중 오류가 발생했습니다: ' + e.message);
+    } finally { window.hideLoading(); }
+};
+
+// ── 입고 ──
 window.lookup_product_master = async function() {
   const pn = document.getElementById('pn-scan-input').value.trim();
   if (!pn) return;
@@ -1342,18 +1395,16 @@ window.addInboundItem = function(sn, qty) {
   const name    = document.getElementById('inbound-name').value.trim();
   const group   = document.getElementById('inbound-group').value.trim();
   const project = document.getElementById('inbound-project').value.trim();
-  const vendor  = document.getElementById('inbound-vendor').value.trim();
   const date    = document.getElementById('inbound-date').value;
   const warn    = document.getElementById('inbound-warning');
 
   if(!pn||!name){ alert('P/N과 품명을 먼저 입력해주세요.'); return; }
-
   if(sn) {
     if(sn===pn || allMaster[sn]) { warn.textContent='⚠️ S/N 입력칸에 P/N 바코드가 스캔되었습니다.'; return; }
     if(pendingInbound.some(i=>i&&i.sn===sn)) { warn.textContent=`⚠️ 이미 대기 목록에 있음: ${sn}`; return; }
   }
   warn.textContent='';
-  pendingInbound.push({pn, name, group, project, vendor, date, sn, qty});
+  pendingInbound.push({pn, name, group, project, date, sn, qty});
   window.renderInboundTable();
   window.setStatus(`📥 대기 추가: ${name} / ${sn||'수량 '+qty}`);
   document.getElementById('inbound-log').textContent = `▶ [${new Date().toLocaleTimeString('ko-KR')}] '${name}' (S/N: ${sn||'수량 '+qty}) 대기열 추가 완료.`;
@@ -1362,8 +1413,8 @@ window.addInboundItem = function(sn, qty) {
 window.renderInboundTable = function(){
   const tbody = document.getElementById('inbound-tbody');
   tbody.innerHTML = pendingInbound.map((it,i)=> it?
-    `<tr data-idx="${i}"><td>${i+1}</td><td>${window.esc(it.project)}</td><td>${window.esc(it.pn)}</td>
-     <td>${window.esc(it.name)}</td><td>${window.esc(it.sn||'-')}</td><td>${it.qty}개</td>
+    `<tr data-idx="${i}"><td>${i+1}</td><td>${esc(it.project)}</td><td>${esc(it.pn)}</td>
+     <td>${esc(it.name)}</td><td>${esc(it.sn||'-')}</td><td>${it.qty}개</td>
      <td><input type="checkbox" class="form-check-input row-chk"></td></tr>`:''
   ).join('');
   window.renderInboundSum();
@@ -1377,7 +1428,7 @@ window.renderInboundSum = function(){
     sumMap[k].qty+=it.qty;
   });
   document.getElementById('inbound-sum-tbody').innerHTML = Object.values(sumMap).map(s=>`<tr>
-      <td>${window.esc(s.pn)}</td><td>${window.esc(s.name)}</td><td style="text-align:center; font-weight:bold;">${s.qty}개</td>
+      <td>${esc(s.pn)}</td><td>${esc(s.name)}</td><td style="text-align:center; font-weight:bold;">${s.qty}개</td>
     </tr>`).join('') || '<tr><td colspan="3" style="text-align:center;color:#999;padding:8px;">스캔 대기 중...</td></tr>';
 };
 
@@ -1397,10 +1448,12 @@ window.confirmInbound = async function(){
     const ts = window.getLogTime();
     for(const item of valid) {
       const eRef = await addDoc(collection(db,'Nokia_Equipment','data','equipment'),{
-        project_name: item.project, vendor: item.vendor, equip_group: item.group,
-        part_name: item.name, part_number: item.pn, serial_number: item.sn||'', 
-        total_qty: item.qty, out_qty: 0, current_stock: item.qty,
-        inbound_date: item.date, outbound_date: '', note: '', created_at: ts
+        project_name: item.project, equip_group: item.group,
+        part_name: item.name,       part_number: item.pn,
+        serial_number: item.sn||'', total_qty: item.qty,
+        out_qty: 0,                 current_stock: item.qty,
+        inbound_date: item.date,    outbound_date: '', note: '',
+        created_at: ts
       });
       await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
         ref_equip_id: eRef.id, action_type:'입고', qty_changed: item.qty, note:'신규 입고', timestamp: ts
@@ -1419,7 +1472,7 @@ window.confirmInbound = async function(){
   } catch(e) { alert("입고 오류: " + e.message); } finally { window.hideLoading(); }
 };
 
-// ── CRUD (수동입력, 수정, 삭제) ──
+// ── CRUD ──
 window.openInventoryModal = function(docId){
   editingDocId = docId;
   document.getElementById('inv-modal-title').textContent = docId?'✏️ 재고 변경':'✨ 재고 수동 입력';
@@ -1520,41 +1573,6 @@ window.saveInventory = async function(){
   } catch(e) { alert("저장 오류: " + e.message); } finally { window.hideLoading(); }
 };
 
-window.editProjectName = async function() {
-    if (!selectedProjName || selectedProjName === '(프로젝트 미지정)') {
-        alert('이름을 변경할 프로젝트를 왼쪽 목록에서 먼저 선택해주세요.\n(※ 미지정 항목은 변경할 수 없습니다.)');
-        return;
-    }
-    const newName = prompt(`'${selectedProjName}'의 새로운 이름을 입력하세요:`, selectedProjName);
-    if (!newName || newName.trim() === '' || newName === selectedProjName) return; 
-
-    const trimmedNewName = newName.trim();
-    if (!confirm(`정말로 프로젝트명을 '${trimmedNewName}'(으)로 변경하시겠습니까?\n해당 프로젝트에 속한 모든 장비 정보가 함께 업데이트됩니다.`)) return;
-
-    window.showLoading('프로젝트명 일괄 업데이트 중...');
-    try {
-        const q = query(collection(db, 'Nokia_Equipment', 'data', 'equipment'), where('project_name', '==', selectedProjName));
-        const snap = await getDocs(q);
-        const updatePromises = [];
-        snap.forEach(docSnap => {
-            updatePromises.push(updateDoc(doc(db, 'Nokia_Equipment', 'data', 'equipment', docSnap.id), { project_name: trimmedNewName }));
-        });
-        await Promise.all(updatePromises);
-
-        let customOrder = JSON.parse(localStorage.getItem('nokia_proj_order') || '[]');
-        const idx = customOrder.indexOf(selectedProjName);
-        if (idx !== -1) {
-            customOrder[idx] = trimmedNewName;
-            localStorage.setItem('nokia_proj_order', JSON.stringify(customOrder));
-        }
-        window.setStatus(`✅ 프로젝트명 변경 완료: ${selectedProjName} ➔ ${trimmedNewName}`);
-        selectedProjName = trimmedNewName; 
-        await window.loadInventory();
-        window.selectProject(trimmedNewName); 
-        alert('프로젝트명이 성공적으로 변경되었습니다.');
-    } catch (e) { alert('오류: ' + e.message); } finally { window.hideLoading(); }
-};
-
 // ── 일괄 출고 ──
 window.openBulkCheckout = function(){
   const sel = window.getSelectedRows('proj-detail-tbody');
@@ -1580,8 +1598,8 @@ window.openBulkCheckout = function(){
         : `<input type="number" class="form-control form-control-sm bulk-qty-input" data-id="${id}" value="1" min="1" max="${r.current_stock}" style="width: 80px; margin: 0 auto; text-align: center;" onclick="event.stopPropagation()">`;
 
     tbody.innerHTML+=`<tr data-id="${id}" onclick="window.rowClick(this)">
-      <td class="text-center">${r._rowNum||''}</td><td>${window.esc(r.equip_group)}</td><td>${window.esc(r.part_name)}</td>
-      <td>${window.esc(r.part_number)}</td><td>${window.esc(r.serial_number)}</td>
+      <td class="text-center">${r._rowNum||''}</td><td>${esc(r.equip_group)}</td><td>${esc(r.part_name)}</td>
+      <td>${esc(r.part_number)}</td><td>${esc(r.serial_number)}</td>
       <td class="text-center fw-bold">${r.current_stock}</td>
       <td class="text-center">${qtyCellHTML}</td>
     </tr>`;
@@ -1701,15 +1719,15 @@ window.openStickerPreview = function(tbodyId = 'proj-detail-tbody', optionId = '
         pageItems.forEach((item) => {
             const snClean = String(item.serial_number).trim().toLowerCase();
             const snText = snClean !== 'none' && snClean !== '' && snClean !== 'nsn' && snClean !== 'n/a' ? item.serial_number : 'N/A';
-            let snHtml = window.esc(snText);
+            let snHtml = esc(snText);
             if (item.print_qty_label) snHtml = `<span style="color:#e53935; font-weight:bold;">N/A (총 ${item.label_qty}개)</span>`;
             
             const stickerHTML = `
                 <div class="st-title"><span style="color:#1a6ea8;">NOKIA</span><span style="color:#666; font-size:12px; font-weight:600; display:flex; align-items:center;">🖨️ ${todayPrint}</span></div>
-                <div class="st-proj">📁 ${window.esc(item.project_name || '미지정')}</div>
-                <div class="st-group">[${window.esc(item.equip_group || '-')}]</div>
-                <div class="st-name" title="${window.esc(item.part_name || '')}">${window.esc(item.part_name || '')}</div>
-                <div class="st-pn">P/N: ${window.esc(item.part_number || '')}</div>
+                <div class="st-proj">📁 ${esc(item.project_name || '미지정')}</div>
+                <div class="st-group">[${esc(item.equip_group || '-')}]</div>
+                <div class="st-name" title="${esc(item.part_name || '')}">${esc(item.part_name || '')}</div>
+                <div class="st-pn">P/N: ${esc(item.part_number || '')}</div>
                 <div class="st-sn">S/N: ${snHtml}</div>
             `;
             const previewSticker = document.createElement('div'); previewSticker.className = 'preview-sticker'; previewSticker.innerHTML = stickerHTML;
@@ -1721,50 +1739,6 @@ window.openStickerPreview = function(tbodyId = 'proj-detail-tbody', optionId = '
     new bootstrap.Modal(document.getElementById('stickerPrintModal')).show();
 };
 window.executeStickerPrint = function() { window.print(); };
-
-// ── 마스터 데이터 (수동) ──
-window.addMaster = async function(){
-  const pn   = document.getElementById('master-pn').value.trim();
-  const name = document.getElementById('master-name').value.trim();
-  const group= document.getElementById('master-group').value.trim();
-  if(!pn||!name){ alert('P/N과 품명은 필수입니다.'); return; }
-  if(allMaster[pn]){ alert(`P/N '${pn}'은(는) 이미 등록되어 있습니다.`); return; }
-  window.showLoading();
-  try {
-    await setDoc(doc(db,'Nokia_Equipment','data','product_master',pn),{part_name:name,equip_group:group});
-    allMaster[pn]={part_name:name,equip_group:group};
-    window.setStatus(`✨ 마스터 등록: ${pn} — ${name}`);
-    window.clearMasterInputs();
-    await window.loadMaster();
-  } catch(e){ alert("오류: "+e.message); } finally { window.hideLoading(); }
-};
-window.updateMaster = async function(){
-  const pn   = document.getElementById('master-pn').value.trim();
-  const name = document.getElementById('master-name').value.trim();
-  const group= document.getElementById('master-group').value.trim();
-  if(!pn||!name){ alert('선택하거나 P/N, 품명을 입력하세요.'); return; }
-  if(!allMaster[pn]){ alert('해당 P/N이 없습니다. 신규 등록을 이용하세요.'); return; }
-  window.showLoading();
-  try {
-    await setDoc(doc(db,'Nokia_Equipment','data','product_master',pn),{part_name:name,equip_group:group});
-    allMaster[pn]={part_name:name,equip_group:group};
-    window.setStatus(`💾 마스터 수정: ${pn}`);
-    await window.loadMaster();
-  } catch(e){ alert("오류: "+e.message); } finally { window.hideLoading(); }
-};
-window.deleteMaster = async function(){
-  const pn = document.getElementById('master-pn').value.trim();
-  if(!pn){ alert('삭제할 항목 선택 필요.'); return; }
-  if(!confirm(`정말로 P/N '${pn}'을(를) 마스터에서 삭제하시겠습니까?`)) return;
-  window.showLoading();
-  try {
-    await deleteDoc(doc(db,'Nokia_Equipment','data','product_master',pn));
-    delete allMaster[pn];
-    window.setStatus(`🗑️ 마스터 삭제: ${pn}`);
-    window.clearMasterInputs();
-    await window.loadMaster();
-  } catch(e){ alert("오류: "+e.message); } finally { window.hideLoading(); }
-};
 
 // ── 엑셀 데이터 관리 ──
 window.askDupMode = function(){
