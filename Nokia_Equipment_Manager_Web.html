@@ -918,7 +918,8 @@ document.getElementById('checkout-date').value = getTodayStr();
 document.getElementById('m-indate').value      = getTodayStr();
 document.getElementById('co-date').value       = getTodayStr();
 
-function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// [핵심 수정 1] 따옴표(')와 쌍따옴표(")가 포함된 텍스트도 에러 없이 화면에 표시되도록 특수문자 치환 완벽 적용
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 window.esc = esc;
 
 function stockClass(stock){ return +stock>0?'in-stock':stock===0||stock==='0'?'zero-stock':''; }
@@ -1324,16 +1325,17 @@ window.renderProjList = function(){
       return customOrder.indexOf(a.name) - customOrder.indexOf(b.name);
   });
 
+  // [핵심 수정 2] 프로젝트 이름에 특수문자/따옴표가 있어도 클릭 시 에러가 나지 않도록 getAttribute 방식을 적용하여 근본적 해결
   document.getElementById('proj-list-tbody').innerHTML = projArray.map(p => `
-    <tr onclick="selectProject('${esc(p.name)}')" 
+    <tr onclick="selectProject(this.getAttribute('data-proj'))" 
         style="cursor:pointer;" 
         class="${selectedProjName === p.name ? 'selected' : ''}"
         data-proj="${esc(p.name)}"
         draggable="true"
-        ondragstart="handleDragStart(event, '${esc(p.name)}')"
+        ondragstart="handleDragStart(event, this.getAttribute('data-proj'))"
         ondragover="handleDragOver(event)"
         ondragleave="handleDragLeave(event)"
-        ondrop="handleDrop(event, '${esc(p.name)}')"
+        ondrop="handleDrop(event, this.getAttribute('data-proj'))"
         ondragend="handleDragEnd(event)">
       <td class="d-flex justify-content-between align-items-center" style="white-space: normal !important; word-break: break-all; padding: 8px 10px;">
         <div style="line-height: 1.4; padding-right: 5px;">
@@ -1754,18 +1756,20 @@ window.loadLogs = async function(){
         qtyColor = '#d32f2f'; 
       }
       
+      // [핵심 수정 3] Timestamp가 문자가 아닌 객체(Object)일 때 발생하는 멈춤(Freezing) 에러 원천 차단
       let displayTime = '';
-      if (l.timestamp) {
-        let dObj = new Date(l.timestamp);
-        if (isNaN(dObj.getTime()) && l.timestamp.includes(' ')) {
-            dObj = new Date(l.timestamp.replace(' ', 'T'));
+      let tsStr = l.timestamp ? String(l.timestamp) : '';
+      if (tsStr) {
+        let dObj = new Date(tsStr);
+        if (isNaN(dObj.getTime()) && tsStr.includes(' ')) {
+            dObj = new Date(tsStr.replace(' ', 'T'));
         }
 
         if (!isNaN(dObj.getTime())) {
             const pad = n => String(n).padStart(2, '0');
             displayTime = `${dObj.getFullYear()}-${pad(dObj.getMonth()+1)}-${pad(dObj.getDate())} ${pad(dObj.getHours())}:${pad(dObj.getMinutes())}:${pad(dObj.getSeconds())}`;
         } else {
-            displayTime = esc(l.timestamp); 
+            displayTime = esc(tsStr); 
         }
       }
 
@@ -1778,9 +1782,7 @@ window.loadLogs = async function(){
   } finally { hideLoading(); }
 };
 
-window.loadMaster = async function(){
-  showLoading('마스터 로딩 중...');
-  try {
+// ------------------------------------------
     await fetchMasterCache();
     window.renderMasterTable();
   } finally { hideLoading(); }
@@ -1810,10 +1812,12 @@ window.renderMasterTable = function(){
     if(el) el.textContent = masterSortKey===k ? (masterSortAsc?'▲':'▼') : '⇅';
   });
 
+  // [핵심 수정 4] 마스터 탭에서도 따옴표로 인한 클릭 에러 방지
   document.getElementById('master-tbody').innerHTML = items.length
     ? items.map((it,i)=>`
       <tr style="background:${i%2===0?'#fff':'#f0f6ff'}; cursor:pointer;"
-          onclick="selectMaster('${esc(it.pn)}','${esc(it.name)}','${esc(it.group)}')">
+          onclick="selectMaster(this.getAttribute('data-pn'), this.getAttribute('data-name'), this.getAttribute('data-group'))"
+          data-pn="${esc(it.pn)}" data-name="${esc(it.name)}" data-group="${esc(it.group)}">
         <td>${esc(it.group)}</td>
         <td><span class="badge" style="background:#e3f0ff;color:#1a4fa8;font-weight:600;font-size:11.5px;">${esc(it.pn)}</span></td>
         <td>${esc(it.name)}</td>
