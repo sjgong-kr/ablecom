@@ -500,7 +500,7 @@ tr.drag-over { border-top: 2px solid var(--nokia-blue) !important; }
 <div class="tab-pane fade" id="tab-logs">
   <div class="d-flex gap-2 align-items-center mb-2">
     <button class="btn btn-sm btn-outline-info" onclick="loadLogs()">🔄 이력 새로고침</button>
-    <span class="text-secondary small">(최근 20,000건)</span>
+    <span class="text-secondary small">(최근 200건)</span>
   </div>
   <div class="tbl-wrap">
     <table class="inv-table" id="tbl-logs">
@@ -1733,14 +1733,14 @@ window.openStickerPreview = function(tbodyId = 'proj-detail-tbody', optionId = '
 };
 
 window.executeStickerPrint = function() {
-// ══════════════════════════════════════════════════
-// 탭3: 이력
-// ══════════════════════════════════════════════════
+    window.print();
+};
+
+// ── [복구] 완벽하게 동작하는 작업 이력(타임라인) 로딩 함수 ──
 window.loadLogs = async function(){
   showLoading('이력 로딩 중...');
   try {
-    // [수정] 작업 이력 불러오기 제한을 200건에서 3000건으로 대폭 확대
-    const snap = await getDocs(query(collection(db,'Nokia_Equipment','data','daily_logs'),orderBy('timestamp','desc'),limit(3000)));
+    const snap = await getDocs(query(collection(db,'Nokia_Equipment','data','daily_logs'),orderBy('timestamp','desc'),limit(200)));
     const logColorMap = {'입고':'#e3f2fd','출고':'#fff8e1','재고삭제':'#ffebee','재고수정':'#f3e5f5'};
     document.getElementById('logs-tbody').innerHTML = snap.docs.map(d=>{
       const l=d.data();
