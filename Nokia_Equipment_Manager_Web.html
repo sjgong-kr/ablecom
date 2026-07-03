@@ -817,7 +817,7 @@ window.togglePwView = togglePwView;
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
-  getFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs,
+  getFirestore, initializeFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs,
   deleteDoc, updateDoc, query, where, orderBy, limit,
   Timestamp, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -832,8 +832,11 @@ const firebaseConfig = {
   measurementId: "G-M4K79K2XPG"
 };
 const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
-
+const db  = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+  useFetchStreams: false
+});
+  
 let pendingInbound  = [];
 let allInventory    = [];
 let allMaster       = {};
