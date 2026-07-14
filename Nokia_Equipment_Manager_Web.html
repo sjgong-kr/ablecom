@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.7.7</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.7.6</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -161,33 +161,6 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   80%{transform:translateX(8px)}
 }
 
-/* ── 미리보기 모달용 스티커 디자인 (깨짐 방지 완벽 픽스) ── */
-#stickerPreviewContent { 
-    background: #525659; padding: 20px; max-height: 70vh; overflow-y: auto; 
-    display: flex; flex-direction: column; align-items: center; 
-}
-.preview-page {
-    display: grid; 
-    grid-template-columns: repeat(2, 1fr); 
-    grid-template-rows: repeat(5, 1fr); 
-    gap: 15px 20px; 
-    margin-bottom: 20px; 
-    background: #fff; 
-    padding: 25px 20px; 
-    width: 100%; 
-    max-width: 650px; 
-    min-height: 920px; /* 깨짐 방지: A4 세로 비율에 맞춰 최소 높이 강제 고정 */
-    flex-shrink: 0;    /* 깨짐 방지: 모달 크기에 따라 내부 그리드가 찌그러지지 않도록 고정 */
-    border: 1px solid #dee2e6; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    align-content: stretch;
-}
-.preview-sticker { border: 1px dashed #999; border-radius: 8px; padding: 12px 16px; display: flex; flex-direction: column; text-align: left; justify-content: center; overflow: hidden; height: 100%; }
-.preview-sticker .st-title { font-weight: 900; font-size: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; margin-bottom: 6px; padding-bottom: 4px; flex-shrink: 0; }
-.preview-sticker .st-proj { color: #000; font-weight: bold; font-size: 12.5px; margin-bottom: 3px; flex-shrink: 0; }
-.preview-sticker .st-group { font-weight: bold; color: #444; font-size: 11.5px; margin-bottom: 3px; flex-shrink: 0; }
-.preview-sticker .st-name { font-weight: bold; font-size: 13px; margin: 6px 0 8px 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; flex-shrink: 0; }
-.preview-sticker .st-pn, .preview-sticker .st-sn { font-family: monospace; font-size: 11.5px; font-weight: 600; margin-top: 2px; flex-shrink: 0; }
-
 /* ── 커스텀 다이얼로그 강제 상위 레이어 ── */
 .modal-backdrop.show { z-index: 1050; }
 #customDialogModal { z-index: 1060; }
@@ -221,7 +194,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.7.7</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.7.6</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -275,7 +248,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.7.7 (자동완성 및 인쇄 미리보기 완벽 패치)</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.7.6 (입고 자동완성 완벽 픽스)</span></h1>
   <div id="clock"></div>
 </div>
 </div>
@@ -405,7 +378,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
           <tbody id="inv-tbody"></tbody>
         </table>
       </div>
-      <div class="mt-1 text-secondary" style="font-size:11px;">※ 연녹색=현재고 보유 / 제목(헤더)을 클릭하면 엑셀처럼 자동 필터링 및 정렬이 가능합니다. (검색어 입력 후 Enter)</div>
+      <div class="mt-1 text-secondary" style="font-size:11px;">※ 연녹색=현재고 보유 / 제목(헤더)을 클릭하면 엑셀처럼 자동 필터링 및 정렬이 가능합니다.</div>
     </div>
 
     <!-- 2. P/N 통계 -->
@@ -531,15 +504,15 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
       <button class="btn btn-sm btn-outline-info" onclick="window.loadMaster()">🔄 새로고침</button>
       <div class="input-group input-group-sm" style="width:180px;">
         <span class="input-group-text">🔍</span>
-        <input type="text" id="master-filter-group" class="form-control" placeholder="장비군 필터" oninput="window.renderMasterTable()" onkeydown="if(event.key==='Enter') window.renderMasterTable()">
+        <input type="text" id="master-filter-group" class="form-control" placeholder="장비군 필터" onkeydown="if(event.key==='Enter') window.renderMasterTable()">
       </div>
       <div class="input-group input-group-sm" style="width:200px;">
         <span class="input-group-text">🔍</span>
-        <input type="text" id="master-filter-pn" class="form-control" placeholder="P/N 필터" oninput="window.renderMasterTable()" onkeydown="if(event.key==='Enter') window.renderMasterTable()">
+        <input type="text" id="master-filter-pn" class="form-control" placeholder="P/N 필터" onkeydown="if(event.key==='Enter') window.renderMasterTable()">
       </div>
       <div class="input-group input-group-sm" style="width:240px;">
         <span class="input-group-text">🔍</span>
-        <input type="text" id="master-filter-name" class="form-control" placeholder="품명 필터" oninput="window.renderMasterTable()" onkeydown="if(event.key==='Enter') window.renderMasterTable()">
+        <input type="text" id="master-filter-name" class="form-control" placeholder="품명 필터" onkeydown="if(event.key==='Enter') window.renderMasterTable()">
       </div>
       <button class="btn btn-sm btn-outline-secondary" onclick="window.clearMasterFilter()">✕ 필터 초기화</button>
       <span id="master-count" class="text-secondary small ms-2"></span>
@@ -615,7 +588,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.7.7 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.7.6 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
@@ -654,7 +627,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   </div>
 </div>
 
-<!-- 일괄 출고 팝업 모달 -->
+<!-- 일괄 출고 전용 팝업 모달 -->
 <div class="modal fade" id="checkoutModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
@@ -1256,7 +1229,9 @@ window.loadLogs = async function(){
 window.loadMaster = async function(){
   window.showLoading('마스터 로딩 중...');
   try {
-    await fetchMasterCache();
+    const snap = await getDocs(collection(db,'Nokia_Equipment','data','product_master'));
+    allMaster = {};
+    snap.forEach(d => { allMaster[d.id] = d.data(); });
     window.renderMasterTable();
   } catch(e){
     console.error(e);
@@ -1584,7 +1559,262 @@ window.renderMasterTable = function(){
   } catch(e) { console.error("renderMasterTable error", e); }
 };
 
-// ── [완벽 픽스] 캐시 최우선 P/N 마스터 검색 로직 ──
+// ── 인터랙션 기능 복원 구역 ──
+window.showStatDetails = function(tr) {
+  const pn = tr.getAttribute('data-pn');
+  const name = tr.getAttribute('data-name');
+  
+  window.currentStatPn = pn;
+  window.currentStatName = name;
+  
+  const filtered = allInventory.filter(r => (r.part_number||'') === pn && (r.part_name||'') === name);
+  document.getElementById('statDetailModalLabel').textContent = `📊 상세 내역 - [${pn}] ${name} (총 ${filtered.length}건 추적됨)`;
+  
+  document.getElementById('stat-detail-tbody').innerHTML = filtered.map(r => {
+    const isPositive = !isNaN(r.current_stock) && Number(r.current_stock) > 0;
+    const rCls = isPositive ? 'in-stock ' + window.stockClass(r.current_stock) : window.stockClass(r.current_stock);
+    return `
+    <tr class="${rCls}">
+      <td class="text-center">${r._rowNum}</td>
+      <td>${window.esc(r.project_name)}</td>
+      <td>${window.esc(r.equip_group)}</td>
+      <td>${window.esc(r.part_name)}</td>
+      <td>${window.esc(r.part_number)}</td>
+      <td>${window.esc(r.serial_number)}</td>
+      <td class="text-center">${r.total_qty}</td>
+      <td class="text-center">${r.out_qty}</td>
+      <td class="text-center fw-bold">${r.current_stock}</td>
+      <td>${window.esc(r.inbound_date)}</td>
+      <td>${window.esc(r.outbound_date)}</td>
+      <td>${window.esc(r.note)}</td>
+    </tr>`}).join('');
+  
+  const modalEl = document.getElementById('statDetailModal');
+  let modal = bootstrap.Modal.getInstance(modalEl);
+  if(!modal) modal = new bootstrap.Modal(modalEl);
+  modal.show();
+};
+
+window.exportStatDetailExcel = async function() {
+  const pn = window.currentStatPn;
+  const name = window.currentStatName;
+  if (!pn && !name) return;
+
+  const filtered = allInventory.filter(r => (r.part_number||'') === pn && (r.part_name||'') === name);
+  if (!filtered.length) {
+      await window.customAlert("추출할 데이터가 없습니다.", "알림");
+      return;
+  }
+
+  window.showLoading('엑셀 생성 중...');
+  try {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('상세 내역');
+      
+      ws.mergeCells('A1:L1');
+      ws.getCell('A1').value = `📊 상세 내역 - [${pn}] ${name}`;
+      ws.getCell('A1').font = { name: '맑은 고딕', size: 14, bold: true, color: { argb: 'FF002060' } };
+      ws.getCell('A1').alignment = { vertical: 'middle', horizontal: 'left' };
+      ws.getRow(1).height = 25;
+      ws.getRow(2).height = 10;
+      
+      const headers = ["ID", "프로젝트명", "장비군", "품명", "P/N", "S/N", "총수량", "출고", "현재고", "입고일자", "출고일자", "비고"];
+      ws.getRow(3).values = headers;
+      
+      const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDDEBF7' } };
+      const headerFont = { name: '맑은 고딕', size: 10, bold: true };
+      const borderStyle = {
+          top: { style: 'thin' }, bottom: { style: 'thin' },
+          left: { style: 'thin' }, right: { style: 'thin' }
+      };
+      
+      for (let i = 1; i <= headers.length; i++) {
+          const cell = ws.getCell(3, i);
+          cell.fill = headerFill;
+          cell.font = headerFont;
+          cell.border = borderStyle;
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      }
+      
+      filtered.forEach((r, idx) => {
+          const row = ws.getRow(idx + 4);
+          row.values = [
+              r._rowNum, r.project_name, r.equip_group, r.part_name, r.part_number, r.serial_number,
+              r.total_qty, r.out_qty, r.current_stock, r.inbound_date, r.outbound_date, r.note
+          ];
+          for (let i = 1; i <= headers.length; i++) {
+              const cell = row.getCell(i);
+              cell.border = borderStyle;
+              cell.alignment = { vertical: 'middle', horizontal: 'center' };
+              if (headers[i-1] === "품명" || headers[i-1] === "비고") {
+                  cell.alignment = { vertical: 'middle', horizontal: 'left' };
+              }
+          }
+      });
+      
+      ws.columns = [
+          { width: 8 }, { width: 15 }, { width: 12 }, { width: 35 }, { width: 15 }, { width: 15 },
+          { width: 8 }, { width: 8 }, { width: 8 }, { width: 12 }, { width: 12 }, { width: 30 }
+      ];
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateStr = window.getTodayStr().replace(/-/g, '');
+      a.download = `상세내역_${pn}_${dateStr}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+  } catch(e) {
+      await window.customAlert("엑셀 추출 중 오류가 발생했습니다: " + e.message, "오류");
+  } finally {
+      window.hideLoading();
+  }
+};
+
+window.selectMaster = function(pn, name, group){
+  document.getElementById('master-pn').value    = pn;
+  document.getElementById('master-name').value  = name;
+  document.getElementById('master-group').value = group;
+  document.getElementById('master-pn').readOnly = true;
+};
+
+window.clearMasterFilter = function(){
+  ['master-filter-group','master-filter-pn','master-filter-name'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value='';
+  });
+  window.renderMasterTable();
+};
+
+window.clearMasterInputs = function(){
+  document.getElementById('master-pn').readOnly = false;
+  ['master-pn','master-name','master-group'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('master-pn').focus();
+};
+
+window.editProjectName = async function() {
+    if (!selectedProjName || selectedProjName === '(프로젝트 미지정)') {
+        await window.customAlert('이름을 변경할 프로젝트를 왼쪽 목록에서 먼저 선택해주세요.\n(※ 미지정 항목은 변경할 수 없습니다.)', '선택 오류');
+        return;
+    }
+    const newName = await window.customPrompt(`'${selectedProjName}'의 새로운 이름을 입력하세요:`, selectedProjName, '프로젝트명 수정');
+    if (!newName || newName.trim() === '' || newName === selectedProjName) return; 
+
+    const trimmedNewName = newName.trim();
+    const yes = await window.customConfirm(`정말로 프로젝트명을 '${trimmedNewName}'(으)로 변경하시겠습니까?\n해당 프로젝트에 속한 모든 장비 정보가 함께 업데이트됩니다.`, '변경 확인');
+    if (!yes) return;
+
+    window.showLoading('프로젝트명 일괄 업데이트 중...');
+    try {
+        const targets = allInventory.filter(r => r.project_name === selectedProjName);
+        for(let t of targets) {
+             await updateDoc(doc(db, 'Nokia_Equipment', 'data', 'equipment', String(t.id)), { project_name: trimmedNewName });
+        }
+
+        window.setStatus(`✅ 프로젝트명 변경 완료: ${selectedProjName} ➔ ${trimmedNewName}`);
+        selectedProjName = trimmedNewName; 
+        await window.loadInventory();
+        window.selectProject(trimmedNewName); 
+        await window.customAlert('프로젝트명이 성공적으로 변경되었습니다.', '완료');
+    } catch (e) {
+        await window.customAlert('프로젝트명 변경 중 오류가 발생했습니다: ' + e.message, '오류');
+    } finally { window.hideLoading(); }
+};
+
+window.addMaster = async function(){
+  const pn   = document.getElementById('master-pn').value.trim();
+  const name = document.getElementById('master-name').value.trim();
+  const group= document.getElementById('master-group').value.trim();
+  if(!pn||!name){ await window.customAlert('P/N과 품명은 필수입니다.', '입력 오류'); return; }
+  if(allMaster[pn]){ await window.customAlert(`P/N '${pn}'은(는) 이미 등록되어 있습니다.`, '중복 오류'); return; }
+  window.showLoading();
+  try {
+    await setDoc(doc(db,'Nokia_Equipment','data','product_master',pn),{part_name:name,equip_group:group});
+    allMaster[pn]={part_name:name,equip_group:group};
+    window.setStatus(`✨ 마스터 등록: ${pn} — ${name}`);
+    window.clearMasterInputs();
+    await window.loadMaster();
+  } catch(e){ await window.customAlert("오류: "+e.message, 'DB 오류'); } finally { window.hideLoading(); }
+};
+
+window.updateMaster = async function(){
+  const pn   = document.getElementById('master-pn').value.trim();
+  const name = document.getElementById('master-name').value.trim();
+  const group= document.getElementById('master-group').value.trim();
+  if(!pn||!name){ await window.customAlert('선택하거나 P/N, 품명을 입력하세요.', '입력 오류'); return; }
+  if(!allMaster[pn]){ await window.customAlert('해당 P/N이 없습니다. 신규 등록을 이용하세요.', '오류'); return; }
+  window.showLoading();
+  try {
+    await setDoc(doc(db,'Nokia_Equipment','data','product_master',pn),{part_name:name,equip_group:group});
+    allMaster[pn]={part_name:name,equip_group:group};
+    window.setStatus(`💾 마스터 수정: ${pn}`);
+    await window.loadMaster();
+  } catch(e){ await window.customAlert("오류: "+e.message, 'DB 오류'); } finally { window.hideLoading(); }
+};
+
+window.deleteMaster = async function(){
+  const pn = document.getElementById('master-pn').value.trim();
+  if(!pn){ await window.customAlert('삭제할 항목을 선택하세요.', '오류'); return; }
+  const yes = await window.customConfirm(`정말로 P/N '${pn}'을(를) 마스터에서 삭제하시겠습니까?\n(※ 기존에 입고된 재고 데이터는 지워지지 않습니다.)`);
+  if(!yes) return;
+  window.showLoading();
+  try {
+    await deleteDoc(doc(db,'Nokia_Equipment','data','product_master',pn));
+    delete allMaster[pn];
+    window.setStatus(`🗑️ 마스터 삭제: ${pn}`);
+    window.clearMasterInputs();
+    await window.loadMaster();
+  } catch(e){ await window.customAlert("오류: "+e.message, 'DB 오류'); } finally { window.hideLoading(); }
+};
+
+window.sortInv = function(key){
+  if(invSortKey===key) invSortAsc=!invSortAsc; else { invSortKey=key; invSortAsc=true; }
+  window.renderInventoryTable();
+};
+window.sortStats = function(key){
+  if(statSortKey===key) statSortAsc=!statSortAsc; else { statSortKey=key; statSortAsc=true; }
+  window.renderStatsTable();
+};
+window.sortProjDetail = function(key){
+  if(pdSortKey===key) pdSortAsc=!pdSortAsc; else { pdSortKey=key; pdSortAsc=true; }
+  window.renderProjDetailTable(window.currentProjRows);
+};
+window.sortMaster = function(key){
+  if(masterSortKey === key) masterSortAsc = !masterSortAsc;
+  else { masterSortKey = key; masterSortAsc = true; }
+  window.renderMasterTable();
+};
+
+window.selectProject = function(name){
+  if(!name) return;
+  selectedProjName = name;
+  const rows = name==='(프로젝트 미지정)'
+    ? allInventory.filter(r=>!r.project_name||String(r.project_name).trim()===''||String(r.project_name).toLowerCase()==='nan')
+    : allInventory.filter(r=>String(r.project_name||'').trim()===name.trim());
+  
+  currentProjDocs = rows;
+  pdSortKey = null; 
+  window.activeFilters['proj'] = {}; 
+  window.renderProjDetailTable(rows);
+  
+  const allChk = document.getElementById('proj-chk-all');
+  if(allChk) allChk.checked = false;
+  window.setStatus(`📁 프로젝트 선택: ${name} (${rows.length}건)`);
+};
+
+window.selectAllProjDetail = function(checked){
+  document.querySelectorAll('#proj-detail-tbody .row-chk').forEach(chk=>{
+    chk.checked = checked;
+    const tr = chk.closest('tr');
+    if(tr) tr.classList.toggle('selected', checked);
+  });
+  const headerChk = document.getElementById('proj-chk-all');
+  if(headerChk) headerChk.checked = checked;
+};
+
+// ── [수정] 메모리 캐시 최우선 마스터 검색 로직 ──
 window.lookup_product_master = async function() {
   const pn_input = document.getElementById('pn-scan-input').value.trim();
   if (!pn_input) return;
@@ -1594,7 +1824,6 @@ window.lookup_product_master = async function() {
     let matchedPn = null;
     let matchedData = null;
 
-    // 1. 메모리 캐시에서 대소문자 100% 무시하고 초고속 검색
     for (const key in allMaster) {
         if (key.toLowerCase() === pn_input.toLowerCase()) {
             matchedPn = key;
@@ -1614,7 +1843,6 @@ window.lookup_product_master = async function() {
         return;
     }
 
-    // 2. 캐시에 없을 때만 서버(Firebase) 조회
     const docRef = doc(db, 'Nokia_Equipment', 'data', 'product_master', pn_input);
     const docSnap = await getDoc(docRef);
     if(docSnap.exists()) {
@@ -1677,8 +1905,6 @@ window._add_inbound_item = async function(sn, qty) {
 
   if(sn) {
     let is_pn = false;
-    
-    // [픽스] 대소문자 구별 없이 P/N 스캔 여부 완벽 검증
     if(sn.toLowerCase() === pn.toLowerCase()) {
         is_pn = true;
     } else {
