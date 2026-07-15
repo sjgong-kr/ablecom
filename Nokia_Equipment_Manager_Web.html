@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.8.1</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.8.3</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -87,8 +87,11 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
              display: flex; justify-content: space-between; }
 
 /* ── 스피너 오버레이 ── */
+/* [Ver.8.3] 스피너 z-index를 일반 모달(1055)보다 위, 알림 팝업(#customDialogModal=1060)보다 아래로.
+   → 모달 안에서 저장 시엔 스피너가 모달 위에 보이고,
+     완료 알림이 뜨면 알림이 스피너 위로 올라와 "생성 중" 멈춤 현상이 사라진다. */
 #loading-overlay { display:none; position:fixed; inset:0;
-  background:rgba(0,0,0,.35); z-index:9999; align-items:center; justify-content:center; }
+  background:rgba(0,0,0,.35); z-index:1058; align-items:center; justify-content:center; }
 #loading-overlay.show { display:flex; }
 
 /* ── 모달 ── */
@@ -229,7 +232,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.8.1</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.8.3</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -283,7 +286,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.8.1 (체크박스 좌측 이동 + 더블클릭 상세/비고수정 + 재고조정)</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.8.3 (완료 팝업 시 스피너 잔류 수정)</span></h1>
   <div id="clock"></div>
 </div>
 </div>
@@ -623,7 +626,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.8.1 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.8.3 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
@@ -913,6 +916,12 @@ window.currentFilterCol = null;
 // ==========================================
 window.customAlert = function(msg, title="알림") {
     return new Promise((resolve) => {
+        // [Ver.8.3] 알림 팝업이 뜬다는 것은 처리가 끝났다는 뜻.
+        //   그런데 여러 함수가 hideLoading "전에" 완료 알림을 띄워,
+        //   팝업 뒤에서 스피너가 계속 돌며 "생성 중..."이 멈춘 것처럼 보였다.
+        //   (예: 엑셀 보고서 추출 완료 후 스피너 잔류)
+        //   → 팝업 표시 시 스피너를 강제로 내려 이 현상을 원천 차단한다.
+        if(typeof window.forceHideLoading === 'function') window.forceHideLoading();
         document.getElementById('customDialogTitle').textContent = title;
         document.getElementById('customDialogMsg').textContent = msg;
         document.getElementById('customDialogInputWrap').style.display = 'none';
@@ -1237,8 +1246,10 @@ document.addEventListener('click', function(e) {
 // ── 데이터베이스 로드 ──
 // [Ver.7.8] 미사용 죽은 함수 fetchMasterCache() 제거됨
 
-window.loadInventory = async function(){
-  window.showLoading('재고 로딩 중...');
+window.loadInventory = async function(silent=false){
+  // [Ver.8.2] silent=true 면 자체 스피너를 켜지 않는다(호출자가 이미 로딩 표시 중).
+  //           → 로그인/수정 시 스피너가 여러 번 껐다 켜지는 깜빡임 제거.
+  if(!silent) window.showLoading('재고 로딩 중...');
   try {
     const snap = await getDocs(collection(db,'Nokia_Equipment','data','equipment'));
     let docsData = snap.docs.map(d => ({id:d.id, ...d.data()}));
@@ -1259,11 +1270,11 @@ window.loadInventory = async function(){
     console.error('[loadInventory]', e);
     window.setStatus('❌ 재고 로딩 실패');
     throw e;   // [Ver.7.8] 호출자가 실패를 인지할 수 있도록 전파
-  } finally { window.hideLoading(); }
+  } finally { if(!silent) window.hideLoading(); }
 };
 
-window.loadLogs = async function(){
-  window.showLoading('이력 로딩 중...');
+window.loadLogs = async function(silent=false){
+  if(!silent) window.showLoading('이력 로딩 중...');
   try {
     // ── [Ver.7.8] 서버측 정렬 + 개수 제한 ──────────────────────────────
     // 이전: 컬렉션 "전량"을 내려받은 뒤 JS에서 slice(0,15000)
@@ -1334,11 +1345,11 @@ window.loadLogs = async function(){
     window.setStatus(`🕒 이력 로딩 완료 (최근 ${logs.length}건)`);
   } catch(e) {
     console.error(e);
-  } finally { window.hideLoading(); }
+  } finally { if(!silent) window.hideLoading(); }
 };
 
-window.loadMaster = async function(){
-  window.showLoading('마스터 로딩 중...');
+window.loadMaster = async function(silent=false){
+  if(!silent) window.showLoading('마스터 로딩 중...');
   try {
     const snap = await getDocs(collection(db,'Nokia_Equipment','data','product_master'));
     allMaster = {};
@@ -1350,7 +1361,7 @@ window.loadMaster = async function(){
     console.error('[loadMaster]', e);
     window.setStatus('❌ 마스터 로딩 실패');
     throw e;
-  } finally { window.hideLoading(); }
+  } finally { if(!silent) window.hideLoading(); }
 };
 
 // ── 화면 렌더링 ──
@@ -1830,7 +1841,7 @@ window.editProjectName = async function() {
 
         window.setStatus(`✅ 프로젝트명 변경 완료: ${selectedProjName} ➔ ${trimmedNewName}`);
         selectedProjName = trimmedNewName; 
-        await window.loadInventory();
+        await window.loadInventory(true);
         window.selectProject(trimmedNewName); 
         await window.customAlert('프로젝트명이 성공적으로 변경되었습니다.', '완료');
     } catch (e) {
@@ -1850,7 +1861,7 @@ window.addMaster = async function(){
     allMaster[pn]={part_name:name,equip_group:group};
     window.setStatus(`✨ 마스터 등록: ${pn} — ${name}`);
     window.clearMasterInputs();
-    await window.loadMaster();
+    await window.loadMaster(true);
   } catch(e){ await window.customAlert("오류: "+e.message, 'DB 오류'); } finally { window.hideLoading(); }
 };
 
@@ -1865,7 +1876,7 @@ window.updateMaster = async function(){
     await setDoc(doc(db,'Nokia_Equipment','data','product_master',pn),{part_name:name,equip_group:group});
     allMaster[pn]={part_name:name,equip_group:group};
     window.setStatus(`💾 마스터 수정: ${pn}`);
-    await window.loadMaster();
+    await window.loadMaster(true);
   } catch(e){ await window.customAlert("오류: "+e.message, 'DB 오류'); } finally { window.hideLoading(); }
 };
 
@@ -1880,7 +1891,7 @@ window.deleteMaster = async function(){
     delete allMaster[pn];
     window.setStatus(`🗑️ 마스터 삭제: ${pn}`);
     window.clearMasterInputs();
-    await window.loadMaster();
+    await window.loadMaster(true);
   } catch(e){ await window.customAlert("오류: "+e.message, 'DB 오류'); } finally { window.hideLoading(); }
 };
 
@@ -2126,8 +2137,8 @@ window.confirm_inbound_pending = async function(){
     window.clear_inbound_pn_inputs();
     window.setStatus(`✅ 입고 확정 완료 — ${valid_items.length}건 저장`);
     await window.customAlert(`${valid_items.length}건 입고 처리 완료!`, "성공");
-    await window.loadInventory();
-    await window.loadMaster();
+    await window.loadInventory(true);
+    await window.loadMaster(true);
   } catch(e) { await window.customAlert("입고 오류: " + e.message, "에러"); } finally { window.hideLoading(); }
 };
 
@@ -2189,7 +2200,7 @@ window.saveDetailNote = async function(){
     if(modal) modal.hide();
 
     window.setStatus('✏️ 비고 수정 완료');
-    await window.loadInventory();
+    await window.loadInventory(true);
   } catch(e){
     await window.customAlert('비고 저장 오류: ' + e.message, '에러');
   } finally { window.hideLoading(); }
@@ -2288,7 +2299,7 @@ window.delete_inventory = async function(){
     }
     if (opCount > 0) await batch.commit();
     window.setStatus(`🗑️ ${sel.length}건 삭제 완료`);
-    await window.loadInventory();
+    await window.loadInventory(true);
   } catch(e){ await window.customAlert("오류: " + e.message, "에러"); } finally { window.hideLoading(); }
 };
 
@@ -2358,7 +2369,7 @@ window.saveInventory = async function(){
     const modal = bootstrap.Modal.getInstance(modalEl);
     if(modal) modal.hide();
     
-    await window.loadInventory();
+    await window.loadInventory(true);
   } catch(e) { await window.customAlert("저장 오류: " + e.message, "에러"); } finally { window.hideLoading(); }
 };
 
@@ -2499,7 +2510,7 @@ window.doCheckout = async function(){
     
     window.setStatus(`📤 출고 완료 — ${itemsToCheckout.length}건 처리`);
     await window.customAlert('일괄 출고 처리 완료!', '완료');
-    await window.loadInventory();
+    await window.loadInventory(true);
     if(selectedProjName) window.selectProject(selectedProjName);
   } catch(e){ await window.customAlert("오류: "+e.message, "에러"); } finally { window.hideLoading(); }
 };
@@ -2777,8 +2788,8 @@ window.importExcel = async function(input){
   if(parts.length){
     window.setStatus(`📥 가져오기 완료 — ${parts.join(' / ')}`);
     await window.customAlert(parts.join('\n'), '가져오기 완료');
-    await window.loadInventory();
-    await window.loadMaster();
+    await window.loadInventory(true);
+    await window.loadMaster(true);
   } else {
     await window.customAlert('처리된 데이터가 없습니다.\n파일 형식이나 컬럼명을 확인해주세요.', '알림');
   }
@@ -3048,9 +3059,10 @@ window.initDataLoad = async function() {
 
   window.showLoading('데이터 로딩 중...');
   try {
-    await window.loadMaster();
-    await window.loadInventory();
-    await window.loadLogs();
+    // [Ver.8.2] 세 로더를 silent 로 호출 → 바깥 스피너 1개만 유지(깜빡임 제거)
+    await window.loadMaster(true);
+    await window.loadInventory(true);
+    await window.loadLogs(true);
 
     window._isDataLoaded = true;              // ✅ 성공했을 때만 잠금
     window.setStatus('✅ 데이터 로딩 완료');
