@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.7.6</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.8.1</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -164,6 +164,41 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 /* ── 커스텀 다이얼로그 강제 상위 레이어 ── */
 .modal-backdrop.show { z-index: 1050; }
 #customDialogModal { z-index: 1060; }
+
+/* ── 🖨️ 스티커 미리보기 (Ver.7.7) ───────────────────────────────
+   .sticker-page / .sticker / .st-* 규칙은 JS의 STICKER_CSS 상수에서
+   런타임에 <style id="sticker-shared-css">로 주입됩니다.
+   (인쇄용 iframe에도 같은 문자열을 넣으므로 프리뷰 == 인쇄물)
+   아래는 "화면에서만" 필요한 축소/배경 스타일입니다.            */
+:root { --pv-scale: 0.80; }
+
+#stickerPreviewContent {
+  background: #525659;            /* PDF 뷰어 느낌의 회색 배경 */
+  padding: 18px 10px 24px;
+  overflow: auto;
+}
+.preview-page-label {
+  text-align: center; color: #e6e6e6;
+  font-size: 12px; font-weight: 700; letter-spacing: .5px;
+  margin: 0 0 6px;
+}
+/* A4(210x297mm) 원본을 그대로 그리고, 겉을 축소된 크기의 창으로 잘라냄 */
+.preview-page-wrap {
+  width:  calc(210mm * var(--pv-scale));
+  height: calc(297mm * var(--pv-scale));
+  margin: 0 auto 22px;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0,0,0,.55);
+}
+.preview-page-wrap > .sticker-page {
+  transform: scale(var(--pv-scale));
+  transform-origin: top left;
+  page-break-after: auto;   /* 화면에선 페이지나눔 불필요 */
+}
+/* 좁은 화면 대응 */
+@media (max-width: 1200px) { :root { --pv-scale: 0.62; } }
+@media (max-width: 800px)  { :root { --pv-scale: 0.45; } }
 </style>
 </head>
 <body>
@@ -194,7 +229,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.7.6</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.8.1</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -248,7 +283,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.7.6 (입고 자동완성 완벽 픽스)</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.8.1 (체크박스 좌측 이동 + 더블클릭 상세/비고수정 + 재고조정)</span></h1>
   <div id="clock"></div>
 </div>
 </div>
@@ -351,7 +386,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
           <button class="btn btn-sm btn-dark" onclick="window.openStickerPreview('inv-tbody', 'bulk-print-option-detail')"><i class="bi bi-printer"></i> 🖨️ 선택 스티커 인쇄</button>
           
           <button class="btn btn-sm btn-nokia" onclick="window.openInventoryModal(null)">✨ 재고 수동 입력</button>
-          <button class="btn btn-sm btn-outline-info" onclick="window._trigger_edit_inventory()">✏️ 선택 재고 변경</button>
+          <button class="btn btn-sm btn-outline-info" onclick="window.editSelectedInv()">✏️ 선택 재고 변경</button>
           <button class="btn btn-sm btn-outline-danger" onclick="window.delete_inventory()">🗑️ 선택 재고 삭제</button>
         </div>
       </div>
@@ -359,6 +394,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
         <table class="inv-table" id="tbl-inv">
           <thead>
             <tr>
+              <th style="width:42px; text-align:center;">선택</th>
               <th class="filter-header" onclick="window.openFilterPopup(event, 'inv', 'id', 'ID')" style="width:50px;">ID <i class="bi bi-filter filter-icon" id="fi-id"></i></th>
               <th class="filter-header" onclick="window.openFilterPopup(event, 'inv', 'project_name', '프로젝트명')" style="width:180px;">프로젝트명 <i class="bi bi-filter filter-icon" id="fi-project_name"></i></th>
               <th class="filter-header" onclick="window.openFilterPopup(event, 'inv', 'vendor', '구매처')" style="width:120px;">구매처 <i class="bi bi-filter filter-icon" id="fi-vendor"></i></th>
@@ -372,7 +408,6 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
               <th class="filter-header" onclick="window.openFilterPopup(event, 'inv', 'inbound_date', '입고일자')" style="width:90px;">입고일자 <i class="bi bi-filter filter-icon" id="fi-inbound_date"></i></th>
               <th class="filter-header" onclick="window.openFilterPopup(event, 'inv', 'outbound_date', '출고일자')" style="width:90px;">출고일자 <i class="bi bi-filter filter-icon" id="fi-outbound_date"></i></th>
               <th class="filter-header" onclick="window.openFilterPopup(event, 'inv', 'note', '비고')" style="width:250px;">비고 <i class="bi bi-filter filter-icon" id="fi-note"></i></th>
-              <th style="width:42px; text-align:center;">선택</th>
             </tr>
           </thead>
           <tbody id="inv-tbody"></tbody>
@@ -575,7 +610,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
       <fieldset class="section-box h-100" style="border-color:#2e7d32;">
         <legend style="color:#2e7d32;">📤 데이터 엑셀 내보내기</legend>
         <p class="small text-secondary mb-3">전체 재고를 하나의 파일 안에 보고서 형식(제목, 서식 자동맞춤)으로 깔끔하게 추출합니다.</p>
-        <button class="btn btn-success btn-sm w-100 mb-2" onclick="window.exportExcel_multi_sheet()">📤 전체 재고 현황 보고서(Excel)로 추출</button>
+        <button class="btn btn-success btn-sm w-100 mb-2" onclick="window.export_excel_multi_sheet()">📤 전체 재고 현황 보고서(Excel)로 추출</button>
       </fieldset>
     </div>
   </div>
@@ -588,7 +623,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.7.6 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.8.1 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
@@ -617,11 +652,53 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
           <div class="col-6"><label class="form-label small mb-1">입고일자</label><input type="date" id="m-indate" class="form-control form-control-sm"></div>
           <div class="col-6"><label class="form-label small mb-1">출고일자</label><input type="date" id="m-outdate" class="form-control form-control-sm"></div>
           <div class="col-12"><label class="form-label small mb-1">비고</label><textarea id="m-note" class="form-control form-control-sm" rows="2"></textarea></div>
+          <!-- [Ver.8.1] 재고 조정 사유 (변경 모드에서만 노출) -->
+          <div class="col-12" id="m-reason-wrap" style="display:none;">
+            <label class="form-label small mb-1 fw-bold text-danger">📋 재고 조정 사유</label>
+            <input type="text" id="m-reason" class="form-control form-control-sm" placeholder="예: 실사 재고 차이 반영, 파손 폐기, 오입력 정정 등" style="border-color:#dc3545;">
+            <div class="form-text small" id="m-stock-hint" style="display:none;"></div>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">취소</button>
         <button type="button" class="btn btn-success btn-sm" onclick="window.saveInventory()">💾 저장 및 이력에 반영</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- [Ver.8.1] 더블클릭 상세보기 모달 (읽기전용 + 비고만 수정) -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1a6ea8;">
+        <h6 class="modal-title text-white">🔍 장비 상세 정보 <span class="small opacity-75">(비고만 수정 가능)</span></h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label small mb-1 text-muted">프로젝트명</label><input type="text" id="d-project" class="form-control form-control-sm" readonly></div>
+          <div class="col-6"><label class="form-label small mb-1 text-muted">구매처</label><input type="text" id="d-vendor" class="form-control form-control-sm" readonly></div>
+          <div class="col-6"><label class="form-label small mb-1 text-muted">장비군</label><input type="text" id="d-group" class="form-control form-control-sm" readonly></div>
+          <div class="col-6"><label class="form-label small mb-1 text-muted">P/N</label><input type="text" id="d-pn" class="form-control form-control-sm" readonly></div>
+          <div class="col-12"><label class="form-label small mb-1 text-muted">품명</label><input type="text" id="d-name" class="form-control form-control-sm" readonly></div>
+          <div class="col-6"><label class="form-label small mb-1 text-muted">S/N</label><input type="text" id="d-sn" class="form-control form-control-sm" readonly></div>
+          <div class="col-6"><label class="form-label small mb-1 text-muted">현재고</label><input type="text" id="d-stock" class="form-control form-control-sm fw-bold" readonly></div>
+          <div class="col-4"><label class="form-label small mb-1 text-muted">총수량</label><input type="text" id="d-total" class="form-control form-control-sm" readonly></div>
+          <div class="col-4"><label class="form-label small mb-1 text-muted">출고수량</label><input type="text" id="d-out" class="form-control form-control-sm" readonly></div>
+          <div class="col-4"><label class="form-label small mb-1 text-muted">입고일자</label><input type="text" id="d-indate" class="form-control form-control-sm" readonly></div>
+          <div class="col-12"><label class="form-label small mb-1 text-muted">출고일자</label><input type="text" id="d-outdate" class="form-control form-control-sm" readonly></div>
+          <div class="col-12">
+            <label class="form-label small mb-1 fw-bold text-primary">✏️ 비고 (수정 가능)</label>
+            <textarea id="d-note" class="form-control form-control-sm" rows="4" style="background:#fffdf5; border:1px solid #f0c040;"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span class="text-muted small me-auto">💡 회색 칸은 읽기 전용입니다. 노란 비고칸만 수정됩니다.</span>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">닫기</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="window.saveDetailNote()">💾 비고 저장</button>
       </div>
     </div>
   </div>
@@ -665,7 +742,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 
 <!-- 스티커 인쇄 미리보기 모달 -->
 <div class="modal fade" id="stickerPrintModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header" style="background:#212529;">
         <h5 class="modal-title text-white">🖨️ 장비 스티커 인쇄 미리보기 (A4 세로 2열x5행 자동분할)</h5>
@@ -673,7 +750,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
       </div>
       <div class="modal-body" id="stickerPreviewContent"></div>
       <div class="modal-footer bg-light">
-        <span class="text-muted me-auto small fw-bold">💡 인쇄가 백지로 나올 경우, 모달창을 닫은 후 다시 시도해 주세요.</span>
+        <span class="text-muted me-auto small fw-bold">💡 아래 미리보기가 실제 인쇄물과 동일합니다. (인쇄 대화상자에서 여백=없음, 배율=100% 권장)</span>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
         <button type="button" class="btn btn-dark" onclick="window.executeStickerPrint()"><i class="bi bi-printer"></i> 🖨️ 인쇄 실행</button>
       </div>
@@ -793,8 +870,11 @@ window.addEventListener('DOMContentLoaded', () => {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs,
-  deleteDoc, updateDoc, query, where
+  deleteDoc, updateDoc, query, where, orderBy, limit, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// [Ver.7.8] 로그는 서버에서 최신순 N건만 가져온다 (읽기 과금 방지)
+const LOG_LIMIT = 1000;
 
 const firebaseConfig = {
   apiKey: "AIzaSyBD5-AJDFJKsneHyqH70SlNU9VixDAHl3o",
@@ -911,11 +991,21 @@ window.customPrompt = function(msg, defaultVal="", title="입력") {
 };
 
 // ── 유틸리티 전역 바인딩 ──
+// [Ver.7.8] 참조 카운팅: showLoading이 중첩돼도 마지막 hideLoading에서만 닫힌다
+let _loadingDepth = 0;
 window.showLoading = function(msg='처리 중...') {
+  _loadingDepth++;
   document.getElementById('loading-msg').textContent = msg;
   document.getElementById('loading-overlay').classList.add('show');
 };
 window.hideLoading = function() {
+  _loadingDepth = Math.max(0, _loadingDepth - 1);
+  if (_loadingDepth === 0) {
+    document.getElementById('loading-overlay').classList.remove('show');
+  }
+};
+window.forceHideLoading = function() {   // 비상 탈출용
+  _loadingDepth = 0;
   document.getElementById('loading-overlay').classList.remove('show');
 };
 window.setStatus = function(msg) {
@@ -931,6 +1021,14 @@ window.getLogTime = function() {
 };
 
 window.esc = function(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+// [Ver.8.0] S/N 유효성 판정을 한 곳으로 통일 (undefined/null 안전 처리)
+//   이전에는 String(item.serial_number)가 undefined → "undefined" 문자열이 되어
+//   "S/N 있음"으로 잘못 판정, 스티커에 그대로 "undefined"가 찍혔다.
+window.hasSerial = function(sn){
+  const c = String(sn ?? '').trim().toLowerCase();
+  return c !== '' && c !== 'none' && c !== 'nsn' && c !== 'n/a' && c !== 'undefined' && c !== 'null';
+};
 window.stockClass = function(stock){ return !isNaN(stock) && Number(stock)>0 ?'in-stock': (stock===0||stock==='0'?'zero-stock':''); }
 
 window.rowClick = function(tr){
@@ -1137,11 +1235,7 @@ document.addEventListener('click', function(e) {
 
 
 // ── 데이터베이스 로드 ──
-async function fetchMasterCache() {
-  const snap = await getDocs(collection(db,'Nokia_Equipment','data','product_master'));
-  allMaster = {};
-  snap.forEach(d => { allMaster[d.id] = d.data(); });
-}
+// [Ver.7.8] 미사용 죽은 함수 fetchMasterCache() 제거됨
 
 window.loadInventory = async function(){
   window.showLoading('재고 로딩 중...');
@@ -1162,24 +1256,41 @@ window.loadInventory = async function(){
     window.renderProjList();
     window.setStatus(`🔄 재고 새로고침 완료 — 총 ${allInventory.length}건`);
   } catch(e){
-    console.error(e);
-    await window.customAlert("재고 로딩 에러: " + e.message, "에러");
+    console.error('[loadInventory]', e);
+    window.setStatus('❌ 재고 로딩 실패');
+    throw e;   // [Ver.7.8] 호출자가 실패를 인지할 수 있도록 전파
   } finally { window.hideLoading(); }
 };
 
 window.loadLogs = async function(){
   window.showLoading('이력 로딩 중...');
   try {
-    const snap = await getDocs(collection(db,'Nokia_Equipment','data','daily_logs'));
+    // ── [Ver.7.8] 서버측 정렬 + 개수 제한 ──────────────────────────────
+    // 이전: 컬렉션 "전량"을 내려받은 뒤 JS에서 slice(0,15000)
+    //       → 로그 1만건이면 접속 1회에 읽기 1만회 과금 (무료할당 하루 5만)
+    // 지금: orderBy(timestamp desc) + limit(LOG_LIMIT) 로 서버가 잘라서 보냄
+    //       → 몇 만 건이 쌓여도 읽기는 항상 LOG_LIMIT 이하로 고정
+    // ------------------------------------------------------------------
+    const logsRef = collection(db,'Nokia_Equipment','data','daily_logs');
+    let snap;
+    try {
+      snap = await getDocs(query(logsRef, orderBy('timestamp','desc'), limit(LOG_LIMIT)));
+    } catch (idxErr) {
+      // 색인 미생성(failed-precondition) 등으로 실패하면 예전 방식으로 안전하게 폴백
+      console.warn('[loadLogs] 서버측 정렬 실패 → 전체 조회로 폴백합니다.', idxErr);
+      snap = await getDocs(logsRef);
+    }
+
     let logs = snap.docs.map(d => d.data());
-    
+
+    // timestamp 누락 문서 대비, 클라이언트에서도 한 번 더 정렬 + 안전 제한
     logs.sort((a,b)=>{
         const tA = a.timestamp || '';
         const tB = b.timestamp || '';
         return tB.localeCompare(tA);
     });
-    
-    logs = logs.slice(0, 15000);
+
+    logs = logs.slice(0, LOG_LIMIT);
 
     const logColorMap = {'입고':'#e3f2fd','출고':'#fff8e1','재고삭제':'#ffebee','재고수정':'#f3e5f5'};
     
@@ -1234,7 +1345,11 @@ window.loadMaster = async function(){
     snap.forEach(d => { allMaster[d.id] = d.data(); });
     window.renderMasterTable();
   } catch(e){
-    console.error(e);
+    // [Ver.7.8] 이전에는 console.error만 하고 조용히 넘어가 장애가 은폐됐다.
+    //           이제 사용자에게 알리고 에러를 위로 던져 initDataLoad가 잡게 한다.
+    console.error('[loadMaster]', e);
+    window.setStatus('❌ 마스터 로딩 실패');
+    throw e;
   } finally { window.hideLoading(); }
 };
 
@@ -1300,7 +1415,8 @@ window.renderInventoryTable = function(){
       const rCls = isPositive ? 'in-stock ' + window.stockClass(r.current_stock) : window.stockClass(r.current_stock);
         
       return `
-      <tr class="${rCls}" data-id="${r.id}" onclick="window.rowClick(this)">
+      <tr class="${rCls}" data-id="${r.id}" onclick="window.rowClick(this)" ondblclick="window.openDetailModal('${r.id}')" title="더블클릭: 상세보기 / 비고수정" style="cursor:pointer;">
+        <td class="text-center"><input type="checkbox" class="form-check-input row-chk" onclick="event.stopPropagation(); window.rowClick(this.closest('tr'))"></td>
         <td class="text-center">${r._rowNum}</td>
         <td>${window.esc(r.project_name)}</td>
         <td>${window.esc(r.vendor)}</td>
@@ -1312,7 +1428,6 @@ window.renderInventoryTable = function(){
         <td class="text-center fw-bold">${r.current_stock}</td>
         <td>${window.esc(r.inbound_date)}</td><td>${window.esc(r.outbound_date)}</td>
         <td>${window.esc(r.note)}</td>
-        <td class="text-center"><input type="checkbox" class="form-check-input row-chk" onclick="event.stopPropagation()"></td>
       </tr>`}).join('');
   } catch(e) { console.error("renderInventoryTable error", e); }
 };
@@ -2016,9 +2131,81 @@ window.confirm_inbound_pending = async function(){
   } catch(e) { await window.customAlert("입고 오류: " + e.message, "에러"); } finally { window.hideLoading(); }
 };
 
+// ==========================================================================
+// [Ver.8.1] 더블클릭 상세보기 — 읽기전용 표시 + 비고만 수정
+// ==========================================================================
+let detailDocId = null;
+
+window.openDetailModal = function(docId){
+  const r = allInventory.find(x => x.id === docId);
+  if(!r){ window.customAlert('장비 정보를 찾을 수 없습니다.', '오류'); return; }
+  detailDocId = docId;
+
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = (val ?? '') === '' ? '-' : val; };
+  set('d-project', r.project_name);
+  set('d-vendor',  r.vendor);
+  set('d-group',   r.equip_group);
+  set('d-pn',      r.part_number);
+  set('d-name',    r.part_name);
+  set('d-sn',      window.hasSerial(r.serial_number) ? r.serial_number : 'N/A');
+  set('d-stock',   r.current_stock);
+  set('d-total',   r.total_qty);
+  set('d-out',     r.out_qty);
+  set('d-indate',  r.inbound_date);
+  set('d-outdate', r.outbound_date);
+  // 비고는 실제 값 그대로 (편집 대상)
+  document.getElementById('d-note').value = r.note || '';
+
+  const modalEl = document.getElementById('detailModal');
+  let modal = bootstrap.Modal.getInstance(modalEl);
+  if(!modal) modal = new bootstrap.Modal(modalEl, {backdrop:'static'});
+  modal.show();
+};
+
+window.saveDetailNote = async function(){
+  if(!detailDocId){ return; }
+  const r = allInventory.find(x => x.id === detailDocId);
+  if(!r){ window.customAlert('장비 정보를 찾을 수 없습니다.', '오류'); return; }
+
+  const newNote = document.getElementById('d-note').value;
+  const oldNote = r.note || '';
+  if(newNote === oldNote){
+    await window.customAlert('비고 내용이 변경되지 않았습니다.', '알림');
+    return;
+  }
+
+  window.showLoading('비고 저장 중...');
+  try {
+    const ts = window.getLogTime();
+    // 비고만 수정 (다른 필드는 건드리지 않음)
+    await updateDoc(doc(db,'Nokia_Equipment','data','equipment',String(detailDocId)), { note: newNote });
+    await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
+      ref_equip_id: String(detailDocId), action_type: '비고수정', qty_changed: 0,
+      note: `비고 수정 (상세보기)`, timestamp: ts
+    });
+
+    const modalEl = document.getElementById('detailModal');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    if(modal) modal.hide();
+
+    window.setStatus('✏️ 비고 수정 완료');
+    await window.loadInventory();
+  } catch(e){
+    await window.customAlert('비고 저장 오류: ' + e.message, '에러');
+  } finally { window.hideLoading(); }
+};
+
 window.openInventoryModal = function(docId){
   editingDocId = docId;
   document.getElementById('inv-modal-title').textContent = docId?'✏️ 재고 변경':'✨ 재고 수동 입력';
+
+  // [Ver.8.1] 조정 사유 필드는 "변경 모드"에서만 노출
+  const reasonWrap = document.getElementById('m-reason-wrap');
+  const reasonInput = document.getElementById('m-reason');
+  const stockHint = document.getElementById('m-stock-hint');
+  if(reasonInput) reasonInput.value = '';
+  if(reasonWrap) reasonWrap.style.display = docId ? 'block' : 'none';
+  if(stockHint){ stockHint.style.display = 'none'; stockHint.textContent = ''; }
   if(!docId){
     ['m-project','m-group','m-name','m-pn','m-sn','m-note','m-vendor'].forEach(id=> { if(document.getElementById(id)) document.getElementById(id).value=''; });
     ['m-total','m-out','m-stock'].forEach(id=>document.getElementById(id).value='0');
@@ -2039,6 +2226,25 @@ window.openInventoryModal = function(docId){
       document.getElementById('m-indate').value=r.inbound_date||window.getTodayStr();
       document.getElementById('m-outdate').value=r.outbound_date||'';
       document.getElementById('m-note').value=r.note||'';
+
+      // [Ver.8.1] 재고 조정 실시간 힌트: 원래 현재고를 기억해두고 증감을 보여준다
+      const stockEl = document.getElementById('m-stock');
+      const origStock = +(r.current_stock || 0);
+      stockEl.dataset.orig = origStock;
+      const hint = document.getElementById('m-stock-hint');
+      const updateHint = () => {
+        const now = +(stockEl.value || 0);
+        const diff = now - origStock;
+        if(diff === 0){
+          hint.style.display = 'none';
+        } else {
+          hint.style.display = 'block';
+          hint.style.color = diff > 0 ? '#198754' : '#dc3545';
+          hint.textContent = `현재고 ${origStock}개 ➔ ${now}개 (${diff > 0 ? '+' : ''}${diff}개 ${diff > 0 ? '증가' : '감소'})`;
+        }
+      };
+      stockEl.oninput = updateHint;
+      updateHint();
     }
   }
   
@@ -2063,15 +2269,24 @@ window.delete_inventory = async function(){
   window.showLoading('삭제 중...');
   try {
     const ts = window.getLogTime();
+    // [Ver.8.0] 삭제도 writeBatch로 (건당 addDoc+deleteDoc 2회 → 일괄 commit)
+    const logsCol = collection(db,'Nokia_Equipment','data','daily_logs');
+    let batch = writeBatch(db);
+    let opCount = 0;
     for(const tr of sel){
       const id = tr.dataset.id;
       const oldItem = allInventory.find(x => x.id === id);
       const oldStock = oldItem ? +oldItem.current_stock : 0;
-      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
+
+      if (opCount + 2 > 450) { await batch.commit(); batch = writeBatch(db); opCount = 0; }
+
+      batch.set(doc(logsCol), {
         ref_equip_id: id, action_type: '재고삭제', qty_changed: -oldStock, note: `관리자 수동 삭제`, timestamp: ts
       });
-      await deleteDoc(doc(db,'Nokia_Equipment','data','equipment', id));
+      batch.delete(doc(db,'Nokia_Equipment','data','equipment', id));
+      opCount += 2;
     }
+    if (opCount > 0) await batch.commit();
     window.setStatus(`🗑️ ${sel.length}건 삭제 완료`);
     await window.loadInventory();
   } catch(e){ await window.customAlert("오류: " + e.message, "에러"); } finally { window.hideLoading(); }
@@ -2098,7 +2313,21 @@ window.saveInventory = async function(){
   if (document.getElementById('m-vendor')) {
       data.vendor = document.getElementById('m-vendor').value.trim();
   }
-  
+
+  // [Ver.8.1] 재고 조정 사유 검증: 변경 모드에서 현재고가 바뀌었으면 사유 권장
+  const adjustReason = (document.getElementById('m-reason')?.value || '').trim();
+  if(editingDocId){
+    const _old = allInventory.find(x => x.id === editingDocId);
+    const _oldStock = _old ? +_old.current_stock : 0;
+    if(data.current_stock !== _oldStock && !adjustReason){
+      const proceed = await window.customConfirm(
+        `현재고를 ${_oldStock}개 → ${data.current_stock}개로 조정하려 합니다.\n조정 사유가 입력되지 않았습니다.\n\n사유 없이 진행하시겠습니까?`,
+        '재고 조정 사유 확인'
+      );
+      if(!proceed) return;   // 취소하고 모달 유지 (사유 입력 유도)
+    }
+  }
+
   const ts = window.getLogTime();
   window.showLoading('저장 중...');
   try {
@@ -2109,7 +2338,8 @@ window.saveInventory = async function(){
       const diff = newStock - oldStock;
       
       let logNote = `기존 재고: ${oldStock}개 ➔ 변경 후: ${newStock}개`;
-      if (data.note) { logNote += ` (${data.note})`; } else { logNote = `[수동수정] ` + logNote; }
+      if (adjustReason) { logNote += ` [사유: ${adjustReason}]`; }   // [Ver.8.1] 조정 사유 기록
+      if (data.note) { logNote += ` (${data.note})`; } else if(!adjustReason) { logNote = `[수동수정] ` + logNote; }
 
       await updateDoc(doc(db,'Nokia_Equipment','data','equipment',String(editingDocId)), data);
       await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
@@ -2156,8 +2386,7 @@ window.openBulkCheckoutWindow = async function() {
       if(!r||+r.current_stock<=0) return;
       checkoutItems.push({...r, checkout_qty:1});
       
-      const snClean = String(r.serial_number).trim().toLowerCase();
-      const hasSn = snClean !== '' && snClean !== 'none' && snClean !== 'nsn' && snClean !== 'n/a';
+      const hasSn = window.hasSerial(r.serial_number);
       
       const qtyCellHTML = hasSn 
           ? `1 <input type="hidden" class="bulk-qty-input" data-id="${id}" value="1">`
@@ -2189,8 +2418,7 @@ window.applyCheckoutQty = async function(){
     const r = checkoutItems.find(x=>x.id==id);
     if(!r) continue;
     
-    const snClean = String(r.serial_number).trim().toLowerCase();
-    const hasSn = snClean !== '' && snClean !== 'none' && snClean !== 'nsn' && snClean !== 'n/a';
+    const hasSn = window.hasSerial(r.serial_number);
     
     if(hasSn && qty>1){ await window.customAlert('S/N이 있는 장비는 1개만 출고 가능합니다.', '오류'); return; }
     if(qty>+r.current_stock){ await window.customAlert(`현재고(${r.current_stock})를 초과할 수 없습니다.`, '재고 부족'); return; }
@@ -2225,24 +2453,45 @@ window.doCheckout = async function(){
   
   window.showLoading('출고 처리 중...');
   try {
-    const ts = window.getLogTime(); 
+    const ts = window.getLogTime();
+    // ── [Ver.8.0] writeBatch 로 일괄 처리 ──────────────────────────────
+    //   이전: 출고 1건마다 updateDoc + addDoc = 네트워크 왕복 2회
+    //         100건이면 200회 → 매우 느리고, 중간에 끊기면 절반만 반영(불일치).
+    //   지금: 여러 건을 batch에 모아 commit() 1회로 원자적 처리.
+    //         (한 batch는 최대 500 작업. 출고 1건=2작업이므로 250건마다 분할)
+    //   commit이 실패하면 전부 반영 안 됨 → 부분반영 불일치가 사라진다.
+    // ------------------------------------------------------------------
+    const logsCol = collection(db,'Nokia_Equipment','data','daily_logs');
+    const OPS_PER_ITEM = 2;
+    const MAX_OPS = 450;                       // 500 한도에 여유
+    let batch = writeBatch(db);
+    let opCount = 0;
+
     for(const item of itemsToCheckout){
       const {r, qty, id} = item;
-      const snClean = String(r.serial_number).trim().toLowerCase();
-      const hasSn = snClean !== '' && snClean !== 'none' && snClean !== 'nsn' && snClean !== 'n/a';
-      
+      const hasSn = window.hasSerial(r.serial_number);
+
       const existing_note = r.note || "";
       let new_history = `[${outDate} 출고] ${outNote}`.trim();
       if(!hasSn) new_history += ` (수량: ${qty}개)`;
       const newNote = existing_note ? `${existing_note}\n${new_history}` : new_history;
-      
-      await updateDoc(doc(db,'Nokia_Equipment','data','equipment',String(id)),{
+
+      // 500 작업 한도에 닿기 전에 중간 commit 후 새 batch 시작
+      if (opCount + OPS_PER_ITEM > MAX_OPS) {
+        await batch.commit();
+        batch = writeBatch(db);
+        opCount = 0;
+      }
+
+      batch.update(doc(db,'Nokia_Equipment','data','equipment',String(id)),{
         current_stock: +r.current_stock-qty, out_qty: +r.out_qty+qty, outbound_date: outDate, note: newNote
       });
-      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
+      batch.set(doc(logsCol), {   // addDoc 대신 doc()로 자동ID 생성 후 set
         ref_equip_id:String(id), action_type:'출고', qty_changed:qty, note:`${outDate} 출고완료 - ${outNote}`, timestamp:ts
       });
+      opCount += OPS_PER_ITEM;
     }
+    if (opCount > 0) await batch.commit();     // 마지막 batch 반영
     
     const modalEl = document.getElementById('checkoutModal');
     const modal = bootstrap.Modal.getInstance(modalEl);
@@ -2255,17 +2504,78 @@ window.doCheckout = async function(){
   } catch(e){ await window.customAlert("오류: "+e.message, "에러"); } finally { window.hideLoading(); }
 };
 
+// ==========================================================================
+// 🖨️ 스티커 인쇄 (Ver.7.7)
+// [핵심] 스티커 CSS를 STICKER_CSS 상수 "한 벌"로만 정의한다.
+//        - 메인 문서: <style id="sticker-shared-css"> 로 주입  → 미리보기가 이 CSS를 씀
+//        - 인쇄 iframe: 같은 문자열을 그대로 write        → 인쇄물이 이 CSS를 씀
+//        결과: 미리보기와 인쇄물이 구조적으로 절대 어긋날 수 없다.
+// ==========================================================================
+const STICKER_CSS = `
+  .sticker-page {
+    page-break-after: always;
+    break-after: page;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 6mm 8mm;
+    padding: 12mm 10mm;
+    width: 210mm;
+    height: 297mm;
+    box-sizing: border-box;
+    align-content: stretch;
+    background: #fff;
+    font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+    color: #000;
+  }
+  .sticker {
+    border: 1px dashed #999;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
+    overflow: hidden;
+    height: 100%;
+  }
+  .st-title {
+    font-weight: 900; font-size: 14pt;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 2px solid #000;
+    margin-bottom: 6px; padding-bottom: 4px;
+  }
+  .st-proj  { color: #000; font-weight: bold; font-size: 11.5pt; margin-bottom: 3px; }
+  .st-group { color: #444; font-weight: bold; font-size: 10.5pt; margin-bottom: 3px; }
+  .st-name  {
+    font-weight: bold; font-size: 12pt; margin: 6px 0 8px 0; line-height: 1.3;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .st-pn, .st-sn { font-family: monospace; font-size: 10.5pt; font-weight: 600; margin-top: 2px; }
+  /* [Ver.8.0] 마지막 페이지 뒤 백지 1장 방지 */
+  .sticker-page:last-child { page-break-after: auto; break-after: auto; }
+`;
+
+// 메인 문서에 스티커 CSS 1회 주입 (미리보기가 이걸 사용)
+(function injectStickerCss(){
+  if (document.getElementById('sticker-shared-css')) return;
+  const st = document.createElement('style');
+  st.id = 'sticker-shared-css';
+  st.textContent = STICKER_CSS;
+  document.head.appendChild(st);
+})();
+
 window.openStickerPreview = async function(tbodyId = 'proj-detail-tbody', optionId = 'bulk-print-option-proj') {
     const sel = window.getSelectedRows(tbodyId);
     if(!sel.length) { await window.customAlert('인쇄할 장비를 리스트에서 체크해주세요.', '선택 오류'); return; }
 
     const rawItems = sel.map(tr => allInventory.find(x => x.id == tr.dataset.id)).filter(Boolean);
-    const bulkOption = document.getElementById(optionId)?.value || 'single'; 
+    const bulkOption = document.getElementById(optionId)?.value || 'single';
     const finalItems = [];
 
     rawItems.forEach(item => {
-        const snClean = String(item.serial_number).trim().toLowerCase();
-        const hasSn = snClean !== 'none' && snClean !== '' && snClean !== 'nsn' && snClean !== 'n/a';
+        const hasSn = window.hasSerial(item.serial_number);
         const stock = parseInt(item.current_stock) || 0;
 
         if (!hasSn && stock > 1) {
@@ -2280,26 +2590,29 @@ window.openStickerPreview = async function(tbodyId = 'proj-detail-tbody', option
     });
 
     const previewContainer = document.getElementById('stickerPreviewContent');
-    const printContainer = document.getElementById('printArea');
+    const printContainer   = document.getElementById('printArea');
     previewContainer.innerHTML = '';
-    printContainer.innerHTML = '';
+    printContainer.innerHTML   = '';
 
     const now = new Date();
     const todayPrint = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 10;   // 2열 x 5행
     const totalPages = Math.ceil(finalItems.length / ITEMS_PER_PAGE);
 
     for (let p = 0; p < totalPages; p++) {
         const pageItems = finalItems.slice(p * ITEMS_PER_PAGE, (p + 1) * ITEMS_PER_PAGE);
-        const previewPage = document.createElement('div'); previewPage.className = 'preview-page';
-        const printPage = document.createElement('div'); printPage.className = 'sticker-page';
+
+        // ── A4 한 장을 "한 번만" 만든다 (인쇄용 원본)
+        const printPage = document.createElement('div');
+        printPage.className = 'sticker-page';
 
         pageItems.forEach((item) => {
-            const snClean = String(item.serial_number).trim().toLowerCase();
-            const snText = snClean !== 'none' && snClean !== '' && snClean !== 'nsn' && snClean !== 'n/a' ? item.serial_number : 'N/A';
+            const snText  = window.hasSerial(item.serial_number) ? item.serial_number : 'N/A';
             let snHtml = window.esc(snText);
-            if (item.print_qty_label) snHtml = `<span style="color:#e53935; font-weight:bold;">N/A (총 ${item.label_qty}개)</span>`;
-            
+            if (item.print_qty_label) {
+                snHtml = `<span style="color:#e53935; font-weight:bold;">N/A (총 ${item.label_qty}개)</span>`;
+            }
+
             const stickerHTML = `
                 <div class="st-title"><span style="color:#1a6ea8;">NOKIA</span><span style="color:#666; font-size:12px; font-weight:600; display:flex; align-items:center;">🖨️ ${todayPrint}</span></div>
                 <div class="st-proj">📁 ${window.esc(item.project_name || '미지정')}</div>
@@ -2308,13 +2621,27 @@ window.openStickerPreview = async function(tbodyId = 'proj-detail-tbody', option
                 <div class="st-pn">P/N: ${window.esc(item.part_number || '')}</div>
                 <div class="st-sn">S/N: ${snHtml}</div>
             `;
-            const previewSticker = document.createElement('div'); previewSticker.className = 'preview-sticker'; previewSticker.innerHTML = stickerHTML;
-            const printSticker = document.createElement('div'); printSticker.className = 'sticker'; printSticker.innerHTML = stickerHTML;
-            previewPage.appendChild(previewSticker); printPage.appendChild(printSticker);
+            const sticker = document.createElement('div');
+            sticker.className = 'sticker';
+            sticker.innerHTML = stickerHTML;
+            printPage.appendChild(sticker);
         });
-        previewContainer.appendChild(previewPage); printContainer.appendChild(printPage);
+
+        printContainer.appendChild(printPage);
+
+        // ── 미리보기: 같은 노드를 복제해서 "축소 창"에 넣는다 (클래스 동일 → CSS 동일)
+        const label = document.createElement('div');
+        label.className = 'preview-page-label';
+        label.textContent = `— Page ${p + 1} / ${totalPages} —`;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'preview-page-wrap';
+        wrap.appendChild(printPage.cloneNode(true));
+
+        previewContainer.appendChild(label);
+        previewContainer.appendChild(wrap);
     }
-    
+
     const modalEl = document.getElementById('stickerPrintModal');
     let modal = bootstrap.Modal.getInstance(modalEl);
     if (!modal) modal = new bootstrap.Modal(modalEl, {backdrop: 'static'});
@@ -2323,40 +2650,65 @@ window.openStickerPreview = async function(tbodyId = 'proj-detail-tbody', option
 
 window.executeStickerPrint = function() {
     const printContent = document.getElementById('printArea').innerHTML;
+    if (!printContent.trim()) { window.customAlert('인쇄할 내용이 없습니다.', '오류'); return; }
+
     const iframe = document.createElement('iframe');
     iframe.style.position = 'absolute';
-    iframe.style.width = '0px';
+    iframe.style.width  = '0px';
     iframe.style.height = '0px';
     iframe.style.border = 'none';
+    // [Ver.8.0] 화면 밖으로 밀어내되 display:none은 쓰지 않는다 (일부 브라우저에서 인쇄 누락)
+    iframe.style.left = '-9999px';
     document.body.appendChild(iframe);
-    
+
+    // ── [Ver.8.0] 백지 인쇄 버그 수정 ───────────────────────────────────
+    // 이전: doc.close() "이후"에 iframe.onload를 등록했다.
+    //       그런데 srcdoc/document.write 흐름에서는 close() 시점에 load가
+    //       이미 끝나버려 핸들러가 영영 안 걸리는 경우가 있었다 → print() 미호출 → 백지.
+    // 지금: 핸들러를 doc.open() "전에" 등록하고, 한 번만 실행되도록 guard를 둔다.
+    //       또한 정리는 setTimeout이 아니라 onafterprint로 처리해
+    //       인쇄 대화상자가 떠 있는 동안 iframe이 사라지는 문제도 막는다.
+    // ------------------------------------------------------------------
+    let printed = false;
+    const doPrint = function() {
+        if (printed) return;          // load가 2번 불려도 1번만
+        printed = true;
+        const win = iframe.contentWindow;
+        const cleanup = function() {
+            if (iframe.parentNode) document.body.removeChild(iframe);
+        };
+        // 인쇄가 끝나면(또는 취소하면) iframe 제거
+        win.onafterprint = cleanup;
+        setTimeout(function() {
+            win.focus();
+            win.print();
+            // onafterprint를 지원하지 않는 환경 대비 안전망 (넉넉히 대기)
+            setTimeout(cleanup, 60000);
+        }, 200);   // 폰트/레이아웃 반영 대기
+    };
+    iframe.onload = doPrint;
+
     const doc = iframe.contentWindow.document;
     doc.open();
-    doc.write('<!DOCTYPE html><html><head><title>스티커 인쇄</title>');
+    doc.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>스티커 인쇄</title>');
     doc.write('<style>');
     doc.write(`
         @page { size: A4 portrait; margin: 0; }
-        body { margin: 0; padding: 0; background-color: #fff; font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; -webkit-print-color-adjust: exact; color-adjust: exact; }
-        .sticker-page { page-break-after: always; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(5, 1fr); gap: 6mm 8mm; padding: 12mm 10mm; width: 210mm; height: 297mm; box-sizing: border-box; align-content: stretch; }
-        .sticker { border: 1px dashed #999; border-radius: 8px; padding: 12px 16px; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; overflow: hidden; height: 100%; }
-        .st-title { font-weight: 900; font-size: 14pt; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; margin-bottom: 6px; padding-bottom: 4px; }
-        .st-proj { color: #000; font-weight: bold; font-size: 11.5pt; margin-bottom: 3px; }
-        .st-group { color: #444; font-weight: bold; font-size: 10.5pt; margin-bottom: 3px; }
-        .st-name { font-weight: bold; font-size: 12pt; margin: 6px 0 8px 0; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-        .st-pn, .st-sn { font-family: monospace; font-size: 10.5pt; font-weight: 600; margin-top: 2px; }
+        body { margin: 0; padding: 0; background-color: #fff;
+               font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+               -webkit-print-color-adjust: exact; color-adjust: exact; print-color-adjust: exact; }
     `);
+    doc.write(STICKER_CSS);
     doc.write('</style></head><body>');
     doc.write(printContent);
     doc.write('</body></html>');
     doc.close();
-    
-    iframe.onload = function() {
-        setTimeout(() => {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-            setTimeout(() => { document.body.removeChild(iframe); }, 1000);
-        }, 150);
-    };
+
+    // document.write 방식은 load 이벤트가 이미 지나갔을 수 있으므로
+    // readyState를 직접 확인해 보조로 한 번 더 트리거한다.
+    if (doc.readyState === 'complete') {
+        doPrint();
+    }
 };
 
 window.askDupMode = function(){
@@ -2651,21 +3003,75 @@ window.export_excel_multi_sheet = async function(){
   } catch(e){ await window.customAlert("오류: " + e.message, "에러"); } finally { window.hideLoading(); }
 };
 
+// [Ver.7.8] Firestore 에러코드를 사람이 읽을 수 있는 원인/조치로 번역
+window.explainFirebaseError = function(e) {
+  const code = (e && e.code) ? String(e.code) : '';
+  const map = {
+    'permission-denied' :
+      '❌ 접근 권한 거부 (permission-denied)\n\n' +
+      'Firestore 보안 규칙이 읽기를 막고 있습니다.\n' +
+      '→ Firebase 콘솔 > Firestore > 규칙 탭을 확인하세요.\n' +
+      '   (테스트 모드 규칙은 30일 후 자동 만료됩니다)',
+    'resource-exhausted' :
+      '❌ 할당량 초과 (resource-exhausted)\n\n' +
+      '오늘 Firestore 읽기 무료 할당량(5만회)을 모두 사용했습니다.\n' +
+      '→ 내일 자정(태평양 표준시)에 초기화되거나, 요금제를 올려야 합니다.',
+    'unavailable' :
+      '❌ 서버에 연결할 수 없음 (unavailable)\n\n' +
+      '네트워크가 끊겼거나, 사내 방화벽이 googleapis.com 을 차단했을 수 있습니다.\n' +
+      '→ 인터넷 연결과 프록시 설정을 확인하세요.',
+    'failed-precondition' :
+      '❌ 색인 필요 (failed-precondition)\n\n' +
+      '→ 브라우저 콘솔(F12)에 뜬 색인 생성 링크를 클릭하세요.',
+    'not-found' :
+      '❌ 경로를 찾을 수 없음 (not-found)\n\n' +
+      '→ Firestore 경로 Nokia_Equipment/data/... 를 확인하세요.',
+    'unauthenticated' :
+      '❌ 인증되지 않음 (unauthenticated)\n\n' +
+      '→ Firebase 인증 설정을 확인하세요.'
+  };
+  if (map[code]) return map[code];
+  return '❌ Firebase 데이터 로딩 오류\n\n' +
+         (code ? '코드: ' + code + '\n' : '') +
+         '메시지: ' + ((e && e.message) || String(e)) + '\n\n' +
+         '자세한 내용은 F12 > Console 탭을 확인하세요.';
+};
+
 window.initDataLoad = async function() {
-  if (window._isDataLoaded) return; 
-  window._isDataLoaded = true;
+  // ── [Ver.7.8] 실패해도 다시 시도할 수 있게 잠금을 관리한다 ──────────
+  // 이전: 플래그를 try "밖"에서 true로 박아버려, 한 번 실패하면 이후
+  //       모든 재시도가 첫 줄에서 return 되어 F5 없이는 복구 불가능했다.
+  // 지금: 성공했을 때만 true. 실패하면 false로 되돌려 재시도를 허용한다.
+  // -------------------------------------------------------------------
+  if (window._isDataLoaded || window._isDataLoading) return;
+  window._isDataLoading = true;
 
   window.showLoading('데이터 로딩 중...');
   try {
     await window.loadMaster();
     await window.loadInventory();
     await window.loadLogs();
+
+    window._isDataLoaded = true;              // ✅ 성공했을 때만 잠금
     window.setStatus('✅ 데이터 로딩 완료');
-  } catch(e){ 
-      console.error(e); 
-      await window.customAlert("Firebase 데이터 로딩 오류: " + e.message, "에러");
-      window.setStatus('❌ 데이터 로딩 실패');
-  } finally { window.hideLoading(); }
+  } catch(e){
+    window._isDataLoaded = false;             // ✅ 실패하면 잠금 해제 → 재시도 가능
+    console.error('[initDataLoad]', e);
+    window.setStatus('❌ 데이터 로딩 실패 — 다시 시도할 수 있습니다');
+
+    const retry = await window.customConfirm(
+      window.explainFirebaseError(e) + '\n\n다시 시도하시겠습니까?',
+      'Firebase 연결 오류'
+    );
+    if (retry) {
+      window._isDataLoading = false;
+      window.hideLoading();
+      return window.initDataLoad();           // 🔁 F5 없이 재시도
+    }
+  } finally {
+    window._isDataLoading = false;
+    window.hideLoading();
+  }
 };
 
 </script>
