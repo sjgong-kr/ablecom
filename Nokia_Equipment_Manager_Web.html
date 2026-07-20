@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.8.7</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.8.8</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -230,7 +230,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.8.7</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.8.8</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -284,7 +284,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.8.7 (스티커 미리보기 iframe 방식 — 인쇄물과 100% 동일)</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.8.8 (작업이력 지연로드 — 읽기 사용량 절감)</span></h1>
   <div id="clock"></div>
 </div>
 </div>
@@ -506,12 +506,12 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div class="d-flex gap-2 align-items-center mb-2">
     <button class="btn btn-sm btn-outline-info" onclick="window.loadLogs()">🔄 이력 새로고침</button>
     <button class="btn btn-sm btn-success" onclick="window.exportLogsExcel()">📤 이력 전체 Excel 추출</button>
-    <span class="text-secondary small">(※ 화면에는 최근 1,000건만 출력됩니다. Excel 추출 시 DB의 이력 전체를 내려받습니다.)</span>
+    <span class="text-secondary small">(※ 화면에는 최근 200건만 표시됩니다. 전체 이력은 DB에 저장되며 Excel 추출로 확인할 수 있습니다.)</span>
   </div>
   <div class="tbl-wrap" style="max-height: 600px;">
     <table class="inv-table" id="tbl-logs">
       <thead><tr><th>시간</th><th>구분</th><th>프로젝트</th><th>장비명 (P/N · S/N)</th><th>수량</th><th>상세내용</th></tr></thead>
-      <tbody id="logs-tbody"></tbody>
+      <tbody id="logs-tbody"><tr><td colspan="6" class="text-center text-secondary py-4">🔄 '이력 새로고침'을 누르면 최근 작업 이력을 불러옵니다.</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -625,7 +625,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.8.7 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.8.8 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
@@ -864,6 +864,20 @@ window.addEventListener('DOMContentLoaded', () => {
       const loginIdEl = document.getElementById('login-id');
       if(loginIdEl) loginIdEl.focus(); 
   }
+
+  // [Ver.8.8] 작업 이력 탭을 "처음 열 때" 한 번만 자동 로드 (지연 로드).
+  //   로그인 시엔 읽지 않아 읽기 사용량을 아끼고, 사용자가 탭을 열면 자동으로 뜬다.
+  //   이후 갱신은 '이력 새로고침' 버튼으로만 (반복 읽기 방지).
+  window._logsLoadedOnce = false;
+  const logsTabLink = document.querySelector('a[href="#tab-logs"]');
+  if (logsTabLink) {
+      logsTabLink.addEventListener('shown.bs.tab', () => {
+          if (!window._logsLoadedOnce && typeof window.loadLogs === 'function') {
+              window._logsLoadedOnce = true;
+              window.loadLogs();
+          }
+      });
+  }
 });
 </script>
 
@@ -876,7 +890,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // [Ver.7.8] 로그는 서버에서 최신순 N건만 가져온다 (읽기 과금 방지)
-const LOG_LIMIT = 1000;
+const LOG_LIMIT = 200;   // [Ver.8.8] 화면 표시용 최근 건수 (DB엔 전부 저장, Excel은 전량 추출)
 
 const firebaseConfig = {
   apiKey: "AIzaSyBD5-AJDFJKsneHyqH70SlNU9VixDAHl3o",
@@ -3321,7 +3335,10 @@ window.initDataLoad = async function() {
     await window.loadProjOrder();   // [Ver.8.6] 프로젝트 정렬 순서 로드
     await window.loadMaster(true);
     await window.loadInventory(true);
-    await window.loadLogs(true);
+    // [Ver.8.8] 작업이력 자동 로드 제거 — 읽기 사용량 절감.
+    //   로그인마다 daily_logs 전체(최대 200건)를 읽던 것을 없애고,
+    //   사용자가 '작업 이력' 탭을 열거나 '이력 새로고침'을 누를 때만 로드한다.
+    //   (DB에는 모든 이력이 그대로 저장되어 있음)
 
     window._isDataLoaded = true;              // ✅ 성공했을 때만 잠금
     window.setStatus('✅ 데이터 로딩 완료');
