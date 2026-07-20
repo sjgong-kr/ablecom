@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.8.6 New</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.8.7</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -183,25 +183,19 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   background: #525659;            /* PDF 뷰어 느낌의 회색 배경 */
   padding: 18px 10px 24px;
   overflow: auto;
+  text-align: center;
 }
-.preview-page-label {
-  text-align: center; color: #e6e6e6;
-  font-size: 12px; font-weight: 700; letter-spacing: .5px;
-  margin: 0 0 6px;
-}
-/* A4(210x297mm) 원본을 그대로 그리고, 겉을 축소된 크기의 창으로 잘라냄 */
-.preview-page-wrap {
-  width:  calc(210mm * var(--pv-scale));
-  height: calc(297mm * var(--pv-scale));
-  margin: 0 auto 22px;
+/* [Ver.8.7] 미리보기 iframe: A4 실제 크기 문서를 iframe으로 렌더하고,
+   iframe 요소 자체를 scale로 축소한다. (인쇄물과 100% 동일) */
+.preview-iframe {
+  width: 210mm;                          /* A4 실제 폭 */
+  border: none;
   background: #fff;
-  overflow: hidden;
-  box-shadow: 0 4px 18px rgba(0,0,0,.55);
-}
-.preview-page-wrap > .sticker-page {
   transform: scale(var(--pv-scale));
-  transform-origin: top left;
-  page-break-after: auto;   /* 화면에선 페이지나눔 불필요 */
+  transform-origin: top center;
+  box-shadow: 0 4px 18px rgba(0,0,0,.55);
+  /* scale로 줄어든 만큼 아래 여백이 남으므로 음수 마진으로 보정 */
+  margin-bottom: calc(-297mm * (1 - var(--pv-scale)));
 }
 /* 좁은 화면 대응 */
 @media (max-width: 1200px) { :root { --pv-scale: 0.62; } }
@@ -236,7 +230,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.8.6</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.8.7</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -290,7 +284,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.8.6 (프로젝트 드래그앤드롭 정렬 복원 + Firestore 순서 저장)</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.8.7 (스티커 미리보기 iframe 방식 — 인쇄물과 100% 동일)</span></h1>
   <div id="clock"></div>
 </div>
 </div>
@@ -631,7 +625,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.8.6 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.8.7 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
@@ -2767,19 +2761,50 @@ window.openStickerPreview = async function(tbodyId = 'proj-detail-tbody', option
         });
 
         printContainer.appendChild(printPage);
-
-        // ── 미리보기: 같은 노드를 복제해서 "축소 창"에 넣는다 (클래스 동일 → CSS 동일)
-        const label = document.createElement('div');
-        label.className = 'preview-page-label';
-        label.textContent = `— Page ${p + 1} / ${totalPages} —`;
-
-        const wrap = document.createElement('div');
-        wrap.className = 'preview-page-wrap';
-        wrap.appendChild(printPage.cloneNode(true));
-
-        previewContainer.appendChild(label);
-        previewContainer.appendChild(wrap);
     }
+
+    // ── [Ver.8.7] 미리보기를 iframe으로 렌더 (인쇄물과 100% 동일) ──────────
+    //   이전: printPage를 복제해 transform:scale로 축소 → mm/px 환산 차이로
+    //         행 간격이 붙어 보이는 문제가 있었다.
+    //   지금: 인쇄에 쓰는 것과 똑같은 HTML(printArea) + STICKER_CSS를 iframe에
+    //         그대로 주입한다. iframe 자체를 scale로 축소해 모달에 맞추므로,
+    //         "보이는 것 = 인쇄되는 것"이 물리적으로 보장된다.
+    // --------------------------------------------------------------------
+    const previewIframe = document.createElement('iframe');
+    previewIframe.className = 'preview-iframe';
+    // A4 실제 크기로 문서를 만들고, iframe 요소만 scale로 줄인다
+    previewContainer.appendChild(previewIframe);
+
+    const pvDoc = previewIframe.contentWindow.document;
+    pvDoc.open();
+    pvDoc.write('<!DOCTYPE html><html><head><meta charset="UTF-8">');
+    pvDoc.write('<style>');
+    pvDoc.write(`
+        html,body { margin:0; padding:0; background:#fff;
+                    font-family:'Malgun Gothic','맑은 고딕',sans-serif; }
+        /* 페이지 사이 구분선(화면 전용) */
+        .sticker-page { box-shadow: 0 0 0 1px #ccc; margin-bottom: 4mm; }
+    `);
+    pvDoc.write(STICKER_CSS);
+    pvDoc.write('</style></head><body>');
+    pvDoc.write(printContainer.innerHTML);   // 인쇄용 원본을 그대로
+    pvDoc.write('</body></html>');
+    pvDoc.close();
+
+    // iframe 높이를 내용에 맞춰 조정 (A4 * 페이지수)
+    previewIframe.onload = () => {
+        try {
+            const body = previewIframe.contentWindow.document.body;
+            previewIframe.style.height = (body.scrollHeight) + 'px';
+        } catch(e){}
+    };
+    // onload가 이미 지난 경우 대비
+    setTimeout(() => {
+        try {
+            const body = previewIframe.contentWindow.document.body;
+            if(body) previewIframe.style.height = (body.scrollHeight) + 'px';
+        } catch(e){}
+    }, 100);
 
     const modalEl = document.getElementById('stickerPrintModal');
     let modal = bootstrap.Modal.getInstance(modalEl);
