@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.8.8</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.9.1</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -230,7 +230,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.8.8</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.9.1</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -284,7 +284,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.8.8 (작업이력 지연로드 — 읽기 사용량 절감)</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.9.1 (긴 프로젝트명 자동 글자축소 — 스티커 잘림 방지)</span></h1>
   <div id="clock"></div>
 </div>
 </div>
@@ -625,7 +625,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.8.8 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.9.1 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
@@ -876,6 +876,14 @@ window.addEventListener('DOMContentLoaded', () => {
               window._logsLoadedOnce = true;
               window.loadLogs();
           }
+      });
+  }
+
+  // [Ver.8.9] 상세보기 모달이 닫히면 z-index를 원래대로 (다음에 일반 위치에서 열릴 때 대비)
+  const detailModalEl = document.getElementById('detailModal');
+  if (detailModalEl) {
+      detailModalEl.addEventListener('hidden.bs.modal', () => {
+          detailModalEl.style.zIndex = '';
       });
   }
 });
@@ -1823,7 +1831,7 @@ window.showStatDetails = function(tr) {
     const isPositive = !isNaN(r.current_stock) && Number(r.current_stock) > 0;
     const rCls = isPositive ? 'in-stock ' + window.stockClass(r.current_stock) : window.stockClass(r.current_stock);
     return `
-    <tr class="${rCls}">
+    <tr class="${rCls}" data-id="${r.id}" ondblclick="window.openDetailModal('${r.id}', true)" title="더블클릭: 상세보기 / 비고수정" style="cursor:pointer;">
       <td class="text-center">${r._rowNum}</td>
       <td>${window.esc(r.project_name)}</td>
       <td>${window.esc(r.equip_group)}</td>
@@ -2272,11 +2280,13 @@ window.confirm_inbound_pending = async function(){
 // [Ver.8.1] 더블클릭 상세보기 — 읽기전용 표시 + 비고만 수정
 // ==========================================================================
 let detailDocId = null;
+let detailFromStat = false;   // [Ver.8.9] statDetailModal 위에 겹쳐 띄웠는지
 
-window.openDetailModal = function(docId){
+window.openDetailModal = function(docId, fromStat=false){
   const r = allInventory.find(x => x.id === docId);
   if(!r){ window.customAlert('장비 정보를 찾을 수 없습니다.', '오류'); return; }
   detailDocId = docId;
+  detailFromStat = fromStat;
 
   const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = (val ?? '') === '' ? '-' : val; };
   set('d-project', r.project_name);
@@ -2294,6 +2304,18 @@ window.openDetailModal = function(docId){
   document.getElementById('d-note').value = r.note || '';
 
   const modalEl = document.getElementById('detailModal');
+  // [Ver.8.9] 상세내역 모달(statDetailModal) 위에 겹쳐 뜰 때는 z-index를 올려
+  //   뒤 모달보다 위로 오게 한다. (Bootstrap 기본 모달은 1055, backdrop 1050)
+  if(fromStat){
+    modalEl.style.zIndex = '1075';
+    // 겹친 backdrop이 앞 모달을 가리지 않도록, 잠시 후 최상단 backdrop의 z-index도 올림
+    setTimeout(()=>{
+      const bds = document.querySelectorAll('.modal-backdrop');
+      if(bds.length) bds[bds.length-1].style.zIndex = '1070';
+    }, 10);
+  } else {
+    modalEl.style.zIndex = '';
+  }
   let modal = bootstrap.Modal.getInstance(modalEl);
   if(!modal) modal = new bootstrap.Modal(modalEl, {backdrop:'static'});
   modal.show();
@@ -2331,9 +2353,42 @@ window.saveDetailNote = async function(){
 
     window.setStatus('✏️ 비고 수정 완료');
     await window.loadInventory(true);
+
+    // [Ver.8.9] P/N 통계 상세내역에서 연 경우, 뒤에 남아있는 상세내역 모달을 최신 데이터로 다시 그린다
+    if(detailFromStat){
+      window.rerenderStatDetail();
+    }
+    detailFromStat = false;
   } catch(e){
     await window.customAlert('비고 저장 오류: ' + e.message, '에러');
   } finally { window.hideLoading(); }
+};
+
+// [Ver.8.9] 상세내역 모달 내용을 최신 allInventory 기준으로 다시 그림 (모달은 그대로 열려있음)
+window.rerenderStatDetail = function(){
+  const pn = window.currentStatPn, name = window.currentStatName;
+  if(pn === undefined && name === undefined) return;
+  const filtered = allInventory.filter(r => (r.part_number||'') === pn && (r.part_name||'') === name);
+  const tbody = document.getElementById('stat-detail-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = filtered.map(r => {
+    const isPositive = !isNaN(r.current_stock) && Number(r.current_stock) > 0;
+    const rCls = isPositive ? 'in-stock ' + window.stockClass(r.current_stock) : window.stockClass(r.current_stock);
+    return `
+    <tr class="${rCls}" data-id="${r.id}" ondblclick="window.openDetailModal('${r.id}', true)" title="더블클릭: 상세보기 / 비고수정" style="cursor:pointer;">
+      <td class="text-center">${r._rowNum}</td>
+      <td>${window.esc(r.project_name)}</td>
+      <td>${window.esc(r.equip_group)}</td>
+      <td>${window.esc(r.part_name)}</td>
+      <td>${window.esc(r.part_number)}</td>
+      <td>${window.esc(r.serial_number)}</td>
+      <td class="text-center">${r.total_qty}</td>
+      <td class="text-center">${r.out_qty}</td>
+      <td class="text-center fw-bold">${r.current_stock}</td>
+      <td>${window.esc(r.inbound_date)}</td>
+      <td>${window.esc(r.outbound_date)}</td>
+      <td>${window.esc(r.note)}</td>
+    </tr>`}).join('');
 };
 
 window.openInventoryModal = function(docId){
@@ -2681,7 +2736,7 @@ const STICKER_CSS = `
     padding: 12px 16px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;   /* [Ver.9.1] 상단부터 채움 (잘림 방지) */
     box-sizing: border-box;
     overflow: hidden;
     height: 100%;
@@ -2692,7 +2747,9 @@ const STICKER_CSS = `
     border-bottom: 2px solid #000;
     margin-bottom: 6px; padding-bottom: 4px;
   }
-  .st-proj  { color: #000; font-weight: bold; font-size: 11.5pt; margin-bottom: 3px; }
+  .st-proj  { color: #000; font-weight: bold; font-size: 11.5pt; margin-bottom: 3px;
+              overflow: hidden; text-overflow: ellipsis;
+              display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.25; }
   .st-group { color: #444; font-weight: bold; font-size: 10.5pt; margin-bottom: 3px; }
   .st-name  {
     font-weight: bold; font-size: 12pt; margin: 6px 0 8px 0; line-height: 1.3;
@@ -2700,6 +2757,19 @@ const STICKER_CSS = `
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   }
   .st-pn, .st-sn { font-family: monospace; font-size: 10.5pt; font-weight: 600; margin-top: 2px; }
+  /* [Ver.9.1] 내용이 길 때 단계별 글자 자동 축소 (스티커 잘림 방지) */
+  .sticker-fit-1 .st-proj { font-size: 10.5pt; }
+  .sticker-fit-1 .st-name { font-size: 11pt; }
+  .sticker-fit-2 .st-title { font-size: 12.5pt; }
+  .sticker-fit-2 .st-proj { font-size: 9.5pt; }
+  .sticker-fit-2 .st-group { font-size: 9.5pt; }
+  .sticker-fit-2 .st-name { font-size: 10pt; margin: 4px 0 5px 0; }
+  .sticker-fit-2 .st-pn, .sticker-fit-2 .st-sn { font-size: 9.5pt; }
+  .sticker-fit-3 .st-title { font-size: 11.5pt; margin-bottom: 4px; padding-bottom: 3px; }
+  .sticker-fit-3 .st-proj { font-size: 8.5pt; -webkit-line-clamp: 2; }
+  .sticker-fit-3 .st-group { font-size: 8.5pt; margin-bottom: 2px; }
+  .sticker-fit-3 .st-name { font-size: 9pt; margin: 3px 0 4px 0; line-height: 1.2; }
+  .sticker-fit-3 .st-pn, .sticker-fit-3 .st-sn { font-size: 8.5pt; }
   /* [Ver.8.0] 마지막 페이지 뒤 백지 1장 방지 */
   .sticker-page:last-child { page-break-after: auto; break-after: auto; }
 `;
@@ -2712,6 +2782,25 @@ const STICKER_CSS = `
   st.textContent = STICKER_CSS;
   document.head.appendChild(st);
 })();
+
+// [Ver.9.1] 실측 기반 자동 축소: 주어진 document의 각 스티커가 세로로 넘치면
+//   sticker-fit 단계를 한 칸씩 올려(글자 축소) 내용이 잘리지 않게 한다.
+//   길이추정 클래스로 대부분 해결되지만, 예외적으로 넘치는 경우의 안전장치.
+window.autoFitStickers = function(targetDoc){
+  const doc = targetDoc || document;
+  const stickers = doc.querySelectorAll('.sticker');
+  stickers.forEach(st => {
+    let guard = 0;
+    // 내용(scrollHeight)이 스티커 높이(clientHeight)를 넘으면 단계 상향
+    while (st.scrollHeight > st.clientHeight + 1 && guard < 3) {
+      if (st.classList.contains('sticker-fit-3')) break;           // 최대 단계 도달
+      else if (st.classList.contains('sticker-fit-2')) { st.classList.remove('sticker-fit-2'); st.classList.add('sticker-fit-3'); }
+      else if (st.classList.contains('sticker-fit-1')) { st.classList.remove('sticker-fit-1'); st.classList.add('sticker-fit-2'); }
+      else st.classList.add('sticker-fit-1');
+      guard++;
+    }
+  });
+};
 
 window.openStickerPreview = async function(tbodyId = 'proj-detail-tbody', optionId = 'bulk-print-option-proj') {
     const sel = window.getSelectedRows(tbodyId);
@@ -2770,6 +2859,14 @@ window.openStickerPreview = async function(tbodyId = 'proj-detail-tbody', option
             `;
             const sticker = document.createElement('div');
             sticker.className = 'sticker';
+            // [Ver.9.1] 프로젝트명+품명 길이에 따라 폰트 자동 축소 단계 클래스 부여.
+            //   내용이 많을수록 sticker-fit-1 → -2 → -3 으로 글자를 줄여 잘림 방지.
+            const projLen = (item.project_name || '').length;
+            const nameLen = (item.part_name || '').length;
+            const contentScore = projLen + nameLen;
+            if (contentScore > 45 || projLen > 28)      sticker.classList.add('sticker-fit-3');
+            else if (contentScore > 32 || projLen > 20) sticker.classList.add('sticker-fit-2');
+            else if (contentScore > 22 || projLen > 14) sticker.classList.add('sticker-fit-1');
             sticker.innerHTML = stickerHTML;
             printPage.appendChild(sticker);
         });
@@ -2786,44 +2883,54 @@ window.openStickerPreview = async function(tbodyId = 'proj-detail-tbody', option
     // --------------------------------------------------------------------
     const previewIframe = document.createElement('iframe');
     previewIframe.className = 'preview-iframe';
-    // A4 실제 크기로 문서를 만들고, iframe 요소만 scale로 줄인다
     previewContainer.appendChild(previewIframe);
 
-    const pvDoc = previewIframe.contentWindow.document;
-    pvDoc.open();
-    pvDoc.write('<!DOCTYPE html><html><head><meta charset="UTF-8">');
-    pvDoc.write('<style>');
-    pvDoc.write(`
-        html,body { margin:0; padding:0; background:#fff;
-                    font-family:'Malgun Gothic','맑은 고딕',sans-serif; }
-        /* 페이지 사이 구분선(화면 전용) */
-        .sticker-page { box-shadow: 0 0 0 1px #ccc; margin-bottom: 4mm; }
-    `);
-    pvDoc.write(STICKER_CSS);
-    pvDoc.write('</style></head><body>');
-    pvDoc.write(printContainer.innerHTML);   // 인쇄용 원본을 그대로
-    pvDoc.write('</body></html>');
-    pvDoc.close();
-
-    // iframe 높이를 내용에 맞춰 조정 (A4 * 페이지수)
-    previewIframe.onload = () => {
-        try {
+    // ── [Ver.9.0] 백지 미리보기 수정 ────────────────────────────────────
+    //   이전: 모달이 아직 display:none 인 상태에서 iframe에 내용을 write 했다.
+    //         display:none 컨테이너의 iframe은 contentDocument가 비어버려
+    //         모달을 연 뒤 회색 백지로 보였다. (실제 인쇄는 별도 iframe이라 정상)
+    //   지금: 모달을 "먼저 표시(shown.bs.modal)"한 뒤에 iframe 문서를 write 한다.
+    // --------------------------------------------------------------------
+    const renderPreviewDoc = () => {
+        const pvDoc = previewIframe.contentWindow.document;
+        pvDoc.open();
+        pvDoc.write('<!DOCTYPE html><html><head><meta charset="UTF-8">');
+        pvDoc.write('<style>');
+        pvDoc.write(`
+            html,body { margin:0; padding:0; background:#fff;
+                        font-family:'Malgun Gothic','맑은 고딕',sans-serif; }
+            .sticker-page { box-shadow: 0 0 0 1px #ccc; margin-bottom: 4mm; }
+        `);
+        pvDoc.write(STICKER_CSS);
+        pvDoc.write('</style></head><body>');
+        pvDoc.write(printContainer.innerHTML);   // 인쇄용 원본을 그대로
+        pvDoc.write('</body></html>');
+        pvDoc.close();
+        // [Ver.9.1] 실측 안전장치: 길이추정으로도 넘치는 스티커는 한 단계 더 축소
+        try { window.autoFitStickers(pvDoc); } catch(e){}
+        // 내용에 맞춰 iframe 높이 조정 (여러 번 시도 — 폰트 로딩 반영)
+        const fit = () => { try {
             const body = previewIframe.contentWindow.document.body;
-            previewIframe.style.height = (body.scrollHeight) + 'px';
-        } catch(e){}
+            if(body && body.scrollHeight) previewIframe.style.height = body.scrollHeight + 'px';
+        } catch(e){} };
+        fit(); setTimeout(fit, 120); setTimeout(fit, 400);
     };
-    // onload가 이미 지난 경우 대비
-    setTimeout(() => {
-        try {
-            const body = previewIframe.contentWindow.document.body;
-            if(body) previewIframe.style.height = (body.scrollHeight) + 'px';
-        } catch(e){}
-    }, 100);
 
     const modalEl = document.getElementById('stickerPrintModal');
     let modal = bootstrap.Modal.getInstance(modalEl);
     if (!modal) modal = new bootstrap.Modal(modalEl, {backdrop: 'static'});
+
+    // 모달이 완전히 표시된 뒤 iframe 문서를 렌더 (한 번만)
+    modalEl.addEventListener('shown.bs.modal', renderPreviewDoc, { once: true });
     modal.show();
+
+    // 혹시 shown 이벤트가 안 오는 환경 대비 (이미 열려있는 경우 등) 보조 트리거
+    setTimeout(() => {
+        try {
+            const pv = previewIframe.contentWindow.document;
+            if(!pv || !pv.body || pv.body.children.length === 0) renderPreviewDoc();
+        } catch(e){ renderPreviewDoc(); }
+    }, 350);
 };
 
 window.executeStickerPrint = function() {
@@ -2858,6 +2965,8 @@ window.executeStickerPrint = function() {
         // 인쇄가 끝나면(또는 취소하면) iframe 제거
         win.onafterprint = cleanup;
         setTimeout(function() {
+            // [Ver.9.1] 인쇄 직전, 넘치는 스티커 자동 축소 (미리보기와 동일 처리)
+            try { window.autoFitStickers(win.document); } catch(e){}
             win.focus();
             win.print();
             // onafterprint를 지원하지 않는 환경 대비 안전망 (넉넉히 대기)
