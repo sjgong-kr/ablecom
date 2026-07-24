@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.9.3</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.9.4</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -230,7 +230,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.9.3</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.9.4</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -284,7 +284,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.9.3 (상세모달 회색 멈춤 수정 — 중복호출 방지 + backdrop 자동정리)</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.9.4 (모달 근본수정 + 사용가능/불가 관리)</span></h1>
   <div id="clock"></div>
 </div>
 </div>
@@ -389,6 +389,9 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
           <button class="btn btn-sm btn-nokia" onclick="window.openInventoryModal(null)">✨ 재고 수동 입력</button>
           <button class="btn btn-sm btn-outline-info" onclick="window.editSelectedInv()">✏️ 선택 재고 변경</button>
           <button class="btn btn-sm btn-outline-danger" onclick="window.delete_inventory()">🗑️ 선택 재고 삭제</button>
+          <span class="border-start ps-2 ms-1"></span>
+          <button class="btn btn-sm btn-success" onclick="window.bulkSetUsable(true)" title="선택한 장비를 사용가능으로 일괄 설정">⭕ 사용가능</button>
+          <button class="btn btn-sm btn-danger" onclick="window.bulkSetUsable(false)" title="선택한 장비를 사용불가로 일괄 설정">❌ 사용불가</button>
         </div>
       </div>
       <div class="tbl-wrap" style="max-height: 600px;">
@@ -424,6 +427,10 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
         <span>🔍 P/N·품명 검색:</span>
         <input type="text" id="search-stats" class="form-control form-control-sm" placeholder="검색어 입력 후 Enter" style="width:250px" onkeydown="if(event.key==='Enter') window.renderStatsTable()">
         <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('search-stats').value='';window.renderStatsTable()">✕ 초기화</button>
+        <div class="form-check ms-2 mb-0">
+          <input class="form-check-input" type="checkbox" id="stats-only-unusable" onchange="window.renderStatsTable()">
+          <label class="form-check-label small fw-bold text-danger" for="stats-only-unusable">❌ 사용불가 있는 항목만</label>
+        </div>
       </div>
       <div class="tbl-wrap" style="max-height: 600px;">
         <table class="inv-table" id="tbl-stats">
@@ -434,6 +441,8 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
             <th class="filter-header" onclick="window.openFilterPopup(event, 'stats', 'ti', '총 입고')" style="width:100px;">총 입고 <i class="bi bi-filter filter-icon" id="fs-ti"></i></th>
             <th class="filter-header" onclick="window.openFilterPopup(event, 'stats', 'to', '총 출고')" style="width:100px;">총 출고 <i class="bi bi-filter filter-icon" id="fs-to"></i></th>
             <th class="filter-header" onclick="window.openFilterPopup(event, 'stats', 'ts', '총 현재고')" style="width:100px;">총 현재고 <i class="bi bi-filter filter-icon" id="fs-ts"></i></th>
+            <th style="width:110px; background:#1e7d45;" title="사용가능(O) 장비의 현재고 합계">⭕ 사용가능</th>
+            <th style="width:110px; background:#a33;" title="사용불가(X) 장비의 현재고 합계">❌ 사용불가</th>
           </tr></thead>
           <tbody id="stats-tbody"></tbody>
         </table>
@@ -625,7 +634,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.9.3 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.9.4 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
@@ -671,7 +680,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 </div>
 
 <!-- [Ver.8.1] 더블클릭 상세보기 모달 (읽기전용 + 비고만 수정) -->
-<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header" style="background:#1a6ea8;">
@@ -692,15 +701,29 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
           <div class="col-4"><label class="form-label small mb-1 text-muted">입고일자</label><input type="text" id="d-indate" class="form-control form-control-sm" readonly></div>
           <div class="col-12"><label class="form-label small mb-1 text-muted">출고일자</label><input type="text" id="d-outdate" class="form-control form-control-sm" readonly></div>
           <div class="col-12">
+            <label class="form-label small mb-1 fw-bold text-success">🔧 사용 상태 (수정 가능)</label>
+            <div class="d-flex gap-3 align-items-center p-2" style="background:#f2fbf5; border:1px solid #9ddfb5; border-radius:6px;">
+              <div class="form-check mb-0">
+                <input class="form-check-input" type="radio" name="d-usable" id="d-usable-o" value="O">
+                <label class="form-check-label fw-bold text-success" for="d-usable-o">⭕ 사용가능</label>
+              </div>
+              <div class="form-check mb-0">
+                <input class="form-check-input" type="radio" name="d-usable" id="d-usable-x" value="X">
+                <label class="form-check-label fw-bold text-danger" for="d-usable-x">❌ 사용불가</label>
+              </div>
+              <span class="text-muted small ms-auto">※ 사유는 아래 비고에 기록해 주세요.</span>
+            </div>
+          </div>
+          <div class="col-12">
             <label class="form-label small mb-1 fw-bold text-primary">✏️ 비고 (수정 가능)</label>
             <textarea id="d-note" class="form-control form-control-sm" rows="4" style="background:#fffdf5; border:1px solid #f0c040;"></textarea>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <span class="text-muted small me-auto">💡 회색 칸은 읽기 전용입니다. 노란 비고칸만 수정됩니다.</span>
+        <span class="text-muted small me-auto">💡 회색 칸은 읽기 전용입니다. 사용상태와 비고만 수정됩니다.</span>
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">닫기</button>
-        <button type="button" class="btn btn-primary btn-sm" onclick="window.saveDetailNote()">💾 비고 저장</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="window.saveDetailNote()">💾 저장</button>
       </div>
     </div>
   </div>
@@ -919,6 +942,18 @@ window.addEventListener('DOMContentLoaded', () => {
           window.cleanupModalBackdrops();
       }
   });
+
+  // [Ver.9.4][D] 자동 감시: 1.5초마다 "열린 모달은 없는데 회색 막만 남은" 상태를
+  //   발견하면 스스로 정리한다. 어떤 경로로 멈추든 최대 1.5초 안에 자동 복구된다.
+  setInterval(() => {
+      const hasBackdrop = document.querySelector('.modal-backdrop');
+      const hasOpenModal = document.querySelector('.modal.show');
+      const opening = Object.values(window._modalOpening || {}).some(v => v);
+      if (hasBackdrop && !hasOpenModal && !opening) {
+          window.cleanupModalBackdrops();
+          console.warn('[모달 감시] 잔류 backdrop을 자동 정리했습니다.');
+      }
+  }, 1500);
 });
 </script>
 
@@ -1003,8 +1038,7 @@ window.customAlert = function(msg, title="알림") {
         document.getElementById('customDialogCancelBtn').style.display = 'none';
         
         const modalEl = document.getElementById('customDialogModal');
-        let modal = bootstrap.Modal.getInstance(modalEl);
-        if (!modal) modal = new bootstrap.Modal(modalEl, {backdrop: 'static', keyboard: false});
+        const modal = window.getModal(modalEl, {backdrop: 'static', keyboard: false});
         
         document.getElementById('customDialogConfirmBtn').onclick = () => {
             window._dialogBusy = true;   // [Ver.8.5] 닫히는 중 표시
@@ -1025,8 +1059,7 @@ window.customConfirm = function(msg, title="확인") {
         document.getElementById('customDialogCancelBtn').style.display = 'inline-block';
         
         const modalEl = document.getElementById('customDialogModal');
-        let modal = bootstrap.Modal.getInstance(modalEl);
-        if (!modal) modal = new bootstrap.Modal(modalEl, {backdrop: 'static', keyboard: false});
+        const modal = window.getModal(modalEl, {backdrop: 'static', keyboard: false});
         
         document.getElementById('customDialogConfirmBtn').onclick = () => {
             window._dialogBusy = true;
@@ -1055,8 +1088,7 @@ window.customPrompt = function(msg, defaultVal="", title="입력") {
         document.getElementById('customDialogCancelBtn').style.display = 'inline-block';
         
         const modalEl = document.getElementById('customDialogModal');
-        let modal = bootstrap.Modal.getInstance(modalEl);
-        if (!modal) modal = new bootstrap.Modal(modalEl, {backdrop: 'static', keyboard: false});
+        const modal = window.getModal(modalEl, {backdrop: 'static', keyboard: false});
         
         document.getElementById('customDialogConfirmBtn').onclick = () => {
             window._dialogBusy = true;
@@ -1113,9 +1145,50 @@ window.getLogTime = function() {
 
 window.esc = function(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+// ==========================================================================
+// [Ver.9.4] 모달 공통 관리 — 회색 멈춤(backdrop 잔류) 근본 차단
+//   [A] 인스턴스 싱글턴: 모달 DOM 1개당 Bootstrap 인스턴스 1개만 만들어 재사용.
+//       (이전엔 getInstance가 null이면 new 를 또 만들어 backdrop 관리가 꼬였다)
+//   [C] 자체 열림 플래그: Bootstrap의 .show 클래스는 애니메이션(약 300ms) 후에
+//       붙으므로, 그 사이 재호출을 막지 못했다. 자체 플래그로 즉시 차단한다.
+// ==========================================================================
+window._modalOpening = {};   // id별 "여는 중" 플래그
+
+window.getModal = function(idOrEl, opts){
+  const el = (typeof idOrEl === 'string') ? document.getElementById(idOrEl) : idOrEl;
+  if(!el) return null;
+  let inst = bootstrap.Modal.getInstance(el);
+  if(!inst) inst = new bootstrap.Modal(el, opts || {});
+  return inst;
+};
+
+// 모달을 안전하게 연다. 이미 열려있거나 여는 중이면 false를 반환(중복 차단).
+window.openModalSafe = function(idOrEl, opts){
+  const el = (typeof idOrEl === 'string') ? document.getElementById(idOrEl) : idOrEl;
+  if(!el) return false;
+  const id = el.id || 'anon';
+  if(el.classList.contains('show') || window._modalOpening[id]) return false;   // [C]
+  window._modalOpening[id] = true;
+  const inst = window.getModal(el, opts);
+  // shown/hidden 시 플래그 해제 (once 아님 — 매번 갱신)
+  const clear = () => { window._modalOpening[id] = false; };
+  el.addEventListener('shown.bs.modal', clear, { once: true });
+  el.addEventListener('hidden.bs.modal', clear, { once: true });
+  setTimeout(clear, 1000);   // 이벤트 유실 대비 안전장치
+  inst.show();
+  return true;
+};
+
 // [Ver.8.0] S/N 유효성 판정을 한 곳으로 통일 (undefined/null 안전 처리)
 //   이전에는 String(item.serial_number)가 undefined → "undefined" 문자열이 되어
 //   "S/N 있음"으로 잘못 판정, 스티커에 그대로 "undefined"가 찍혔다.
+// [Ver.9.4] 사용가능 여부 판정.
+//   usable 필드가 없는 "기존 장비"는 자동으로 사용가능(O)으로 본다.
+//   → 기존 데이터를 일괄 수정할 필요 없이 바로 적용된다 (Firestore 쓰기 0회).
+window.isUsable = function(item){
+  return item && item.usable !== false;
+};
+
 window.hasSerial = function(sn){
   const c = String(sn ?? '').trim().toLowerCase();
   return c !== '' && c !== 'none' && c !== 'nsn' && c !== 'n/a' && c !== 'undefined' && c !== 'null';
@@ -1523,10 +1596,14 @@ window.renderInventoryTable = function(){
       const isPositive = !isNaN(stock) && Number(stock) > 0;
       const rCls = isPositive ? 'in-stock ' + window.stockClass(r.current_stock) : window.stockClass(r.current_stock);
         
+      // [Ver.9.4] 사용불가 장비는 배지로 표시하고 살짝 흐리게
+      const _usable = window.isUsable(r);
+      const _uBadge = _usable ? '' : '<span class="badge bg-danger ms-1" style="font-size:9px;">사용불가</span>';
+      const _uStyle = _usable ? '' : 'opacity:.72;';
       return `
-      <tr class="${rCls}" data-id="${r.id}" onclick="window.rowClick(this)" ondblclick="window.openDetailModal('${r.id}')" title="더블클릭: 상세보기 / 비고수정" style="cursor:pointer;">
+      <tr class="${rCls}" data-id="${r.id}" onclick="window.rowClick(this)" ondblclick="window.openDetailModal('${r.id}')" title="더블클릭: 상세보기 / 비고수정" style="cursor:pointer;${_uStyle}">
         <td class="text-center"><input type="checkbox" class="form-check-input row-chk" onclick="event.stopPropagation(); window.rowClick(this.closest('tr'))"></td>
-        <td class="text-center">${r._rowNum}</td>
+        <td class="text-center">${r._rowNum}${_uBadge}</td>
         <td>${window.esc(r.project_name)}</td>
         <td>${window.esc(r.vendor)}</td>
         <td>${window.esc(r.equip_group)}</td>
@@ -1551,14 +1628,21 @@ window.renderStatsTable = function(){
       if(q && !pnStr.includes(q) && !nameStr.includes(q)) return;
 
       const k=(r.part_number||'')+'|'+(r.part_name||'');
-      if(!map[k]) map[k]={equip_group:r.equip_group||'',part_name:r.part_name||'',part_number:r.part_number||'',ti:0,to:0,ts:0};
+      if(!map[k]) map[k]={equip_group:r.equip_group||'',part_name:r.part_name||'',part_number:r.part_number||'',ti:0,to:0,ts:0,uo:0,ux:0};
       map[k].ti+=+r.total_qty||0;
       map[k].to+=+r.out_qty||0;
       map[k].ts+=+r.current_stock||0;
+      // [Ver.9.4] 현재고 기준으로 사용가능(uo) / 사용불가(ux) 재고를 나눠 집계
+      const cs = +r.current_stock||0;
+      if(window.isUsable(r)) map[k].uo += cs; else map[k].ux += cs;
     });
 
     let items = Object.values(map);
     
+    // [Ver.9.4] '사용불가 있는 항목만' 체크 시 ux>0 인 것만 표시
+    const onlyUnusable = document.getElementById('stats-only-unusable')?.checked;
+    if(onlyUnusable) items = items.filter(r => (r.ux||0) > 0);
+
     items = items.filter(r => {
         for (let key in window.activeFilters['stats']) {
             let activeSet = window.activeFilters['stats'][key];
@@ -1609,6 +1693,8 @@ window.renderStatsTable = function(){
         <td>${window.esc(s.equip_group)}</td><td>${window.esc(s.part_name)}</td><td>${window.esc(s.part_number)}</td>
         <td class="text-center">${s.ti}</td><td class="text-center">${s.to}</td>
         <td class="text-center fw-bold">${s.ts}</td>
+        <td class="text-center fw-bold" style="color:#198754;">${s.uo}</td>
+        <td class="text-center fw-bold" style="color:${s.ux>0?'#dc3545':'#aaa'};">${s.ux}</td>
       </tr>`}).join('');
   } catch(e) { console.error("renderStatsTable error", e); }
 };
@@ -1880,9 +1966,7 @@ window.showStatDetails = function(tr) {
     </tr>`}).join('');
   
   const modalEl = document.getElementById('statDetailModal');
-  let modal = bootstrap.Modal.getInstance(modalEl);
-  if(!modal) modal = new bootstrap.Modal(modalEl);
-  modal.show();
+  window.openModalSafe(modalEl);
 };
 
 window.exportStatDetailExcel = async function() {
@@ -2316,11 +2400,9 @@ let detailDocId = null;
 let detailSource = '';   // [Ver.9.2] 어디서 열었는지: '' | 'stat'(P/N통계 상세) | 'proj'(프로젝트 상세)
 
 window.openDetailModal = function(docId, source=''){
-  // [Ver.9.3] 중복 호출 방지: 이미 상세 모달이 열려있으면 무시한다.
-  //   더블클릭은 click 2회 뒤에 발생하므로, 빠른 연타 시 이 함수가 여러 번 불려
-  //   Bootstrap이 backdrop을 중복 생성/미정리하여 화면이 회색으로 멈추는 일이 있었다.
+  // [Ver.9.4] 중복 열기는 openModalSafe()가 차단한다(애니메이션 중 재호출 포함).
   const _dm = document.getElementById('detailModal');
-  if(_dm && _dm.classList.contains('show')) return;
+  if(_dm && (_dm.classList.contains('show') || window._modalOpening['detailModal'])) return;
 
   const r = allInventory.find(x => x.id === docId);
   if(!r){ window.customAlert('장비 정보를 찾을 수 없습니다.', '오류'); return; }
@@ -2339,6 +2421,12 @@ window.openDetailModal = function(docId, source=''){
   set('d-out',     r.out_qty);
   set('d-indate',  r.inbound_date);
   set('d-outdate', r.outbound_date);
+  // [Ver.9.4] 사용 상태 라디오 세팅 (usable 없으면 사용가능으로 간주)
+  const usable = window.isUsable(r);
+  const ro = document.getElementById('d-usable-o'), rx = document.getElementById('d-usable-x');
+  if(ro) ro.checked = usable;
+  if(rx) rx.checked = !usable;
+
   // 비고는 실제 값 그대로 (편집 대상)
   document.getElementById('d-note').value = r.note || '';
 
@@ -2354,9 +2442,7 @@ window.openDetailModal = function(docId, source=''){
   } else {
     modalEl.style.zIndex = '';
   }
-  let modal = bootstrap.Modal.getInstance(modalEl);
-  if(!modal) modal = new bootstrap.Modal(modalEl, {backdrop:'static'});
-  modal.show();
+  window.openModalSafe(modalEl);
 };
 
 window.saveDetailNote = async function(){
@@ -2366,30 +2452,47 @@ window.saveDetailNote = async function(){
 
   const newNote = document.getElementById('d-note').value;
   const oldNote = r.note || '';
-  if(newNote === oldNote){
-    await window.customAlert('비고 내용이 변경되지 않았습니다.', '알림');
+  // [Ver.9.4] 사용 상태도 함께 확인
+  const newUsable = document.getElementById('d-usable-o')?.checked !== false ? true : false;
+  const oldUsable = window.isUsable(r);
+  const noteChanged = (newNote !== oldNote);
+  const usableChanged = (newUsable !== oldUsable);
+
+  if(!noteChanged && !usableChanged){
+    await window.customAlert('변경된 내용이 없습니다.', '알림');
     return;
   }
 
-  window.showLoading('비고 저장 중...');
+  window.showLoading('저장 중...');
   try {
     const ts = window.getLogTime();
-    // 비고만 수정 (다른 필드는 건드리지 않음)
-    await updateDoc(doc(db,'Nokia_Equipment','data','equipment',String(detailDocId)), { note: newNote });
-    // [Ver.8.4] 변경 전/후를 별도 필드로 저장 → 이력에서 "이전 → 이후" 표시 가능
-    await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
-      ref_equip_id: String(detailDocId), action_type: '비고수정', qty_changed: 0,
-      note: `비고 수정 (상세보기)`,
-      note_before: oldNote,
-      note_after: newNote,
-      timestamp: ts
-    });
+    // 비고 / 사용상태만 수정 (다른 필드는 건드리지 않음)
+    const payload = {};
+    if(noteChanged)   payload.note = newNote;
+    if(usableChanged) payload.usable = newUsable;
+    await updateDoc(doc(db,'Nokia_Equipment','data','equipment',String(detailDocId)), payload);
+
+    // 이력 기록: 비고 변경 / 사용상태 변경 각각
+    if(noteChanged){
+      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
+        ref_equip_id: String(detailDocId), action_type: '비고수정', qty_changed: 0,
+        note: `비고 수정 (상세보기)`,
+        note_before: oldNote, note_after: newNote, timestamp: ts
+      });
+    }
+    if(usableChanged){
+      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
+        ref_equip_id: String(detailDocId), action_type: '사용상태변경', qty_changed: 0,
+        note: `사용 상태: ${oldUsable ? '사용가능(O)' : '사용불가(X)'} ➔ ${newUsable ? '사용가능(O)' : '사용불가(X)'}`,
+        timestamp: ts
+      });
+    }
 
     const modalEl = document.getElementById('detailModal');
     const modal = bootstrap.Modal.getInstance(modalEl);
     if(modal) modal.hide();
 
-    window.setStatus('✏️ 비고 수정 완료');
+    window.setStatus('✏️ 저장 완료');
     await window.loadInventory(true);
 
     // [Ver.9.2] 출처에 맞춰 뒤 화면을 최신 데이터로 갱신
@@ -2490,15 +2593,61 @@ window.openInventoryModal = function(docId){
   }
   
   const modalEl = document.getElementById('invModal');
-  let modal = bootstrap.Modal.getInstance(modalEl);
-  if (!modal) modal = new bootstrap.Modal(modalEl, {backdrop: 'static'});
-  modal.show();
+  window.openModalSafe(modalEl);
 };
 
 window.editSelectedInv = async function(){
   const sel = window.getSelectedRows('inv-tbody');
   if(!sel.length){ await window.customAlert('수정할 행을 선택해주세요.', '선택 오류'); return; }
   window.openInventoryModal(sel[0].dataset.id);
+};
+
+// ==========================================================================
+// [Ver.9.4] 선택한 장비들의 사용가능/불가를 일괄 설정 (writeBatch)
+// ==========================================================================
+window.bulkSetUsable = async function(usable){
+  const sel = window.getSelectedRows('inv-tbody');
+  if(!sel.length){ await window.customAlert('먼저 대상 장비를 체크해주세요.', '선택 오류'); return; }
+
+  const label = usable ? '사용가능(⭕)' : '사용불가(❌)';
+  const ok = await window.customConfirm(
+    `선택한 ${sel.length}건을 [${label}] 상태로 일괄 변경합니다.\n\n계속하시겠습니까?`,
+    '사용 상태 일괄 변경'
+  );
+  if(!ok) return;
+
+  window.showLoading('사용 상태 변경 중...');
+  try {
+    const ts = window.getLogTime();
+    const logsCol = collection(db,'Nokia_Equipment','data','daily_logs');
+    let batch = writeBatch(db);
+    let opCount = 0, changed = 0;
+
+    for(const tr of sel){
+      const id = tr.dataset.id;
+      const item = allInventory.find(x => x.id === id);
+      if(!item) continue;
+      if(window.isUsable(item) === usable) continue;   // 이미 같은 상태면 건너뜀(쓰기 절약)
+
+      if(opCount + 2 > 450){ await batch.commit(); batch = writeBatch(db); opCount = 0; }
+
+      batch.update(doc(db,'Nokia_Equipment','data','equipment',String(id)), { usable: usable });
+      batch.set(doc(logsCol), {
+        ref_equip_id: String(id), action_type: '사용상태변경', qty_changed: 0,
+        note: `사용 상태 일괄변경 ➔ ${label}`, timestamp: ts
+      });
+      opCount += 2; changed++;
+    }
+    if(opCount > 0) await batch.commit();
+
+    window.setStatus(`🔧 사용 상태 변경 완료 — ${changed}건 (${label})`);
+    await window.loadInventory(true);
+    await window.customAlert(
+      changed > 0 ? `${changed}건을 [${label}]로 변경했습니다.`
+                  : '변경할 항목이 없습니다. (이미 모두 같은 상태입니다)', '완료');
+  } catch(e){
+    await window.customAlert('사용 상태 변경 오류: ' + e.message, '에러');
+  } finally { window.hideLoading(); }
 };
 
 window.delete_inventory = async function(){
@@ -2650,9 +2799,7 @@ window.openBulkCheckoutWindow = async function() {
     if(!checkoutItems.length){ await window.customAlert('현재고가 남아있는 장비가 없습니다.', '알림'); return; }
     
     const modalEl = document.getElementById('checkoutModal');
-    let modal = bootstrap.Modal.getInstance(modalEl);
-    if (!modal) modal = new bootstrap.Modal(modalEl, {backdrop: 'static'});
-    modal.show();
+    window.openModalSafe(modalEl);
 };
 
 window.applyCheckoutQty = async function(){
@@ -2962,12 +3109,9 @@ window.openStickerPreview = async function(tbodyId = 'proj-detail-tbody', option
     };
 
     const modalEl = document.getElementById('stickerPrintModal');
-    let modal = bootstrap.Modal.getInstance(modalEl);
-    if (!modal) modal = new bootstrap.Modal(modalEl, {backdrop: 'static'});
-
     // 모달이 완전히 표시된 뒤 iframe 문서를 렌더 (한 번만)
     modalEl.addEventListener('shown.bs.modal', renderPreviewDoc, { once: true });
-    modal.show();
+    window.openModalSafe(modalEl, {backdrop: 'static'});
 
     // 혹시 shown 이벤트가 안 오는 환경 대비 (이미 열려있는 경우 등) 보조 트리거
     setTimeout(() => {
@@ -3047,10 +3191,7 @@ window.askDupMode = function(){
   return new Promise(resolve=>{
     dupResolve = resolve;
     document.querySelectorAll('input[name="dupMode"]').forEach(r=>r.checked=r.value==='skip');
-    const modalEl = document.getElementById('dupModal');
-    let modal = bootstrap.Modal.getInstance(modalEl);
-    if(!modal) modal = new bootstrap.Modal(modalEl, {backdrop: 'static'});
-    modal.show();
+    window.openModalSafe('dupModal', {backdrop: 'static'});
   });
 };
 window.dupConfirm = function(){
