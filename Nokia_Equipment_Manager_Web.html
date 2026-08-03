@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.9.4</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.9.6</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -230,7 +230,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.9.4</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.9.6</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -284,8 +284,12 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.9.4 (모달 근본수정 + 사용가능/불가 관리)</span></h1>
-  <div id="clock"></div>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.9.6 (프로젝트 상세 표시 오류 수정)</span></h1>
+  <div class="d-flex align-items-center gap-2">
+    <span id="current-user-badge" class="text-white small fw-bold"></span>
+    <button class="btn btn-sm btn-outline-light py-0 px-2" style="font-size:11px;" onclick="window.doLogout()">로그아웃</button>
+    <div id="clock"></div>
+  </div>
 </div>
 </div>
 
@@ -298,6 +302,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-logs">🕒 작업 이력(타임라인)</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-master">🏷️ 제품명 마스터 관리</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-data">⚙️ 엑셀 데이터 관리</a></li>
+  <li class="nav-item admin-only" style="display:none;"><a class="nav-link" data-bs-toggle="tab" href="#tab-users">👤 계정 관리</a></li>
 </ul>
 
 <div class="tab-content" id="mainTabContent">
@@ -409,6 +414,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
               <th class="filter-header" onclick="window.openFilterPopup(event, 'inv', 'total_qty', '총수량')" style="width:60px;">총수량 <i class="bi bi-filter filter-icon" id="fi-total_qty"></i></th>
               <th class="filter-header" onclick="window.openFilterPopup(event, 'inv', 'out_qty', '출고')" style="width:60px;">출고 <i class="bi bi-filter filter-icon" id="fi-out_qty"></i></th>
               <th class="filter-header" onclick="window.openFilterPopup(event, 'inv', 'current_stock', '현재고')" style="width:60px;">현재고 <i class="bi bi-filter filter-icon" id="fi-current_stock"></i></th>
+              <th class="filter-header" onclick="window.openFilterPopup(event, 'inv', 'usable_label', '사용상태')" style="width:95px;">사용상태 <i class="bi bi-filter filter-icon" id="fi-usable_label"></i></th>
               <th class="filter-header" onclick="window.openFilterPopup(event, 'inv', 'inbound_date', '입고일자')" style="width:90px;">입고일자 <i class="bi bi-filter filter-icon" id="fi-inbound_date"></i></th>
               <th class="filter-header" onclick="window.openFilterPopup(event, 'inv', 'outbound_date', '출고일자')" style="width:90px;">출고일자 <i class="bi bi-filter filter-icon" id="fi-outbound_date"></i></th>
               <th class="filter-header" onclick="window.openFilterPopup(event, 'inv', 'note', '비고')" style="width:250px;">비고 <i class="bi bi-filter filter-icon" id="fi-note"></i></th>
@@ -496,6 +502,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
                 <th class="filter-header" onclick="window.openFilterPopup(event, 'proj', 'total_qty', '총수량')" style="width:60px;">총수량 <i class="bi bi-filter filter-icon" id="fp-total_qty"></i></th>
                 <th class="filter-header" onclick="window.openFilterPopup(event, 'proj', 'out_qty', '출고')" style="width:60px;">출고 <i class="bi bi-filter filter-icon" id="fp-out_qty"></i></th>
                 <th class="filter-header" onclick="window.openFilterPopup(event, 'proj', 'current_stock', '현재고')" style="width:60px;">현재고 <i class="bi bi-filter filter-icon" id="fp-current_stock"></i></th>
+                <th class="filter-header" onclick="window.openFilterPopup(event, 'proj', 'usable_label', '사용상태')" style="width:95px;">사용상태 <i class="bi bi-filter filter-icon" id="fp-usable_label"></i></th>
                 <th class="filter-header" onclick="window.openFilterPopup(event, 'proj', 'inbound_date', '입고일자')" style="width:90px;">입고일자 <i class="bi bi-filter filter-icon" id="fp-inbound_date"></i></th>
                 <th class="filter-header" onclick="window.openFilterPopup(event, 'proj', 'outbound_date', '출고일자')" style="width:90px;">출고일자 <i class="bi bi-filter filter-icon" id="fp-outbound_date"></i></th>
                 <th class="filter-header" onclick="window.openFilterPopup(event, 'proj', 'note', '비고')" style="width:250px;">비고 <i class="bi bi-filter filter-icon" id="fp-note"></i></th>
@@ -519,7 +526,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   </div>
   <div class="tbl-wrap" style="max-height: 600px;">
     <table class="inv-table" id="tbl-logs">
-      <thead><tr><th>시간</th><th>구분</th><th>프로젝트</th><th>장비명 (P/N · S/N)</th><th>수량</th><th>상세내용</th></tr></thead>
+      <thead><tr><th>시간</th><th>작업자</th><th>구분</th><th>프로젝트</th><th>장비명 (P/N · S/N)</th><th>수량</th><th>상세내용</th></tr></thead>
       <tbody id="logs-tbody"><tr><td colspan="6" class="text-center text-secondary py-4">🔄 '이력 새로고침'을 누르면 최근 작업 이력을 불러옵니다.</td></tr></tbody>
     </table>
   </div>
@@ -627,6 +634,59 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   </div>
 </div>
 
+<!-- ══════════════════ 탭6: 계정 관리 (관리자 전용) ══════════════════ -->
+<div class="tab-pane fade" id="tab-users">
+  <div class="alert alert-warning py-2 small mb-2">
+    <b>⚠️ 참고</b> — 이 계정 기능은 <b>작업자 구분 및 이력 추적</b>을 위한 것입니다.
+    브라우저에서 실행되는 앱 특성상 비밀번호가 완전히 감춰지지는 않으므로, 중요한 비밀번호는 사용하지 마세요.
+  </div>
+  <div class="row g-3">
+    <div class="col-12 col-md-5">
+      <fieldset class="section-box h-100">
+        <legend>➕ 계정 추가 / 수정</legend>
+        <div class="mb-2">
+          <label class="form-label small mb-1">아이디</label>
+          <input type="text" id="u-id" class="form-control form-control-sm" placeholder="로그인 ID">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small mb-1">비밀번호</label>
+          <input type="text" id="u-pw" class="form-control form-control-sm" placeholder="비밀번호">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small mb-1">표시 이름</label>
+          <input type="text" id="u-name" class="form-control form-control-sm" placeholder="예: 홍길동 / 창고팀">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small mb-1">권한</label>
+          <select id="u-role" class="form-select form-select-sm">
+            <option value="user">일반 사용자</option>
+            <option value="admin">관리자 (계정 관리 가능)</option>
+          </select>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-nokia btn-sm flex-grow-1" onclick="window.saveUser()">💾 저장 (추가/수정)</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="window.clearUserForm()">↺ 초기화</button>
+        </div>
+        <div class="form-text small mt-2">※ 이미 있는 아이디를 입력하면 해당 계정이 <b>수정</b>됩니다.</div>
+      </fieldset>
+    </div>
+    <div class="col-12 col-md-7">
+      <fieldset class="section-box h-100">
+        <legend>👥 계정 목록</legend>
+        <div class="tbl-wrap" style="max-height:420px;">
+          <table class="inv-table" id="tbl-users">
+            <thead><tr><th style="width:130px;">아이디</th><th style="width:120px;">비밀번호</th><th>표시 이름</th><th style="width:90px;">권한</th><th style="width:120px;">관리</th></tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+        <div class="mt-2 text-secondary" style="font-size:11px;">
+          ※ <b>기본 계정</b>(admin, ablecom)은 코드에 내장되어 있어 삭제할 수 없습니다. 비밀번호 변경은 가능합니다.
+        </div>
+      </fieldset>
+    </div>
+  </div>
+</div>
+
 </div><!-- /tab-content -->
 </div><!-- /main-wrap -->
 
@@ -634,7 +694,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.9.4 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.9.6 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
@@ -835,15 +895,45 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 
 <script>
 // UI/로그인 및 기초 함수 설정
-const _AUTH = { id: 'ablecom', pw: 'Root+123' };
-const SESSION_KEY = 'nokia_inv_auth';
+// ==========================================================================
+// [Ver.9.5] 다중 계정 로그인
+//   - 기본 계정(아래 _DEFAULT_USERS)은 코드에 내장 — Firestore 접속 전에도 로그인 가능
+//   - 추가 계정은 Firestore(Nokia_Equipment/data/settings/users)에 저장되며,
+//     로그인 성공 후 불러와 다음 로그인부터 사용된다.
+//   ⚠️ 주의: 브라우저에서 도는 앱이므로 비밀번호는 소스/DB에서 읽힐 수 있습니다.
+//      이 기능은 "작업자 구분 및 이력 추적"용이며, 외부 침입을 막는 보안은 아닙니다.
+//      실제 보안이 필요하면 Firebase Authentication 도입이 필요합니다.
+// ==========================================================================
+const _DEFAULT_USERS = [
+  { id: 'admin',   pw: 'admin',    role: 'admin', name: 'admin' },
+  { id: 'ablecom', pw: 'Root+123', role: 'user',  name: '공용계정' }
+];
+const SESSION_KEY  = 'nokia_inv_auth';
+const SESSION_USER = 'nokia_inv_user';
+const USERS_CACHE  = 'nokia_inv_users_cache';
+
+// 현재 로그인한 사용자 (작업 이력 기록에 사용)
+window.currentUser = null;
+
+// 사용 가능한 계정 목록 = 기본계정 + Firestore에서 불러온 계정(캐시)
+window.getAllUsers = function(){
+  let extra = [];
+  try { extra = JSON.parse(localStorage.getItem(USERS_CACHE) || '[]'); } catch(e){ extra = []; }
+  const map = {};
+  _DEFAULT_USERS.forEach(u => { map[u.id] = u; });
+  extra.forEach(u => { if(u && u.id) map[u.id] = u; });   // DB 계정이 우선(비번 변경 반영)
+  return Object.values(map);
+};
 
 window.doLogin = function() {
   const id = document.getElementById('login-id').value.trim();
   const pw = document.getElementById('login-pw').value;
   const err = document.getElementById('login-err');
-  if (id === _AUTH.id && pw === _AUTH.pw) {
+  const found = window.getAllUsers().find(u => u.id === id && u.pw === pw);
+  if (found) {
+    window.currentUser = { id: found.id, role: found.role || 'user', name: found.name || found.id };
     sessionStorage.setItem(SESSION_KEY, '1');
+    sessionStorage.setItem(SESSION_USER, JSON.stringify(window.currentUser));
     window.showMainApp();
   } else {
     err.textContent = '⚠️ 아이디 또는 비밀번호가 올바르지 않습니다.';
@@ -860,10 +950,28 @@ window.showMainApp = function() {
   document.getElementById('app-header-wrap').classList.add('visible');
   document.getElementById('main-wrap').classList.add('visible');
   document.getElementById('statusbar-wrap').classList.add('visible');
+
+  // [Ver.9.5] 로그인 사용자 표시 + 관리자 전용 메뉴 노출
+  const u = window.currentUser;
+  const badge = document.getElementById('current-user-badge');
+  if(badge && u){
+    badge.innerHTML = `<i class="bi bi-person-circle"></i> ${u.name || u.id}` +
+      (u.role === 'admin' ? ' <span class="badge bg-warning text-dark ms-1" style="font-size:9px;">관리자</span>' : '');
+  }
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = (u && u.role === 'admin') ? '' : 'none';
+  });
   
   if(typeof window.initDataLoad === 'function') {
       window.initDataLoad();
   }
+};
+
+window.doLogout = function() {
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_USER);
+  window.currentUser = null;
+  location.reload();
 };
 
 window.togglePwView = function() {
@@ -882,6 +990,8 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   if (sessionStorage.getItem(SESSION_KEY) === '1') {
+      // [Ver.9.5] 새로고침 시 로그인 사용자 복원
+      try { window.currentUser = JSON.parse(sessionStorage.getItem(SESSION_USER) || 'null'); } catch(e){}
       window.showMainApp();
   } else {
       const loginIdEl = document.getElementById('login-id');
@@ -942,6 +1052,14 @@ window.addEventListener('DOMContentLoaded', () => {
           window.cleanupModalBackdrops();
       }
   });
+
+  // [Ver.9.5] 계정 관리 탭 진입 시 목록 렌더
+  const usersTabLink = document.querySelector('a[href="#tab-users"]');
+  if (usersTabLink) {
+      usersTabLink.addEventListener('shown.bs.tab', () => {
+          if (typeof window.renderUsersTable === 'function') window.renderUsersTable();
+      });
+  }
 
   // [Ver.9.4][D] 자동 감시: 1.5초마다 "열린 모달은 없는데 회색 막만 남은" 상태를
   //   발견하면 스스로 정리한다. 어떤 경로로 멈추든 최대 1.5초 안에 자동 복구된다.
@@ -1415,7 +1533,11 @@ window.loadInventory = async function(silent=false){
         return tA.localeCompare(tB);
     });
 
-    allInventory = docsData.map((d,i)=>({_rowNum:i+1, ...d}));
+    // [Ver.9.5] 필터/표시용 사용상태 라벨 (필터 팝업은 문자열 값 기준으로 동작)
+    allInventory = docsData.map((d,i)=>({
+      _rowNum: i+1, ...d,
+      usable_label: (d.usable === false) ? '사용불가' : '사용가능'
+    }));
     
     window.renderInventoryTable();
     window.renderStatsTable();
@@ -1505,8 +1627,9 @@ window.loadLogs = async function(silent=false){
         detailHtml = window.esc(l.note);
       }
 
+      const _who = l.user_id ? window.esc(l.user_id) : '<span class="text-secondary">-</span>';
       htmlContent += `<tr style="background:${bg}">
-        <td>${displayTime}</td><td>${window.esc(l.action_type)}</td>
+        <td>${displayTime}</td><td class="fw-bold">${_who}</td><td>${window.esc(l.action_type)}</td>
         <td>${window.esc(projName)}</td>
         <td>${window.esc(name)}</td><td class="text-center fw-bold" style="color:${qtyColor};">${qtyDisplay}</td><td>${detailHtml}</td>
       </tr>`;
@@ -1596,14 +1719,16 @@ window.renderInventoryTable = function(){
       const isPositive = !isNaN(stock) && Number(stock) > 0;
       const rCls = isPositive ? 'in-stock ' + window.stockClass(r.current_stock) : window.stockClass(r.current_stock);
         
-      // [Ver.9.4] 사용불가 장비는 배지로 표시하고 살짝 흐리게
+      // [Ver.9.5] 사용상태는 현재고 옆 전용 컬럼으로 표시
       const _usable = window.isUsable(r);
-      const _uBadge = _usable ? '' : '<span class="badge bg-danger ms-1" style="font-size:9px;">사용불가</span>';
       const _uStyle = _usable ? '' : 'opacity:.72;';
+      const _uCell = _usable
+        ? '<span class="badge bg-success" style="font-size:10px;">⭕ 사용가능</span>'
+        : '<span class="badge bg-danger" style="font-size:10px;">❌ 사용불가</span>';
       return `
       <tr class="${rCls}" data-id="${r.id}" onclick="window.rowClick(this)" ondblclick="window.openDetailModal('${r.id}')" title="더블클릭: 상세보기 / 비고수정" style="cursor:pointer;${_uStyle}">
         <td class="text-center"><input type="checkbox" class="form-check-input row-chk" onclick="event.stopPropagation(); window.rowClick(this.closest('tr'))"></td>
-        <td class="text-center">${r._rowNum}${_uBadge}</td>
+        <td class="text-center">${r._rowNum}</td>
         <td>${window.esc(r.project_name)}</td>
         <td>${window.esc(r.vendor)}</td>
         <td>${window.esc(r.equip_group)}</td>
@@ -1612,6 +1737,7 @@ window.renderInventoryTable = function(){
         <td>${window.esc(r.serial_number)}</td>
         <td class="text-center">${r.total_qty}</td><td class="text-center">${r.out_qty}</td>
         <td class="text-center fw-bold">${r.current_stock}</td>
+        <td class="text-center">${_uCell}</td>
         <td>${window.esc(r.inbound_date)}</td><td>${window.esc(r.outbound_date)}</td>
         <td>${window.esc(r.note)}</td>
       </tr>`}).join('');
@@ -1704,6 +1830,135 @@ window.renderStatsTable = function(){
 //   경로: Nokia_Equipment/data/settings/proj_order  → { order: [이름...] }
 //   드래그앤드롭으로 순서를 바꾸면 즉시 저장된다.
 // ==========================================================================
+// ==========================================================================
+// [Ver.9.5] 계정 관리 — Firestore 저장 (Nokia_Equipment/data/settings/users)
+//   기본 계정(admin/ablecom)은 코드 내장이라 DB 없이도 로그인 가능.
+//   추가/수정된 계정은 DB에 저장되고, 로그인 후 캐시되어 다음 로그인에 사용된다.
+// ==========================================================================
+window.loadUsers = async function(){
+  try {
+    const snap = await getDoc(doc(db,'Nokia_Equipment','data','settings','users'));
+    const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+    localStorage.setItem('nokia_inv_users_cache', JSON.stringify(list));
+    return list;
+  } catch(e){
+    console.warn('[loadUsers] 계정 로드 실패', e);
+    return [];
+  }
+};
+
+window.saveUsersToDb = async function(list){
+  await setDoc(doc(db,'Nokia_Equipment','data','settings','users'), { list: list });
+  localStorage.setItem('nokia_inv_users_cache', JSON.stringify(list));
+};
+
+// DB에 저장된 계정만 반환(기본계정 제외한 편집 대상)
+window.getDbUsers = function(){
+  try { return JSON.parse(localStorage.getItem('nokia_inv_users_cache') || '[]'); } catch(e){ return []; }
+};
+
+window.renderUsersTable = function(){
+  const tbody = document.getElementById('users-tbody');
+  if(!tbody) return;
+  const dbUsers = window.getDbUsers();
+  const dbIds = new Set(dbUsers.map(u=>u.id));
+  // 기본계정 중 DB에서 덮어쓰지 않은 것도 목록에 표시(읽기전용 표시)
+  const builtins = _DEFAULT_USERS.filter(u => !dbIds.has(u.id));
+  const rows = [
+    ...builtins.map(u => ({...u, _builtin:true})),
+    ...dbUsers.map(u => ({...u, _builtin:_DEFAULT_USERS.some(d=>d.id===u.id)}))
+  ];
+  tbody.innerHTML = rows.map(u => `
+    <tr>
+      <td class="fw-bold">${window.esc(u.id)}${u._builtin?' <span class="badge bg-secondary" style="font-size:9px;">기본</span>':''}</td>
+      <td><code>${window.esc(u.pw)}</code></td>
+      <td>${window.esc(u.name||'')}</td>
+      <td class="text-center">${u.role==='admin'?'<span class="badge bg-warning text-dark">관리자</span>':'<span class="badge bg-light text-dark">일반</span>'}</td>
+      <td class="text-center">
+        <button class="btn btn-sm btn-outline-info py-0 px-2" style="font-size:11px;" onclick="window.editUser('${window.esc(u.id)}')">✏️ 수정</button>
+        ${u._builtin ? '' : `<button class="btn btn-sm btn-outline-danger py-0 px-2 ms-1" style="font-size:11px;" onclick="window.deleteUser('${window.esc(u.id)}')">🗑️</button>`}
+      </td>
+    </tr>`).join('') || '<tr><td colspan="5" class="text-center text-secondary py-3">등록된 추가 계정이 없습니다.</td></tr>';
+};
+
+window.clearUserForm = function(){
+  ['u-id','u-pw','u-name'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const r=document.getElementById('u-role'); if(r) r.value='user';
+};
+
+window.editUser = function(id){
+  const all = window.getAllUsers();
+  const u = all.find(x=>x.id===id);
+  if(!u) return;
+  document.getElementById('u-id').value   = u.id;
+  document.getElementById('u-pw').value   = u.pw || '';
+  document.getElementById('u-name').value = u.name || '';
+  document.getElementById('u-role').value = u.role || 'user';
+  window.setStatus(`✏️ '${id}' 계정을 편집합니다.`);
+};
+
+window.saveUser = async function(){
+  const id   = document.getElementById('u-id').value.trim();
+  const pw   = document.getElementById('u-pw').value.trim();
+  const name = document.getElementById('u-name').value.trim();
+  const role = document.getElementById('u-role').value;
+
+  if(!id || !pw){ await window.customAlert('아이디와 비밀번호를 입력해주세요.', '입력 오류'); return; }
+  if(/[\s]/.test(id)){ await window.customAlert('아이디에 공백은 사용할 수 없습니다.', '입력 오류'); return; }
+
+  window.showLoading('계정 저장 중...');
+  try {
+    const list = window.getDbUsers();
+    const idx = list.findIndex(u=>u.id===id);
+    const entry = { id, pw, name: name || id, role };
+    const isNew = (idx === -1);
+    if(isNew) list.push(entry); else list[idx] = entry;
+
+    await window.saveUsersToDb(list);
+    await window.writeUserLog(isNew ? '계정추가' : '계정수정', `계정 '${id}' (${role==='admin'?'관리자':'일반'})`);
+
+    window.renderUsersTable();
+    window.clearUserForm();
+    window.setStatus(`👤 계정 ${isNew?'추가':'수정'} 완료: ${id}`);
+    await window.customAlert(`계정 '${id}'을(를) ${isNew?'추가':'수정'}했습니다.`, '완료');
+  } catch(e){
+    await window.customAlert('계정 저장 오류: ' + e.message, '에러');
+  } finally { window.hideLoading(); }
+};
+
+window.deleteUser = async function(id){
+  if(_DEFAULT_USERS.some(u=>u.id===id)){
+    await window.customAlert('기본 계정은 삭제할 수 없습니다.', '삭제 불가'); return;
+  }
+  if(window.currentUser && window.currentUser.id === id){
+    await window.customAlert('현재 로그인 중인 계정은 삭제할 수 없습니다.', '삭제 불가'); return;
+  }
+  const ok = await window.customConfirm(`계정 '${id}'을(를) 삭제하시겠습니까?`, '계정 삭제');
+  if(!ok) return;
+
+  window.showLoading('계정 삭제 중...');
+  try {
+    const list = window.getDbUsers().filter(u=>u.id!==id);
+    await window.saveUsersToDb(list);
+    await window.writeUserLog('계정삭제', `계정 '${id}' 삭제`);
+    window.renderUsersTable();
+    window.setStatus(`🗑️ 계정 삭제 완료: ${id}`);
+  } catch(e){
+    await window.customAlert('계정 삭제 오류: ' + e.message, '에러');
+  } finally { window.hideLoading(); }
+};
+
+// 계정 관련 작업을 이력에 기록
+window.writeUserLog = async function(actionType, detail){
+  try {
+    await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
+      ref_equip_id: '', action_type: actionType, qty_changed: 0,
+      note: detail, user_id: (window.currentUser?.id || 'unknown'),
+      timestamp: window.getLogTime()
+    });
+  } catch(e){ console.warn('[writeUserLog]', e); }
+};
+
 window.loadProjOrder = async function(){
   try {
     const snap = await getDoc(doc(db,'Nokia_Equipment','data','settings','proj_order'));
@@ -1865,6 +2120,11 @@ window.renderProjDetailTable = function(rows){
     document.getElementById('proj-detail-tbody').innerHTML = sorted.map(r=>{
       const isPositive = !isNaN(r.current_stock) && Number(r.current_stock) > 0;
       const rCls = isPositive ? 'in-stock ' + window.stockClass(r.current_stock) : window.stockClass(r.current_stock);
+      // [Ver.9.6] 사용상태 셀 (9.5에서 정의 없이 사용해 렌더가 통째로 실패하던 버그 수정)
+      const _usable = window.isUsable(r);
+      const _uCell = _usable
+        ? '<span class="badge bg-success" style="font-size:10px;">⭕ 사용가능</span>'
+        : '<span class="badge bg-danger" style="font-size:10px;">❌ 사용불가</span>';
       return `
       <tr class="${rCls}" data-id="${r.id}" ondblclick="window.openDetailModal('${r.id}', 'proj')" title="더블클릭: 상세보기 / 비고수정" style="cursor:pointer;">
         <td class="text-center"><input type="checkbox" class="form-check-input row-chk sticker-check" onclick="event.stopPropagation()"></td>
@@ -1873,6 +2133,7 @@ window.renderProjDetailTable = function(rows){
         <td>${window.esc(r.part_number)}</td><td>${window.esc(r.serial_number)}</td>
         <td class="text-center">${r.total_qty}</td><td class="text-center">${r.out_qty}</td>
         <td class="text-center fw-bold">${r.current_stock}</td>
+        <td class="text-center">${_uCell}</td>
         <td>${window.esc(r.inbound_date)}</td><td>${window.esc(r.outbound_date)}</td>
         <td>${window.esc(r.note)}</td>
       </tr>`}).join('');
@@ -2380,7 +2641,7 @@ window.confirm_inbound_pending = async function(){
       
       await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
         ref_equip_id: eRef.id, action_type:'입고',
-        qty_changed: item.qty, note: item.vendor ? `${item.vendor} 신규 입고` : '신규 입고', timestamp: ts
+        qty_changed: item.qty, note: item.vendor ? `${item.vendor} 신규 입고` : '신규 입고', timestamp: ts, user_id: (window.currentUser?.id || '')
       });
     }
     pendingInbound.length = 0;
@@ -2477,14 +2738,14 @@ window.saveDetailNote = async function(){
       await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
         ref_equip_id: String(detailDocId), action_type: '비고수정', qty_changed: 0,
         note: `비고 수정 (상세보기)`,
-        note_before: oldNote, note_after: newNote, timestamp: ts
+        note_before: oldNote, note_after: newNote, timestamp: ts, user_id: (window.currentUser?.id || '')
       });
     }
     if(usableChanged){
       await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
         ref_equip_id: String(detailDocId), action_type: '사용상태변경', qty_changed: 0,
         note: `사용 상태: ${oldUsable ? '사용가능(O)' : '사용불가(X)'} ➔ ${newUsable ? '사용가능(O)' : '사용불가(X)'}`,
-        timestamp: ts
+        timestamp: ts, user_id: (window.currentUser?.id || '')
       });
     }
 
@@ -2634,7 +2895,7 @@ window.bulkSetUsable = async function(usable){
       batch.update(doc(db,'Nokia_Equipment','data','equipment',String(id)), { usable: usable });
       batch.set(doc(logsCol), {
         ref_equip_id: String(id), action_type: '사용상태변경', qty_changed: 0,
-        note: `사용 상태 일괄변경 ➔ ${label}`, timestamp: ts
+        note: `사용 상태 일괄변경 ➔ ${label}`, timestamp: ts, user_id: (window.currentUser?.id || '')
       });
       opCount += 2; changed++;
     }
@@ -2671,7 +2932,7 @@ window.delete_inventory = async function(){
       if (opCount + 2 > 450) { await batch.commit(); batch = writeBatch(db); opCount = 0; }
 
       batch.set(doc(logsCol), {
-        ref_equip_id: id, action_type: '재고삭제', qty_changed: -oldStock, note: `관리자 수동 삭제`, timestamp: ts
+        ref_equip_id: id, action_type: '재고삭제', qty_changed: -oldStock, note: `관리자 수동 삭제`, timestamp: ts, user_id: (window.currentUser?.id || '')
       });
       batch.delete(doc(db,'Nokia_Equipment','data','equipment', id));
       opCount += 2;
@@ -2738,14 +2999,14 @@ window.saveInventory = async function(){
 
       await updateDoc(doc(db,'Nokia_Equipment','data','equipment',String(editingDocId)), data);
       await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
-        ref_equip_id: editingDocId, action_type: '재고수정', qty_changed: diff, note: logNote, timestamp: ts,
+        ref_equip_id: editingDocId, action_type: '재고수정', qty_changed: diff, note: logNote, timestamp: ts, user_id: (window.currentUser?.id || ''),
         ...logExtra
       });
       window.setStatus(`✏️ 재고 수정 완료`);
     } else {
       const ref = await addDoc(collection(db,'Nokia_Equipment','data','equipment'), data);
       await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
-        ref_equip_id: ref.id, action_type: '수동입력', qty_changed: data.total_qty, note: '관리자 수동 신규 등록', timestamp: ts
+        ref_equip_id: ref.id, action_type: '수동입력', qty_changed: data.total_qty, note: '관리자 수동 신규 등록', timestamp: ts, user_id: (window.currentUser?.id || '')
       });
       window.setStatus(`✨ 수동 등록 완료 — ${name}`);
     }
@@ -2881,7 +3142,7 @@ window.doCheckout = async function(){
         current_stock: +r.current_stock-qty, out_qty: +r.out_qty+qty, outbound_date: outDate, note: newNote
       });
       batch.set(doc(logsCol), {   // addDoc 대신 doc()로 자동ID 생성 후 set
-        ref_equip_id:String(id), action_type:'출고', qty_changed:qty, note:`${outDate} 출고완료 - ${outNote}`, timestamp:ts
+        ref_equip_id:String(id), action_type:'출고', qty_changed:qty, note:`${outDate} 출고완료 - ${outNote}`, timestamp:ts, user_id:(window.currentUser?.id || ''), user_id:(window.currentUser?.id || '')
       });
       opCount += OPS_PER_ITEM;
     }
@@ -3290,7 +3551,7 @@ window.importLegacySheet = async function(raw, project){
       allMaster[pn]={part_name:name,equip_group:grp};
     }
     if(note){
-      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{ref_equip_id:ref.id,action_type:'초기기록',qty_changed:out||tot,note:note,timestamp:ts});
+      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{ref_equip_id:ref.id,action_type:'초기기록',qty_changed:out||tot,note:note,timestamp:ts,user_id:(window.currentUser?.id||'')});
     }
     cnt++;
   }
@@ -3352,9 +3613,9 @@ window.importReportFormat = async function(wb, mode){
       await setDoc(doc(db,'Nokia_Equipment','data','product_master',pn),{part_name:name,equip_group:grp});
       allMaster[pn]={part_name:name,equip_group:grp};
     }
-    await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{ref_equip_id:ref.id,action_type:'입고(복원)',qty_changed:tot,note:'보고서 포맷 가져오기',timestamp:ts});
+    await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{ref_equip_id:ref.id,action_type:'입고(복원)',qty_changed:tot,note:'보고서 포맷 가져오기',timestamp:ts,user_id:(window.currentUser?.id||'')});
     if(out>0&&outDate){
-      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{ref_equip_id:ref.id,action_type:'보고서복원',qty_changed:out,note:`${outDate} 출고 (보고서 가져오기)`,timestamp:ts});
+      await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{ref_equip_id:ref.id,action_type:'보고서복원',qty_changed:out,note:`${outDate} 출고 (보고서 가져오기)`,timestamp:ts,user_id:(window.currentUser?.id||'')});
     }
     ok++;
   }
@@ -3408,8 +3669,8 @@ window.exportLogsExcel = async function(){
     const CELL_BORDER = { top:THIN, bottom:THIN, left:THIN, right:THIN };
     const HDR_BORDER  = { top:THICK, bottom:THICK, left:THIN, right:THIN };
 
-    const cols = ['시간','구분','프로젝트','장비군','품명','P/N','S/N','수량변화','상세내용','비고(변경전)','비고(변경후)'];
-    const widths = [20, 12, 22, 12, 30, 16, 18, 10, 34, 24, 24];
+    const cols = ['시간','작업자','구분','프로젝트','장비군','품명','P/N','S/N','수량변화','상세내용','비고(변경전)','비고(변경후)'];
+    const widths = [20, 14, 12, 22, 12, 30, 16, 18, 10, 34, 24, 24];
 
     ws.getCell('A1').value = '📊 NOKIA 장비 작업 이력 보고서';
     ws.getCell('A1').font = TITLE_FONT;
@@ -3429,6 +3690,7 @@ window.exportLogsExcel = async function(){
       const r = allInventory.find(x=>x.id===l.ref_equip_id) || {};
       const row = [
         l.timestamp || '',
+        l.user_id || '',
         l.action_type || '',
         r.project_name || '',
         r.equip_group || '',
@@ -3444,7 +3706,7 @@ window.exportLogsExcel = async function(){
       row.forEach((val, ci)=>{
         const c = eRow.getCell(ci+1); c.value = val;
         c.font = DATA_FONT; c.border = CELL_BORDER;
-        c.alignment = { horizontal: (ci===7 ? 'center':'left'), vertical:'middle', wrapText:(ci>=8) };
+        c.alignment = { horizontal: (ci===8 ? 'center':'left'), vertical:'middle', wrapText:(ci>=9) };
         if(ri%2===1) c.fill = EVEN_FILL;
       });
       eRow.height = 15;
@@ -3627,6 +3889,7 @@ window.initDataLoad = async function() {
   window.showLoading('데이터 로딩 중...');
   try {
     // [Ver.8.2] 세 로더를 silent 로 호출 → 바깥 스피너 1개만 유지(깜빡임 제거)
+    await window.loadUsers();       // [Ver.9.5] 계정 목록 로드(다음 로그인부터 반영)
     await window.loadProjOrder();   // [Ver.8.6] 프로젝트 정렬 순서 로드
     await window.loadMaster(true);
     await window.loadInventory(true);
