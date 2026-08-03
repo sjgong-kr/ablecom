@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.9.8</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.9.9</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -230,7 +230,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.9.8</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.9.9</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -284,7 +284,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.9.8 (신규 계정 즉시 로그인 가능 수정)</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.9.9 (P/N 통계 상세에 사용상태 표시)</span></h1>
   <div class="d-flex align-items-center gap-2">
     <span id="current-user-badge" class="text-white small fw-bold"></span>
     <button class="btn btn-sm btn-outline-light py-0 px-2" style="font-size:11px;" onclick="window.openPwChange(false)">🔑 비밀번호 변경</button>
@@ -695,7 +695,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.9.8 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.9.9 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
@@ -915,7 +915,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
           <table class="inv-table">
             <thead><tr>
               <th style="width:46px;">ID</th><th>프로젝트명</th><th>장비군</th><th>품명</th><th>P/N</th><th>S/N</th>
-              <th>총수량</th><th>출고</th><th>현재고</th><th>입고일자</th><th>출고일자</th><th>비고</th>
+              <th>총수량</th><th>출고</th><th>현재고</th><th style="width:95px;">사용상태</th><th>입고일자</th><th>출고일자</th><th>비고</th>
             </tr></thead>
             <tbody id="stat-detail-tbody"></tbody>
           </table>
@@ -2375,6 +2375,10 @@ window.showStatDetails = function(tr) {
   document.getElementById('stat-detail-tbody').innerHTML = filtered.map(r => {
     const isPositive = !isNaN(r.current_stock) && Number(r.current_stock) > 0;
     const rCls = isPositive ? 'in-stock ' + window.stockClass(r.current_stock) : window.stockClass(r.current_stock);
+    // [Ver.9.9] 사용상태 셀 (재고/프로젝트 상세와 동일 표기)
+    const _uCell = window.isUsable(r)
+      ? '<span class="badge bg-success" style="font-size:10px;">⭕ 사용가능</span>'
+      : '<span class="badge bg-danger" style="font-size:10px;">❌ 사용불가</span>';
     return `
     <tr class="${rCls}" data-id="${r.id}" ondblclick="window.openDetailModal('${r.id}', 'stat')" title="더블클릭: 상세보기 / 비고수정" style="cursor:pointer;">
       <td class="text-center">${r._rowNum}</td>
@@ -2386,6 +2390,7 @@ window.showStatDetails = function(tr) {
       <td class="text-center">${r.total_qty}</td>
       <td class="text-center">${r.out_qty}</td>
       <td class="text-center fw-bold">${r.current_stock}</td>
+      <td class="text-center">${_uCell}</td>
       <td>${window.esc(r.inbound_date)}</td>
       <td>${window.esc(r.outbound_date)}</td>
       <td>${window.esc(r.note)}</td>
@@ -2948,6 +2953,10 @@ window.rerenderStatDetail = function(){
   tbody.innerHTML = filtered.map(r => {
     const isPositive = !isNaN(r.current_stock) && Number(r.current_stock) > 0;
     const rCls = isPositive ? 'in-stock ' + window.stockClass(r.current_stock) : window.stockClass(r.current_stock);
+    // [Ver.9.9] 사용상태 셀 (재고/프로젝트 상세와 동일 표기)
+    const _uCell = window.isUsable(r)
+      ? '<span class="badge bg-success" style="font-size:10px;">⭕ 사용가능</span>'
+      : '<span class="badge bg-danger" style="font-size:10px;">❌ 사용불가</span>';
     return `
     <tr class="${rCls}" data-id="${r.id}" ondblclick="window.openDetailModal('${r.id}', 'stat')" title="더블클릭: 상세보기 / 비고수정" style="cursor:pointer;">
       <td class="text-center">${r._rowNum}</td>
@@ -2959,6 +2968,7 @@ window.rerenderStatDetail = function(){
       <td class="text-center">${r.total_qty}</td>
       <td class="text-center">${r.out_qty}</td>
       <td class="text-center fw-bold">${r.current_stock}</td>
+      <td class="text-center">${_uCell}</td>
       <td>${window.esc(r.inbound_date)}</td>
       <td>${window.esc(r.outbound_date)}</td>
       <td>${window.esc(r.note)}</td>
