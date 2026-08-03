@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.9.6</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.9.8</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -230,7 +230,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.9.6</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.9.8</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -284,9 +284,10 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.9.6 (프로젝트 상세 표시 오류 수정)</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.9.8 (신규 계정 즉시 로그인 가능 수정)</span></h1>
   <div class="d-flex align-items-center gap-2">
     <span id="current-user-badge" class="text-white small fw-bold"></span>
+    <button class="btn btn-sm btn-outline-light py-0 px-2" style="font-size:11px;" onclick="window.openPwChange(false)">🔑 비밀번호 변경</button>
     <button class="btn btn-sm btn-outline-light py-0 px-2" style="font-size:11px;" onclick="window.doLogout()">로그아웃</button>
     <div id="clock"></div>
   </div>
@@ -667,7 +668,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
           <button class="btn btn-nokia btn-sm flex-grow-1" onclick="window.saveUser()">💾 저장 (추가/수정)</button>
           <button class="btn btn-outline-secondary btn-sm" onclick="window.clearUserForm()">↺ 초기화</button>
         </div>
-        <div class="form-text small mt-2">※ 이미 있는 아이디를 입력하면 해당 계정이 <b>수정</b>됩니다.</div>
+        <div class="form-text small mt-2">※ 이미 있는 아이디를 입력하면 해당 계정이 <b>수정</b>됩니다.<br>※ 새 계정(또는 비밀번호 변경 시)은 <b>최초 로그인 때 사용자가 직접 비밀번호를 바꾸게</b> 됩니다.</div>
       </fieldset>
     </div>
     <div class="col-12 col-md-7">
@@ -675,7 +676,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
         <legend>👥 계정 목록</legend>
         <div class="tbl-wrap" style="max-height:420px;">
           <table class="inv-table" id="tbl-users">
-            <thead><tr><th style="width:130px;">아이디</th><th style="width:120px;">비밀번호</th><th>표시 이름</th><th style="width:90px;">권한</th><th style="width:120px;">관리</th></tr></thead>
+            <thead><tr><th style="width:120px;">아이디</th><th style="width:110px;">비밀번호</th><th>표시 이름</th><th style="width:80px;">권한</th><th style="width:110px;">상태</th><th style="width:180px;">관리</th></tr></thead>
             <tbody id="users-tbody"></tbody>
           </table>
         </div>
@@ -694,7 +695,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.9.6 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.9.8 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
@@ -734,6 +735,43 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">취소</button>
         <button type="button" class="btn btn-success btn-sm" onclick="window.saveInventory()">💾 저장 및 이력에 반영</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- [Ver.9.7] 비밀번호 변경 모달 (최초 로그인 시 강제 / 평소 자발적 변경) -->
+<div class="modal fade" id="pwChangeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1a6ea8;">
+        <h6 class="modal-title text-white">🔑 비밀번호 변경</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" id="pw-close-btn"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning py-2 small" id="pw-force-msg" style="display:none;">
+          <b>최초 로그인입니다.</b> 보안을 위해 비밀번호를 변경한 후 사용해 주세요.
+        </div>
+        <div class="mb-2">
+          <label class="form-label small mb-1">새 비밀번호</label>
+          <input type="password" id="pw-new" class="form-control form-control-sm" placeholder="새 비밀번호 (4자 이상)">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small mb-1">새 비밀번호 확인</label>
+          <input type="password" id="pw-new2" class="form-control form-control-sm" placeholder="한 번 더 입력">
+        </div>
+        <div class="form-check small">
+          <input class="form-check-input" type="checkbox" id="pw-show" onchange="window.togglePwChangeView()">
+          <label class="form-check-label" for="pw-show">비밀번호 보기</label>
+        </div>
+        <div id="pw-err" class="text-danger small mt-2"></div>
+        <div class="text-muted small mt-2">
+          ※ 관리자가 분실 시 확인할 수 있도록 저장되므로, <b>다른 사이트와 같은 비밀번호는 사용하지 마세요.</b>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" id="pw-cancel-btn">취소</button>
+        <button type="button" class="btn btn-nokia btn-sm" onclick="window.submitPwChange()">💾 변경</button>
       </div>
     </div>
   </div>
@@ -925,13 +963,35 @@ window.getAllUsers = function(){
   return Object.values(map);
 };
 
-window.doLogin = function() {
+window.doLogin = async function() {
   const id = document.getElementById('login-id').value.trim();
   const pw = document.getElementById('login-pw').value;
   const err = document.getElementById('login-err');
-  const found = window.getAllUsers().find(u => u.id === id && u.pw === pw);
+
+  // ── [Ver.9.8] 신규 계정이 바로 로그인되지 않던 문제 수정 ─────────────
+  //   이전: 로그인 검증이 localStorage 캐시만 봤는데, 그 캐시는 "로그인 성공 후"
+  //         loadUsers()가 채웠다. → 다른 PC에서 새 계정으로 첫 로그인 시 항상 실패.
+  //   지금: 검증 전에 Firestore에서 계정 목록을 먼저 가져와 캐시를 갱신한다.
+  //         (네트워크 실패 시에는 기존 캐시 + 기본계정으로 진행 → 오프라인에도 안전)
+  // --------------------------------------------------------------------
+  let found = window.getAllUsers().find(u => u.id === id && u.pw === pw);
+  if (!found && typeof window.loadUsers === 'function') {
+    err.textContent = '🔄 계정 정보 확인 중...';
+    try {
+      await window.loadUsers();          // Firestore에서 최신 계정 목록 조회
+      found = window.getAllUsers().find(u => u.id === id && u.pw === pw);
+    } catch(e) {
+      console.warn('[doLogin] 계정 목록 조회 실패, 캐시로 진행', e);
+    }
+    err.textContent = '';
+  }
+
   if (found) {
-    window.currentUser = { id: found.id, role: found.role || 'user', name: found.name || found.id };
+    // [Ver.9.7] mustChangePw=true 면 앱 진입 후 비밀번호 변경을 강제한다
+    window.currentUser = {
+      id: found.id, role: found.role || 'user', name: found.name || found.id,
+      mustChangePw: (found.mustChangePw === true)
+    };
     sessionStorage.setItem(SESSION_KEY, '1');
     sessionStorage.setItem(SESSION_USER, JSON.stringify(window.currentUser));
     window.showMainApp();
@@ -1835,6 +1895,104 @@ window.renderStatsTable = function(){
 //   기본 계정(admin/ablecom)은 코드 내장이라 DB 없이도 로그인 가능.
 //   추가/수정된 계정은 DB에 저장되고, 로그인 후 캐시되어 다음 로그인에 사용된다.
 // ==========================================================================
+// ==========================================================================
+// [Ver.9.7] 비밀번호 변경 — 최초 로그인 시 강제, 이후 자발적 변경
+// ==========================================================================
+window._pwForceMode = false;
+
+window.openPwChange = function(force=false){
+  window._pwForceMode = force;
+  document.getElementById('pw-new').value  = '';
+  document.getElementById('pw-new2').value = '';
+  document.getElementById('pw-err').textContent = '';
+  document.getElementById('pw-show').checked = false;
+  window.togglePwChangeView();
+  // 강제 모드에서는 닫기/취소 버튼을 숨겨 반드시 변경하게 한다
+  document.getElementById('pw-force-msg').style.display = force ? 'block' : 'none';
+  document.getElementById('pw-close-btn').style.display = force ? 'none' : '';
+  document.getElementById('pw-cancel-btn').style.display = force ? 'none' : '';
+  window.openModalSafe('pwChangeModal', {backdrop:'static', keyboard:false});
+  setTimeout(()=>document.getElementById('pw-new').focus(), 300);
+};
+
+window.togglePwChangeView = function(){
+  const show = document.getElementById('pw-show').checked;
+  ['pw-new','pw-new2'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.type = show ? 'text' : 'password';
+  });
+};
+
+window.submitPwChange = async function(){
+  const p1 = document.getElementById('pw-new').value;
+  const p2 = document.getElementById('pw-new2').value;
+  const err = document.getElementById('pw-err');
+  err.textContent = '';
+
+  if(!p1 || p1.length < 4){ err.textContent = '⚠️ 비밀번호는 4자 이상이어야 합니다.'; return; }
+  if(p1 !== p2){ err.textContent = '⚠️ 두 비밀번호가 일치하지 않습니다.'; return; }
+  if(!window.currentUser){ err.textContent = '⚠️ 로그인 정보가 없습니다.'; return; }
+
+  const uid = window.currentUser.id;
+  // 최초 비밀번호와 같은지 확인 (강제 변경인데 그대로 두는 것 방지)
+  const cur = window.getAllUsers().find(u=>u.id===uid);
+  if(window._pwForceMode && cur && cur.pw === p1){
+    err.textContent = '⚠️ 기존 비밀번호와 다른 값으로 설정해 주세요.'; return;
+  }
+
+  window.showLoading('비밀번호 변경 중...');
+  try {
+    const list = window.getDbUsers();
+    const idx = list.findIndex(u=>u.id===uid);
+    if(idx === -1){
+      // 기본 계정(admin/ablecom)의 비밀번호 변경 → DB 목록에 편입해 저장
+      const base = _DEFAULT_USERS.find(u=>u.id===uid) || {id:uid, role:'user', name:uid};
+      list.push({ ...base, pw:p1, mustChangePw:false });
+    } else {
+      list[idx] = { ...list[idx], pw:p1, mustChangePw:false };
+    }
+    await window.saveUsersToDb(list);
+    await window.writeUserLog('비밀번호변경', `계정 '${uid}' 비밀번호 변경`);
+
+    window.currentUser.mustChangePw = false;
+    sessionStorage.setItem(SESSION_USER, JSON.stringify(window.currentUser));
+
+    const inst = bootstrap.Modal.getInstance(document.getElementById('pwChangeModal'));
+    if(inst) inst.hide();
+    window._pwForceMode = false;
+    window.setStatus('🔑 비밀번호 변경 완료');
+    await window.customAlert('비밀번호가 변경되었습니다.', '완료');
+    if(typeof window.renderUsersTable === 'function') window.renderUsersTable();
+  } catch(e){
+    err.textContent = '⚠️ 저장 오류: ' + e.message;
+  } finally { window.hideLoading(); }
+};
+
+// 관리자용: 비밀번호를 초기화하고 다음 로그인 때 변경하도록 표시
+window.resetUserPw = async function(id){
+  const newPw = await window.customPrompt(`'${id}' 계정의 임시 비밀번호를 입력하세요.\n(사용자가 다음 로그인 시 직접 변경하게 됩니다)`, '', '비밀번호 초기화');
+  if(newPw === null) return;
+  const pw = String(newPw).trim();
+  if(pw.length < 4){ await window.customAlert('비밀번호는 4자 이상이어야 합니다.', '입력 오류'); return; }
+
+  window.showLoading('비밀번호 초기화 중...');
+  try {
+    const list = window.getDbUsers();
+    const idx = list.findIndex(u=>u.id===id);
+    if(idx === -1){
+      const base = _DEFAULT_USERS.find(u=>u.id===id) || {id, role:'user', name:id};
+      list.push({ ...base, pw, mustChangePw:true });
+    } else {
+      list[idx] = { ...list[idx], pw, mustChangePw:true };
+    }
+    await window.saveUsersToDb(list);
+    await window.writeUserLog('비밀번호초기화', `계정 '${id}' 비밀번호 초기화(최초변경 필요)`);
+    window.renderUsersTable();
+    await window.customAlert(`'${id}' 계정의 임시 비밀번호를 설정했습니다.\n사용자에게 전달해 주세요.`, '완료');
+  } catch(e){
+    await window.customAlert('초기화 오류: ' + e.message, '에러');
+  } finally { window.hideLoading(); }
+};
+
 window.loadUsers = async function(){
   try {
     const snap = await getDoc(doc(db,'Nokia_Equipment','data','settings','users'));
@@ -1874,11 +2032,13 @@ window.renderUsersTable = function(){
       <td><code>${window.esc(u.pw)}</code></td>
       <td>${window.esc(u.name||'')}</td>
       <td class="text-center">${u.role==='admin'?'<span class="badge bg-warning text-dark">관리자</span>':'<span class="badge bg-light text-dark">일반</span>'}</td>
+      <td class="text-center">${u.mustChangePw===true?'<span class="badge bg-info text-dark" title="사용자가 최초 로그인 시 비밀번호를 변경해야 합니다">최초변경 대기</span>':'<span class="text-secondary small">변경완료</span>'}</td>
       <td class="text-center">
         <button class="btn btn-sm btn-outline-info py-0 px-2" style="font-size:11px;" onclick="window.editUser('${window.esc(u.id)}')">✏️ 수정</button>
+        <button class="btn btn-sm btn-outline-warning py-0 px-2 ms-1" style="font-size:11px;" onclick="window.resetUserPw('${window.esc(u.id)}')" title="임시 비밀번호로 초기화">🔑 초기화</button>
         ${u._builtin ? '' : `<button class="btn btn-sm btn-outline-danger py-0 px-2 ms-1" style="font-size:11px;" onclick="window.deleteUser('${window.esc(u.id)}')">🗑️</button>`}
       </td>
-    </tr>`).join('') || '<tr><td colspan="5" class="text-center text-secondary py-3">등록된 추가 계정이 없습니다.</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="6" class="text-center text-secondary py-3">등록된 추가 계정이 없습니다.</td></tr>';
 };
 
 window.clearUserForm = function(){
@@ -1910,8 +2070,13 @@ window.saveUser = async function(){
   try {
     const list = window.getDbUsers();
     const idx = list.findIndex(u=>u.id===id);
-    const entry = { id, pw, name: name || id, role };
     const isNew = (idx === -1);
+    // [Ver.9.7] 신규 계정은 최초 로그인 시 비밀번호 변경을 강제한다.
+    //   수정 시: 비밀번호를 바꿨다면 다시 최초변경 대상으로 표시.
+    let mustChange;
+    if(isNew) mustChange = true;
+    else mustChange = (list[idx].pw !== pw) ? true : (list[idx].mustChangePw === true);
+    const entry = { id, pw, name: name || id, role, mustChangePw: mustChange };
     if(isNew) list.push(entry); else list[idx] = entry;
 
     await window.saveUsersToDb(list);
@@ -3900,6 +4065,16 @@ window.initDataLoad = async function() {
 
     window._isDataLoaded = true;              // ✅ 성공했을 때만 잠금
     window.setStatus('✅ 데이터 로딩 완료');
+
+    // [Ver.9.7] 최초 로그인(임시 비밀번호)이면 비밀번호 변경을 강제한다.
+    //   loadUsers() 이후이므로 DB의 최신 mustChangePw 값을 다시 확인한다.
+    if(window.currentUser){
+      const me = window.getAllUsers().find(u => u.id === window.currentUser.id);
+      if(me && me.mustChangePw === true){
+        window.currentUser.mustChangePw = true;
+        setTimeout(()=> window.openPwChange(true), 400);
+      }
+    }
   } catch(e){
     window._isDataLoaded = false;             // ✅ 실패하면 잠금 해제 → 재시도 가능
     console.error('[initDataLoad]', e);
@@ -3920,6 +4095,17 @@ window.initDataLoad = async function() {
   }
 };
 
+// ── [Ver.9.8] 페이지 로드 시 계정 목록을 미리 가져온다 ─────────────────
+//   로그인 화면에서 바로 최신 계정으로 인증할 수 있게 해, 새로 만든 계정이
+//   "다른 PC에서 첫 로그인이 안 되는" 문제를 없앤다. (실패해도 앱 동작엔 영향 없음)
+(async function prefetchUsers(){
+  try {
+    await window.loadUsers();
+    console.info('[계정] 로그인용 계정 목록을 불러왔습니다.');
+  } catch(e) {
+    console.warn('[계정] 사전 조회 실패 — 로그인 시 다시 시도합니다.', e);
+  }
+})();
 </script>
 </body>
 </html>
