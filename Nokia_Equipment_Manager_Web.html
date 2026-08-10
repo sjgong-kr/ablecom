@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.9.9</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.10.1</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -230,7 +230,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.9.9</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.10.1</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -284,7 +284,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.9.9 (P/N 통계 상세에 사용상태 표시)</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.10.1 (Dashboard 5열 + 소분류 순서 + 상세 드릴다운)</span></h1>
   <div class="d-flex align-items-center gap-2">
     <span id="current-user-badge" class="text-white small fw-bold"></span>
     <button class="btn btn-sm btn-outline-light py-0 px-2" style="font-size:11px;" onclick="window.openPwChange(false)">🔑 비밀번호 변경</button>
@@ -298,7 +298,8 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="main-wrap">
 <div class="container-fluid px-3 pt-2">
 <ul class="nav nav-tabs" id="mainTabs">
-  <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-inbound">📥 입고 (연속스캔/대기)</a></li>
+  <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-dashboard">🏠 Dashboard</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-inbound">📥 입고 (연속스캔/대기)</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-inventory">📦 실시간 재고 &amp; 통계 &amp; 출고</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-logs">🕒 작업 이력(타임라인)</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-master">🏷️ 제품명 마스터 관리</a></li>
@@ -309,7 +310,44 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div class="tab-content" id="mainTabContent">
 
 <!-- ══════════════════ 탭1: 입고 ══════════════════ -->
-<div class="tab-pane fade show active" id="tab-inbound">
+<!-- ══════════════════ 탭0: Dashboard (메인) ══════════════════ -->
+<div class="tab-pane fade show active" id="tab-dashboard">
+  <div class="d-flex gap-2 align-items-center flex-wrap mb-3">
+    <h5 class="mb-0 fw-bold" style="color:#1a6ea8;">🏠 소분류별 재고 현황</h5>
+    <button class="btn btn-sm btn-outline-info" onclick="window.renderDashboard()">🔄 새로고침</button>
+    <div class="form-check ms-2 mb-0">
+      <input class="form-check-input" type="checkbox" id="dash-hide-zero" onchange="window.renderDashboard()">
+      <label class="form-check-label small" for="dash-hide-zero">재고 0인 소분류 숨기기</label>
+    </div>
+    <span class="text-secondary small ms-auto" id="dash-summary"></span>
+  </div>
+
+  <!-- 소분류 카드 -->
+  <div id="dash-cards" class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3"></div>
+
+  <!-- 선택한 소분류 상세 -->
+  <div id="dash-detail-wrap" class="mt-4" style="display:none;">
+    <fieldset class="section-box" style="border-color:#1a6ea8;">
+      <legend style="color:#1a6ea8;" id="dash-detail-title">상세</legend>
+      <div class="d-flex gap-2 mb-2">
+        <button class="btn btn-sm btn-outline-secondary" onclick="window.closeDashDetail()">✕ 닫기</button>
+        <span class="text-secondary small align-self-center" id="dash-detail-count"></span>
+      </div>
+      <div class="tbl-wrap" style="max-height:420px;">
+        <table class="inv-table" id="tbl-dash-detail">
+          <thead><tr>
+            <th>품명</th><th>P/N</th><th>장비군</th>
+            <th style="width:90px;">총수량</th><th style="width:80px;">출고</th><th style="width:90px;">현재고</th>
+            <th style="width:100px;">⭕ 사용가능</th><th style="width:100px;">❌ 사용불가</th>
+          </tr></thead>
+          <tbody id="dash-detail-tbody"></tbody>
+        </table>
+      </div>
+    </fieldset>
+  </div>
+</div>
+
+<div class="tab-pane fade" id="tab-inbound">
   <fieldset class="section-box">
     <legend>1. 입고 공통 정보</legend>
     <div class="row g-2 align-items-center">
@@ -535,6 +573,9 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 
 <!-- ══════════════════ 탭4: 마스터 관리 ══════════════════ -->
 <div class="tab-pane fade" id="tab-master">
+<div class="row g-3">
+<!-- ── 좌측: 제품명 마스터 (기존) ── -->
+<div class="col-12 col-lg-6">
   <fieldset class="section-box">
     <legend>제품 마스터 등록 / 수정</legend>
     <div class="row g-2 align-items-center">
@@ -584,6 +625,53 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
       </table>
     </div>
   </fieldset>
+</div>
+
+<!-- ── [Ver.10.0] 우측: 소분류 관리 ── -->
+<div class="col-12 col-lg-6">
+  <fieldset class="section-box" style="border-color:#6a1b9a;">
+    <legend style="color:#6a1b9a;">🏷️ 소분류 목록 관리</legend>
+    <div class="d-flex gap-2 mb-2">
+      <input type="text" id="cat-new-name" class="form-control form-control-sm" placeholder="새 소분류 이름 (예: ROADM 카드)"
+             onkeydown="if(event.key==='Enter') window.addCategory()">
+      <button class="btn btn-sm btn-nokia flex-shrink-0" onclick="window.addCategory()">➕ 추가</button>
+    </div>
+    <div id="cat-chips" class="d-flex flex-wrap gap-1 mb-1" style="min-height:34px;"></div>
+    <div class="form-text small">※ 소분류를 삭제하면 그 소분류에 지정된 품명들은 <b>미분류</b>가 됩니다.</div>
+  </fieldset>
+
+  <fieldset class="section-box" style="border-color:#6a1b9a;">
+    <legend style="color:#6a1b9a;">📦 품명별 소분류 지정</legend>
+    <div class="d-flex gap-2 align-items-center flex-wrap mb-2">
+      <div class="input-group input-group-sm" style="width:200px;">
+        <span class="input-group-text">🔍</span>
+        <input type="text" id="cat-filter-name" class="form-control" placeholder="품명 검색" oninput="window.renderCategoryAssign()">
+      </div>
+      <select id="cat-filter-status" class="form-select form-select-sm" style="width:150px;" onchange="window.renderCategoryAssign()">
+        <option value="all">전체 보기</option>
+        <option value="none">미분류만</option>
+        <option value="done">분류완료만</option>
+      </select>
+      <span id="cat-assign-count" class="text-secondary small"></span>
+    </div>
+    <div class="d-flex gap-2 align-items-center mb-2 p-2" style="background:#f6f0fa; border-radius:6px;">
+      <span class="small fw-bold">✅ 선택 항목 일괄 지정:</span>
+      <select id="cat-bulk-select" class="form-select form-select-sm" style="width:170px;"></select>
+      <button class="btn btn-sm btn-outline-primary" onclick="window.bulkAssignCategory()">적용</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="window.toggleAllCatChk(true)">전체선택</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="window.toggleAllCatChk(false)">해제</button>
+    </div>
+    <div class="tbl-wrap" style="max-height:380px;">
+      <table class="inv-table" id="tbl-cat-assign">
+        <thead><tr>
+          <th style="width:40px;">선택</th><th style="width:46%;">품명</th><th style="width:70px;">재고</th><th style="width:190px;">소분류</th>
+        </tr></thead>
+        <tbody id="cat-assign-tbody"></tbody>
+      </table>
+    </div>
+  </fieldset>
+</div>
+</div><!-- /row -->
 </div>
 
 <!-- ══════════════════ 탭5: 엑셀 데이터 관리 ══════════════════ -->
@@ -695,7 +783,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.9.9 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.10.1 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
@@ -1113,6 +1201,21 @@ window.addEventListener('DOMContentLoaded', () => {
       }
   });
 
+  // [Ver.10.0] Dashboard / 마스터(소분류) 탭 진입 시 렌더
+  const dashTabLink = document.querySelector('a[href="#tab-dashboard"]');
+  if (dashTabLink) {
+      dashTabLink.addEventListener('shown.bs.tab', () => {
+          if (typeof window.renderDashboard === 'function') window.renderDashboard();
+      });
+  }
+  const masterTabLink = document.querySelector('a[href="#tab-master"]');
+  if (masterTabLink) {
+      masterTabLink.addEventListener('shown.bs.tab', () => {
+          if (typeof window.renderCategoryChips === 'function') window.renderCategoryChips();
+          if (typeof window.renderCategoryAssign === 'function') window.renderCategoryAssign();
+      });
+  }
+
   // [Ver.9.5] 계정 관리 탭 진입 시 목록 렌더
   const usersTabLink = document.querySelector('a[href="#tab-users"]');
   if (usersTabLink) {
@@ -1166,6 +1269,9 @@ let currentProjDocs = [];
 let currentProjRows = []; 
 let selectedProjName = null;
 let projOrder = [];   // [Ver.8.6] 프로젝트 정렬 순서 (Firestore 저장)
+// [Ver.10.0] 소분류: list=소분류 이름 목록, map={ 품명: 소분류 }
+let catData = { list: [], map: {} };
+let dashSelectedCat = null;   // Dashboard에서 선택한 소분류
 let editingDocId    = null;
 let checkoutItems   = [];
 let dupResolve      = null;
@@ -1602,6 +1708,7 @@ window.loadInventory = async function(silent=false){
     window.renderInventoryTable();
     window.renderStatsTable();
     window.renderProjList();
+    if(typeof window.renderDashboard === 'function') window.renderDashboard();   // [Ver.10.0] 재고 변경 시 대시보드 갱신
     window.setStatus(`🔄 재고 새로고침 완료 — 총 ${allInventory.length}건`);
   } catch(e){
     console.error('[loadInventory]', e);
@@ -2124,6 +2231,351 @@ window.writeUserLog = async function(actionType, detail){
   } catch(e){ console.warn('[writeUserLog]', e); }
 };
 
+// ==========================================================================
+// [Ver.10.0] 소분류(카테고리) — 품명 기준 분류
+//   저장 위치: Nokia_Equipment/data/settings/categories
+//   { list: ["ROADM 카드", "광모듈", ...], map: { "8P20": "ROADM 카드", ... } }
+//   같은 품명이면 P/N이 달라도 같은 소분류로 묶인다.
+// ==========================================================================
+window.CAT_NONE = '미분류';
+
+// ── 소분류 관리 UI ───────────────────────────────────────────────────
+// 시스템에 존재하는 모든 품명 = 재고(equipment) + 마스터(product_master)
+window.getAllPartNames = function(){
+  const set = new Set();
+  (allInventory || []).forEach(r => { const n=String(r.part_name||'').trim(); if(n) set.add(n); });
+  Object.values(allMaster || {}).forEach(m => { const n=String(m.part_name||'').trim(); if(n) set.add(n); });
+  return [...set].sort((a,b)=>a.localeCompare(b));
+};
+
+window.renderCategoryChips = function(){
+  const box = document.getElementById('cat-chips');
+  if(!box) return;
+  if(!catData.list.length){
+    box.innerHTML = '<span class="text-secondary small">등록된 소분류가 없습니다. 위에서 추가해 주세요.</span>';
+  } else {
+    box.innerHTML = catData.list.map(c=>{
+      const cnt = Object.values(catData.map).filter(v=>v===c).length;
+      const esc = window.esc(c).replace(/'/g,"\\'");
+      // [Ver.10.1] 드래그앤드롭으로 Dashboard 표시 순서를 정한다
+      return `<span class="badge bg-light text-dark border cat-chip" style="font-size:12px; padding:6px 8px; cursor:grab;"
+        draggable="true" data-cat="${window.esc(c)}"
+        ondragstart="window.catDragStart(event,'${esc}')"
+        ondragend="window.catDragEnd(event)"
+        ondragover="window.catDragOver(event)"
+        ondrop="window.catDrop(event,'${esc}')"
+        title="드래그하여 Dashboard 순서 변경">
+        <i class="bi bi-grip-vertical text-secondary"></i>
+        ${window.esc(c)} <span class="text-secondary">(${cnt})</span>
+        <a href="#" onclick="event.preventDefault(); event.stopPropagation(); window.deleteCategory('${esc}')" style="text-decoration:none; color:#dc3545; margin-left:4px;" title="삭제">✕</a>
+      </span>`;
+    }).join('');
+  }
+  // 일괄 지정 셀렉트도 갱신
+  const sel = document.getElementById('cat-bulk-select');
+  if(sel) sel.innerHTML = `<option value="">(미분류로)</option>` + catData.list.map(c=>`<option value="${window.esc(c)}">${window.esc(c)}</option>`).join('');
+};
+
+// [Ver.10.1] 소분류 드래그앤드롭 정렬 (Dashboard 카드 순서에 반영)
+let _dragCatName = null;
+window.catDragStart = function(ev, name){
+  _dragCatName = name;
+  ev.dataTransfer.effectAllowed = 'move';
+  try { ev.dataTransfer.setData('text/plain', name); } catch(e){}
+  ev.currentTarget.style.opacity = '0.4';
+};
+window.catDragEnd = function(ev){
+  ev.currentTarget.style.opacity = '';
+  document.querySelectorAll('.cat-chip').forEach(c=>c.style.borderLeft='');
+};
+window.catDragOver = function(ev){
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.cat-chip').forEach(c=>c.style.borderLeft='');
+  ev.currentTarget.style.borderLeft = '3px solid #1a6ea8';
+};
+window.catDrop = async function(ev, targetName){
+  ev.preventDefault();
+  ev.currentTarget.style.borderLeft = '';
+  if(!_dragCatName || _dragCatName === targetName) return;
+  const from = catData.list.indexOf(_dragCatName);
+  const to   = catData.list.indexOf(targetName);
+  if(from === -1 || to === -1) return;
+  catData.list.splice(from, 1);
+  catData.list.splice(to, 0, _dragCatName);
+  _dragCatName = null;
+  window.renderCategoryChips();
+  try {
+    await window.saveCategories();
+    if(typeof window.renderDashboard === 'function') window.renderDashboard();
+    window.setStatus('↕️ 소분류 순서 변경됨 (저장 완료)');
+  } catch(e){ window.setStatus('❌ 순서 저장 실패'); }
+};
+
+window.addCategory = async function(){
+  const el = document.getElementById('cat-new-name');
+  const name = (el?.value || '').trim();
+  if(!name){ await window.customAlert('소분류 이름을 입력해주세요.', '입력 오류'); return; }
+  if(name === window.CAT_NONE){ await window.customAlert(`'${window.CAT_NONE}'는 예약된 이름입니다.`, '입력 오류'); return; }
+  if(catData.list.includes(name)){ await window.customAlert('이미 있는 소분류입니다.', '중복'); return; }
+
+  window.showLoading('소분류 추가 중...');
+  try {
+    catData.list.push(name);
+    await window.saveCategories();
+    el.value = '';
+    window.renderCategoryChips(); window.renderCategoryAssign();
+    window.setStatus(`🏷️ 소분류 추가: ${name}`);
+  } catch(e){ await window.customAlert('저장 오류: '+e.message,'에러'); }
+  finally { window.hideLoading(); }
+};
+
+window.deleteCategory = async function(name){
+  const cnt = Object.values(catData.map).filter(v=>v===name).length;
+  const ok = await window.customConfirm(
+    `소분류 '${name}'을(를) 삭제합니다.` + (cnt ? `\n지정된 품명 ${cnt}건이 '미분류'가 됩니다.` : '') + '\n\n계속하시겠습니까?',
+    '소분류 삭제');
+  if(!ok) return;
+  window.showLoading('소분류 삭제 중...');
+  try {
+    catData.list = catData.list.filter(c=>c!==name);
+    Object.keys(catData.map).forEach(k=>{ if(catData.map[k]===name) delete catData.map[k]; });
+    await window.saveCategories();
+    window.renderCategoryChips(); window.renderCategoryAssign();
+    if(typeof window.renderDashboard === 'function') window.renderDashboard();
+    window.setStatus(`🗑️ 소분류 삭제: ${name}`);
+  } catch(e){ await window.customAlert('삭제 오류: '+e.message,'에러'); }
+  finally { window.hideLoading(); }
+};
+
+window.renderCategoryAssign = function(){
+  const tbody = document.getElementById('cat-assign-tbody');
+  if(!tbody) return;
+  const kw = (document.getElementById('cat-filter-name')?.value || '').trim().toLowerCase();
+  const status = document.getElementById('cat-filter-status')?.value || 'all';
+
+  // 품명별 재고 합계
+  const stockByName = {};
+  (allInventory || []).forEach(r=>{
+    const n=String(r.part_name||'').trim(); if(!n) return;
+    stockByName[n] = (stockByName[n]||0) + (+r.current_stock||0);
+  });
+
+  let names = window.getAllPartNames();
+  if(kw) names = names.filter(n => n.toLowerCase().includes(kw));
+  if(status==='none') names = names.filter(n => !catData.map[n]);
+  if(status==='done') names = names.filter(n => !!catData.map[n]);
+
+  const cntEl = document.getElementById('cat-assign-count');
+  if(cntEl){
+    const total = window.getAllPartNames().length;
+    const done = window.getAllPartNames().filter(n=>catData.map[n]).length;
+    cntEl.textContent = `표시 ${names.length}건 / 전체 ${total}건 (분류완료 ${done}건)`;
+  }
+
+  tbody.innerHTML = names.map(n=>{
+    const cur = catData.map[n] || '';
+    const opts = `<option value="">${window.CAT_NONE}</option>` +
+      catData.list.map(c=>`<option value="${window.esc(c)}" ${c===cur?'selected':''}>${window.esc(c)}</option>`).join('');
+    return `<tr>
+      <td class="text-center"><input type="checkbox" class="form-check-input cat-chk" data-name="${window.esc(n)}"></td>
+      <td style="white-space:normal; word-break:break-all; font-size:12px;" title="${window.esc(n)}">${window.esc(n)}</td>
+      <td class="text-center fw-bold">${stockByName[n] || 0}</td>
+      <td><select class="form-select form-select-sm" onchange="window.assignCategory('${window.esc(n).replace(/'/g,"\\'")}', this.value)">${opts}</select></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" class="text-center text-secondary py-3">표시할 품명이 없습니다.</td></tr>';
+};
+
+window.assignCategory = async function(partName, cat){
+  try {
+    if(cat) catData.map[partName] = cat; else delete catData.map[partName];
+    await window.saveCategories();
+    window.renderCategoryChips();
+    if(typeof window.renderDashboard === 'function') window.renderDashboard();
+    window.setStatus(`🏷️ '${partName}' ➔ ${cat || window.CAT_NONE}`);
+  } catch(e){ await window.customAlert('저장 오류: '+e.message,'에러'); }
+};
+
+window.toggleAllCatChk = function(checked){
+  document.querySelectorAll('#cat-assign-tbody .cat-chk').forEach(c=>c.checked = checked);
+};
+
+window.bulkAssignCategory = async function(){
+  const cat = document.getElementById('cat-bulk-select').value;
+  const chks = [...document.querySelectorAll('#cat-assign-tbody .cat-chk')].filter(c=>c.checked);
+  if(!chks.length){ await window.customAlert('먼저 품명을 선택해주세요.', '선택 오류'); return; }
+  const ok = await window.customConfirm(`선택한 ${chks.length}건을 [${cat || window.CAT_NONE}]로 지정합니다.\n\n계속하시겠습니까?`, '소분류 일괄 지정');
+  if(!ok) return;
+
+  window.showLoading('소분류 적용 중...');
+  try {
+    chks.forEach(c=>{
+      const n = c.dataset.name;
+      if(cat) catData.map[n] = cat; else delete catData.map[n];
+    });
+    await window.saveCategories();
+    window.renderCategoryChips(); window.renderCategoryAssign();
+    if(typeof window.renderDashboard === 'function') window.renderDashboard();
+    window.setStatus(`🏷️ ${chks.length}건 소분류 지정 완료`);
+  } catch(e){ await window.customAlert('저장 오류: '+e.message,'에러'); }
+  finally { window.hideLoading(); }
+};
+
+
+// ==========================================================================
+// [Ver.10.0] Dashboard — 소분류별 재고 카드 + 클릭 시 상세
+// ==========================================================================
+const DASH_COLORS = ['#1a6ea8','#2e7d32','#c2185b','#f57c00','#6a1b9a','#00838f','#5d4037','#455a64','#ad1457','#33691e'];
+
+window.renderDashboard = function(){
+  const wrap = document.getElementById('dash-cards');
+  if(!wrap) return;
+
+  // 소분류별 집계 (현재고 기준)
+  const agg = {};
+  (allInventory || []).forEach(r => {
+    const cat = window.getCategory(r);
+    if(!agg[cat]) agg[cat] = { cat, items:0, total:0, out:0, stock:0, usable:0, unusable:0 };
+    const a = agg[cat];
+    const cs = +r.current_stock || 0;
+    a.items++;
+    a.total += +r.total_qty || 0;
+    a.out   += +r.out_qty || 0;
+    a.stock += cs;
+    if(window.isUsable(r)) a.usable += cs; else a.unusable += cs;
+  });
+
+  // 등록된 소분류는 재고가 없어도 카드로 표시(0으로)
+  (catData.list || []).forEach(c => {
+    if(!agg[c]) agg[c] = { cat:c, items:0, total:0, out:0, stock:0, usable:0, unusable:0 };
+  });
+
+  let list = Object.values(agg);
+  if(document.getElementById('dash-hide-zero')?.checked){
+    list = list.filter(a => a.stock > 0);
+  }
+  // [Ver.10.1] 소분류 목록의 순서(드래그앤드롭으로 지정)를 따른다.
+  //   목록에 없는 소분류는 뒤로, '미분류'는 항상 맨 마지막.
+  list.sort((a,b)=>{
+    if(a.cat === window.CAT_NONE) return 1;
+    if(b.cat === window.CAT_NONE) return -1;
+    const ia = catData.list.indexOf(a.cat), ib = catData.list.indexOf(b.cat);
+    if(ia === -1 && ib === -1) return b.stock - a.stock;
+    if(ia === -1) return 1;
+    if(ib === -1) return -1;
+    return ia - ib;
+  });
+
+  const totalStock = list.reduce((n,a)=>n+a.stock,0);
+  const totalUnusable = list.reduce((n,a)=>n+a.unusable,0);
+  const sum = document.getElementById('dash-summary');
+  if(sum) sum.innerHTML = `총 현재고 <b>${totalStock}</b>개 · 사용불가 <b style="color:#dc3545;">${totalUnusable}</b>개 · 소분류 <b>${list.length}</b>종`;
+
+  if(!list.length){
+    wrap.innerHTML = '<div class="col-12 text-center text-secondary py-5">표시할 데이터가 없습니다.</div>';
+    return;
+  }
+
+  wrap.innerHTML = list.map((a,i)=>{
+    const color = a.cat === window.CAT_NONE ? '#888' : DASH_COLORS[i % DASH_COLORS.length];
+    const isSel = (dashSelectedCat === a.cat);
+    return `
+    <div class="col">
+      <div class="card h-100 dash-card ${isSel?'dash-card-active':''}" style="cursor:pointer; border-left:6px solid ${color};"
+           onclick="window.showDashDetail('${window.esc(a.cat).replace(/'/g,"\\'")}')" title="클릭하면 상세 내역을 봅니다">
+        <div class="card-body py-3 px-3">
+          <div class="text-truncate fw-bold mb-1" style="color:${color};" title="${window.esc(a.cat)}">${window.esc(a.cat)}</div>
+          <div class="d-flex align-items-baseline gap-1">
+            <span style="font-size:30px; font-weight:800; line-height:1; color:#222;">${a.stock}</span>
+            <span class="text-secondary small">개 현재고</span>
+          </div>
+          <div class="mt-2 small">
+            <span class="badge bg-success">⭕ ${a.usable}</span>
+            <span class="badge ${a.unusable>0?'bg-danger':'bg-light text-secondary'} ms-1">❌ ${a.unusable}</span>
+          </div>
+          <div class="text-secondary mt-2" style="font-size:11px;">
+            품목 ${a.items}건 · 총입고 ${a.total} · 출고 ${a.out}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+};
+
+window.showDashDetail = function(cat){
+  dashSelectedCat = cat;
+  const rows = (allInventory || []).filter(r => window.getCategory(r) === cat);
+
+  // 품명+P/N 단위로 묶어서 표시
+  const map = {};
+  rows.forEach(r=>{
+    const k = (r.part_name||'') + '|' + (r.part_number||'');
+    if(!map[k]) map[k] = { part_name:r.part_name||'', part_number:r.part_number||'', equip_group:r.equip_group||'', total:0, out:0, stock:0, usable:0, unusable:0 };
+    const m = map[k]; const cs = +r.current_stock||0;
+    m.total += +r.total_qty||0; m.out += +r.out_qty||0; m.stock += cs;
+    if(window.isUsable(r)) m.usable += cs; else m.unusable += cs;
+  });
+  const items = Object.values(map).sort((a,b)=> b.stock - a.stock);
+
+  document.getElementById('dash-detail-title').textContent = `📦 ${cat}`;
+  document.getElementById('dash-detail-count').textContent = `품목 ${items.length}종 / 개별 장비 ${rows.length}건`;
+  document.getElementById('dash-detail-tbody').innerHTML = items.map(m=>`
+    <tr style="cursor:pointer;" title="클릭하면 개별 장비 상세내역을 봅니다 (Excel 추출 가능)"
+        onclick="window.openStatFromDash('${window.esc(m.part_number).replace(/'/g,"\\'")}','${window.esc(m.part_name).replace(/'/g,"\\'")}')">
+      <td>${window.esc(m.part_name)}</td>
+      <td>${window.esc(m.part_number)}</td>
+      <td>${window.esc(m.equip_group)}</td>
+      <td class="text-center">${m.total}</td>
+      <td class="text-center">${m.out}</td>
+      <td class="text-center fw-bold">${m.stock}</td>
+      <td class="text-center fw-bold" style="color:#198754;">${m.usable}</td>
+      <td class="text-center fw-bold" style="color:${m.unusable>0?'#dc3545':'#aaa'};">${m.unusable}</td>
+    </tr>`).join('') || '<tr><td colspan="8" class="text-center text-secondary py-3">해당 소분류에 장비가 없습니다.</td></tr>';
+
+  document.getElementById('dash-detail-wrap').style.display = 'block';
+  window.renderDashboard();   // 선택 카드 강조 갱신
+  document.getElementById('dash-detail-wrap').scrollIntoView({behavior:'smooth', block:'nearest'});
+};
+
+// [Ver.10.1] Dashboard 상세 → P/N 통계 상세 모달로 드릴다운
+//   기존 showStatDetails를 그대로 재사용하므로 개별 장비 목록·Excel 추출이 동일하게 동작한다.
+window.openStatFromDash = function(pn, name){
+  if(typeof window.showStatDetails !== 'function') return;
+  window.showStatDetails({ getAttribute: (k) => (k === 'data-pn' ? pn : name) });
+};
+
+window.closeDashDetail = function(){
+  dashSelectedCat = null;
+  document.getElementById('dash-detail-wrap').style.display = 'none';
+  window.renderDashboard();
+};
+
+window.loadCategories = async function(){
+  try {
+    const snap = await getDoc(doc(db,'Nokia_Equipment','data','settings','categories'));
+    if(snap.exists()){
+      const d = snap.data();
+      catData = { list: Array.isArray(d.list) ? d.list : [], map: (d.map && typeof d.map === 'object') ? d.map : {} };
+    } else {
+      catData = { list: [], map: {} };
+    }
+  } catch(e){
+    console.warn('[loadCategories] 소분류 로드 실패', e);
+    catData = { list: [], map: {} };
+  }
+};
+
+window.saveCategories = async function(){
+  await setDoc(doc(db,'Nokia_Equipment','data','settings','categories'), { list: catData.list, map: catData.map });
+};
+
+// 장비(또는 품명 문자열)의 소분류를 구한다
+window.getCategory = function(itemOrName){
+  const name = (typeof itemOrName === 'string') ? itemOrName : (itemOrName?.part_name || '');
+  const key = String(name).trim();
+  return (catData.map && catData.map[key]) ? catData.map[key] : window.CAT_NONE;
+};
+
 window.loadProjOrder = async function(){
   try {
     const snap = await getDoc(doc(db,'Nokia_Equipment','data','settings','proj_order'));
@@ -2423,7 +2875,7 @@ window.exportStatDetailExcel = async function() {
       ws.getRow(1).height = 25;
       ws.getRow(2).height = 10;
       
-      const headers = ["ID", "프로젝트명", "장비군", "품명", "P/N", "S/N", "총수량", "출고", "현재고", "입고일자", "출고일자", "비고"];
+      const headers = ["ID", "프로젝트명", "소분류", "장비군", "품명", "P/N", "S/N", "총수량", "출고", "현재고", "사용상태", "입고일자", "출고일자", "비고"];
       ws.getRow(3).values = headers;
       
       const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDDEBF7' } };
@@ -2444,8 +2896,10 @@ window.exportStatDetailExcel = async function() {
       filtered.forEach((r, idx) => {
           const row = ws.getRow(idx + 4);
           row.values = [
-              r._rowNum, r.project_name, r.equip_group, r.part_name, r.part_number, r.serial_number,
-              r.total_qty, r.out_qty, r.current_stock, r.inbound_date, r.outbound_date, r.note
+              r._rowNum, r.project_name, window.getCategory(r), r.equip_group, r.part_name, r.part_number, r.serial_number,
+              r.total_qty, r.out_qty, r.current_stock,
+              (window.isUsable(r) ? '사용가능' : '사용불가'),
+              r.inbound_date, r.outbound_date, r.note
           ];
           for (let i = 1; i <= headers.length; i++) {
               const cell = row.getCell(i);
@@ -2458,8 +2912,8 @@ window.exportStatDetailExcel = async function() {
       });
       
       ws.columns = [
-          { width: 8 }, { width: 15 }, { width: 12 }, { width: 35 }, { width: 15 }, { width: 15 },
-          { width: 8 }, { width: 8 }, { width: 8 }, { width: 12 }, { width: 12 }, { width: 30 }
+          { width: 8 }, { width: 15 }, { width: 16 }, { width: 12 }, { width: 35 }, { width: 15 }, { width: 15 },
+          { width: 8 }, { width: 8 }, { width: 8 }, { width: 10 }, { width: 12 }, { width: 12 }, { width: 30 }
       ];
 
       const buffer = await wb.xlsx.writeBuffer();
@@ -3950,36 +4404,40 @@ window.export_excel_multi_sheet = async function(){
       ws.autoFilter = { from:{row:3,column:1}, to:{row:3+dataRows.length,column:detailCols.length} };
     }
 
-    const detailCols  = ['순번','프로젝트명','구매처','입고일자','출고일자','장비군','품명','P/N','S/N','총수량','출고','재고','비고'];
-    const detailWidths= [6, 24, 15, 12, 12, 10, 32, 16, 18, 8, 8, 8, 28];
+    // [Ver.10.0] 소분류 / 사용상태 컬럼 추가
+    const detailCols  = ['순번','프로젝트명','구매처','입고일자','출고일자','소분류','장비군','품명','P/N','S/N','총수량','출고','재고','사용상태','비고'];
+    const detailWidths= [6, 24, 15, 12, 12, 16, 10, 32, 16, 18, 8, 8, 8, 10, 28];
     const allData = allRows.map((r,i)=>[
       i+1, r.project_name||'', r.vendor||'', r.inbound_date||'', r.outbound_date||'',
-      r.equip_group||'', r.part_name||'', r.part_number||'', r.serial_number||'',
-      +r.total_qty||0, +r.out_qty||0, +r.current_stock||0, r.note||''
+      window.getCategory(r), r.equip_group||'', r.part_name||'', r.part_number||'', r.serial_number||'',
+      +r.total_qty||0, +r.out_qty||0, +r.current_stock||0,
+      (window.isUsable(r) ? '사용가능' : '사용불가'), r.note||''
     ]);
     const wsAll = wb.addWorksheet('전체 현황', {views:[{state:'frozen',xSplit:0,ySplit:3}]});
     buildDetailSheet(wsAll, '전체 현황', allData, detailCols, detailWidths);
 
-    const statCols   = ['장비군','품명','P/N','총입고','총출고','총현재고'];
-    const statWidths = [12, 34, 18, 10, 10, 10];
+    const statCols   = ['소분류','장비군','품명','P/N','총입고','총출고','총현재고','사용가능','사용불가'];
+    const statWidths = [16, 12, 34, 18, 10, 10, 10, 10, 10];
     const statMap={};
     activeRows.forEach(r=>{
       const k=(r.part_number||'')+'|'+(r.part_name||'');
-      if(!statMap[k]) statMap[k]={g:r.equip_group||'',n:r.part_name||'',p:r.part_number||'',ti:0,to:0,ts:0};
+      if(!statMap[k]) statMap[k]={c:window.getCategory(r),g:r.equip_group||'',n:r.part_name||'',p:r.part_number||'',ti:0,to:0,ts:0,uo:0,ux:0};
+      const cs=+r.current_stock||0;
       statMap[k].ti+=+r.total_qty||0;
       statMap[k].to+=+r.out_qty||0;
-      statMap[k].ts+=+r.current_stock||0;
+      statMap[k].ts+=cs;
+      if(window.isUsable(r)) statMap[k].uo+=cs; else statMap[k].ux+=cs;
     });
-    const statData = Object.values(statMap).sort((a,b)=>a.g.localeCompare(b.g)||a.n.localeCompare(b.n)).map(s=>[s.g, s.n, s.p, s.ti, s.to, s.ts]);
+    const statData = Object.values(statMap).sort((a,b)=>a.c.localeCompare(b.c)||a.g.localeCompare(b.g)||a.n.localeCompare(b.n)).map(s=>[s.c, s.g, s.n, s.p, s.ti, s.to, s.ts, s.uo, s.ux]);
     const wsStat = wb.addWorksheet('P_N별 전체 재고', {views:[{state:'frozen',xSplit:0,ySplit:3}]});
-    wsStat.getCell('A1').value = '📊 NOKIA 장비 P/N별 재고 통계'; wsStat.getCell('A1').font = TITLE_FONT; wsStat.mergeCells('A1:D1'); wsStat.getRow(1).height = 24;
+    wsStat.getCell('A1').value = '📊 NOKIA 장비 P/N별 재고 통계'; wsStat.getCell('A1').font = TITLE_FONT; wsStat.mergeCells('A1:E1'); wsStat.getRow(1).height = 24;
     wsStat.getCell('F1').value = `출력일시: ${reportDate}`; wsStat.getCell('F1').font = DATE_FONT; wsStat.getCell('F1').alignment = {horizontal:'right'};
     wsStat.getRow(2).height = 6;
     statCols.forEach((h,ci)=>{ const c=wsStat.getCell(3,ci+1); c.value=h; applyHdrStyle(c); });
     wsStat.getRow(3).height = 18;
     statData.forEach((row,ri)=>{
       const eRow = wsStat.getRow(ri+4);
-      row.forEach((val,ci)=>{ const c=eRow.getCell(ci+1); c.value=val; applyDataStyle(c,ci>=3?'center':'left',ri); });
+      row.forEach((val,ci)=>{ const c=eRow.getCell(ci+1); c.value=val; applyDataStyle(c,ci>=4?'center':'left',ri); });
       eRow.height=15;
     });
     statWidths.forEach((w,i)=>{ wsStat.getColumn(i+1).width=w; });
@@ -4065,6 +4523,7 @@ window.initDataLoad = async function() {
   try {
     // [Ver.8.2] 세 로더를 silent 로 호출 → 바깥 스피너 1개만 유지(깜빡임 제거)
     await window.loadUsers();       // [Ver.9.5] 계정 목록 로드(다음 로그인부터 반영)
+    await window.loadCategories();  // [Ver.10.0] 소분류 로드
     await window.loadProjOrder();   // [Ver.8.6] 프로젝트 정렬 순서 로드
     await window.loadMaster(true);
     await window.loadInventory(true);
@@ -4075,6 +4534,7 @@ window.initDataLoad = async function() {
 
     window._isDataLoaded = true;              // ✅ 성공했을 때만 잠금
     window.setStatus('✅ 데이터 로딩 완료');
+    if(typeof window.renderDashboard === 'function') window.renderDashboard();   // [Ver.10.0]
 
     // [Ver.9.7] 최초 로그인(임시 비밀번호)이면 비밀번호 변경을 강제한다.
     //   loadUsers() 이후이므로 DB의 최신 mustChangePw 값을 다시 확인한다.
