@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.10.1</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.10.4</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -230,7 +230,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.10.1</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.10.4</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -284,7 +284,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.10.1 (Dashboard 5열 + 소분류 순서 + 상세 드릴다운)</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.10.4 (재고 그래프 상하 막대 + 비고 열)</span></h1>
   <div class="d-flex align-items-center gap-2">
     <span id="current-user-badge" class="text-white small fw-bold"></span>
     <button class="btn btn-sm btn-outline-light py-0 px-2" style="font-size:11px;" onclick="window.openPwChange(false)">🔑 비밀번호 변경</button>
@@ -783,7 +783,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.10.1 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.10.4 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
@@ -823,6 +823,39 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">취소</button>
         <button type="button" class="btn btn-success btn-sm" onclick="window.saveInventory()">💾 저장 및 이력에 반영</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- [Ver.10.2] 일자별 재고 현황 그래프 모달 -->
+<div class="modal fade" id="stockChartModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#f57c00;">
+        <h6 class="modal-title text-white" id="stockChartLabel">📈 일자별 재고 현황</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex gap-3 align-items-center flex-wrap mb-2 small">
+          <span><span style="display:inline-block;width:12px;height:12px;background:#2e7d32;"></span> 입고(위쪽 ↑)</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:#c62828;"></span> 출고(아래쪽 ↓)</span>
+          <span><span style="display:inline-block;width:18px;height:4px;background:#1a6ea8;vertical-align:middle;border-radius:2px;"></span> <b>보유량</b></span>
+          <span class="text-secondary ms-auto" id="chart-info"></span>
+        </div>
+        <div style="overflow-x:auto;">
+          <div id="stock-chart-area" style="min-width:600px;"></div>
+        </div>
+        <div class="tbl-wrap mt-3" style="max-height:220px;">
+          <table class="inv-table">
+            <thead><tr><th style="width:110px;">일자</th><th style="width:80px;">입고</th><th style="width:80px;">출고</th><th style="width:90px;">잔고</th><th>비고 (납품처 등)</th></tr></thead>
+            <tbody id="stock-chart-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span class="text-muted small me-auto">※ 현재 보유량을 기준으로 입출고 이력을 역산한 일자별 보유량입니다. (사용가능·불가 구분 없이 전체 수량)</span>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">닫기</button>
       </div>
     </div>
   </div>
@@ -994,6 +1027,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
       <div class="modal-header" style="background:#1a6ea8;">
         <h6 class="modal-title text-white" id="statDetailModalLabel">📊 장비 상세 내역</h6>
         <div>
+          <button type="button" class="btn btn-sm btn-warning me-2" onclick="window.openStockChart()">📈 일자별 재고 현황</button>
           <button type="button" class="btn btn-sm btn-light me-3" onclick="window.exportStatDetailExcel()">📥 엑셀 추출</button>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
@@ -1042,6 +1076,15 @@ const USERS_CACHE  = 'nokia_inv_users_cache';
 window.currentUser = null;
 
 // 사용 가능한 계정 목록 = 기본계정 + Firestore에서 불러온 계정(캐시)
+// [Ver.10.2] 계정 ID → 표시 이름. 없는 계정이면 ID를 그대로 반환한다.
+window.getUserDisplayName = function(uid){
+  if(!uid) return '';
+  try {
+    const u = window.getAllUsers().find(x => x.id === uid);
+    return (u && u.name) ? u.name : uid;
+  } catch(e){ return uid; }
+};
+
 window.getAllUsers = function(){
   let extra = [];
   try { extra = JSON.parse(localStorage.getItem(USERS_CACHE) || '[]'); } catch(e){ extra = []; }
@@ -1214,6 +1257,12 @@ window.addEventListener('DOMContentLoaded', () => {
           if (typeof window.renderCategoryChips === 'function') window.renderCategoryChips();
           if (typeof window.renderCategoryAssign === 'function') window.renderCategoryAssign();
       });
+  }
+
+  // [Ver.10.3] 재고 그래프 모달이 닫히면 z-index 원복 (상세내역 위 중첩용)
+  const chartModalEl = document.getElementById('stockChartModal');
+  if (chartModalEl) {
+      chartModalEl.addEventListener('hidden.bs.modal', () => { chartModalEl.style.zIndex = ''; });
   }
 
   // [Ver.9.5] 계정 관리 탭 진입 시 목록 렌더
@@ -1794,7 +1843,8 @@ window.loadLogs = async function(silent=false){
         detailHtml = window.esc(l.note);
       }
 
-      const _who = l.user_id ? window.esc(l.user_id) : '<span class="text-secondary">-</span>';
+      // [Ver.10.2] 작업자를 아이디 대신 "표시 이름"으로 보여준다 (계정 삭제 시엔 아이디로 대체)
+      const _who = l.user_id ? window.esc(window.getUserDisplayName(l.user_id)) : '<span class="text-secondary">-</span>';
       htmlContent += `<tr style="background:${bg}">
         <td>${displayTime}</td><td class="fw-bold">${_who}</td><td>${window.esc(l.action_type)}</td>
         <td>${window.esc(projName)}</td>
@@ -2850,6 +2900,194 @@ window.showStatDetails = function(tr) {
   
   const modalEl = document.getElementById('statDetailModal');
   window.openModalSafe(modalEl);
+};
+
+// ==========================================================================
+// [Ver.10.2] 일자별 재고 현황 그래프 (막대: 입고/출고, 선: 누적 잔고)
+//   현재 열린 P/N 상세내역(currentStatPn/Name)의 장비들에 대해
+//   daily_logs의 입고·출고 기록을 일자별로 집계해 잔고 추이를 그린다.
+// ==========================================================================
+window.openStockChart = async function(){
+  const pn   = window.currentStatPn;
+  const name = window.currentStatName;
+  if(pn === undefined){ await window.customAlert('먼저 상세 내역을 열어주세요.', '알림'); return; }
+
+  const targets = allInventory.filter(r => (r.part_number||'') === pn && (r.part_name||'') === name);
+  const idSet = new Set(targets.map(r => String(r.id)));
+  // [Ver.10.3] 현재 실제 재고 = 잔고 계산의 기준점
+  const currentStock = targets.reduce((n,r)=> n + (+r.current_stock||0), 0);
+
+  window.showLoading('이력 조회 중...');
+  try {
+    const logsRef = collection(db,'Nokia_Equipment','data','daily_logs');
+    let snap;
+    try { snap = await getDocs(query(logsRef, orderBy('timestamp','asc'))); }
+    catch(e){ snap = await getDocs(logsRef); }
+    const logs = snap.docs.map(d=>d.data())
+      .filter(l => idSet.has(String(l.ref_equip_id)))
+      .sort((a,b)=> String(a.timestamp||'').localeCompare(String(b.timestamp||'')));
+
+    // ── 일자별 입고/출고 집계 ──────────────────────────────────────────
+    //   '초기기록'은 엑셀 가져오기 시 기존 재고를 기록한 것으로, qty_changed가
+    //   출고량일 수도 총량일 수도 있어 입출고로 계산하면 왜곡된다 → 제외한다.
+    // [Ver.10.4] 장비ID → 비고(note) 매핑 (납품처 등을 표에 표시하기 위함)
+    const noteById = {};
+    targets.forEach(r => { noteById[String(r.id)] = String(r.note || '').trim(); });
+
+    const byDate = {};
+    const addTo = (date, key, qty, equipId) => {
+      if(!date || !qty) return;
+      if(!byDate[date]) byDate[date] = { date, in:0, out:0, notes:new Set() };
+      byDate[date][key] += qty;
+      // 출고 발생 장비의 비고를 모은다 (어디로 납품했는지)
+      if(key === 'out' && equipId){
+        const nt = noteById[String(equipId)];
+        if(nt) byDate[date].notes.add(nt);
+      }
+    };
+    logs.forEach(l=>{
+      const date = String(l.timestamp||'').slice(0,10).replace(/\./g,'-');
+      const q = Math.abs(+l.qty_changed || 0);
+      const t = l.action_type || '';
+      const eid = l.ref_equip_id;
+      if(t === '초기기록') return;                       // 계산에서 제외
+      if(t === '입고' || t === '입고(복원)')      addTo(date, 'in',  q, eid);
+      else if(t === '출고' || t === '보고서복원') addTo(date, 'out', q, eid);
+      else if(t === '재고수정' || t === '수동입력'){
+        const d = +l.qty_changed || 0;
+        if(d > 0) addTo(date,'in',d,eid); else if(d < 0) addTo(date,'out',-d,eid);
+      }
+      else if(t === '재고삭제') addTo(date, 'out', q, eid);
+    });
+
+    let rows = Object.values(byDate).sort((a,b)=> a.date.localeCompare(b.date));
+
+    // ── [Ver.10.3] 잔고는 "현재 재고"에서 거꾸로 계산한다 ───────────────
+    //   이전: 0에서 시작해 이력을 더해가다 보니, 입고 이력 없이 출고만 있는
+    //         (엑셀로 들여온) 장비에서 잔고가 음수(-49)로 나왔다.
+    //   지금: 마지막 날 잔고 = 실제 현재고. 거기서 역순으로 되짚어 과거를 채운다.
+    //         → 그래프 마지막 값이 항상 실제 재고와 일치하고 음수가 생기지 않는다.
+    let bal = currentStock;
+    for(let i = rows.length - 1; i >= 0; i--){
+      rows[i].bal = bal;                       // 그날 마감 잔고
+      bal = bal - rows[i].in + rows[i].out;     // 그 전날 마감 잔고
+    }
+    const startBal = bal;   // 첫 기록 이전의 보유량(엑셀 이관분 등)
+
+    document.getElementById('stockChartLabel').textContent = `📈 일자별 재고 현황 — [${pn}] ${name}`;
+    const info = document.getElementById('chart-info');
+    info.textContent = rows.length
+      ? `${rows[0].date} ~ ${rows[rows.length-1].date} · ${rows.length}일 · 현재 보유 ${currentStock}개`
+      : `입출고 이력 없음 · 현재 보유 ${currentStock}개`;
+
+    window.drawStockChart(rows, currentStock, startBal);
+
+    document.getElementById('stock-chart-tbody').innerHTML = rows.length
+      ? rows.slice().reverse().map(r=>{
+          const noteTxt = [...(r.notes||[])].join(' / ');
+          return `<tr>
+          <td>${window.esc(r.date)}</td>
+          <td class="text-center" style="color:#2e7d32; font-weight:bold;">${r.in?('+'+r.in):''}</td>
+          <td class="text-center" style="color:#c62828; font-weight:bold;">${r.out?('-'+r.out):''}</td>
+          <td class="text-center fw-bold">${r.bal}</td>
+          <td style="white-space:normal; word-break:break-all; font-size:12px;" title="${window.esc(noteTxt)}">${window.esc(noteTxt)}</td></tr>`;
+        }).join('')
+        + `<tr style="background:#f2f2f2;"><td class="text-secondary">(이전 보유)</td><td></td><td></td><td class="text-center fw-bold text-secondary">${startBal}</td><td class="text-secondary small">첫 기록 이전부터 보유하던 수량</td></tr>`
+      : '<tr><td colspan="5" class="text-center text-secondary py-3">입출고 이력이 없습니다.</td></tr>';
+
+    // [Ver.10.3] 상세내역 모달 위에 겹쳐 뜨도록 z-index를 올린다
+    const cm = document.getElementById('stockChartModal');
+    cm.style.zIndex = '1075';
+    setTimeout(()=>{
+      const bds = document.querySelectorAll('.modal-backdrop');
+      if(bds.length) bds[bds.length-1].style.zIndex = '1070';
+    }, 10);
+    window.openModalSafe('stockChartModal');
+  } catch(e){
+    await window.customAlert('그래프 생성 오류: ' + e.message, '에러');
+  } finally { window.hideLoading(); }
+};
+
+// [Ver.10.3] 보유량 꺾은선 중심 + 입출고 막대 (사용가능/불가 구분 없음)
+window.drawStockChart = function(rows, currentStock, startBal){
+  const area = document.getElementById('stock-chart-area');
+  if(!area) return;
+  if(!rows.length){
+    area.innerHTML = `<div class="text-center text-secondary py-5">입출고 이력이 없습니다. (현재 보유 ${currentStock}개)</div>`;
+    return;
+  }
+
+  const pts = [{date:'이전', in:0, out:0, bal:startBal}, ...rows];
+
+  // ── [Ver.10.4] 위/아래 2단 구성 ─────────────────────────────────────
+  //   상단: 보유량 꺾은선 (재고 추이)
+  //   하단: 입고(위쪽 ↑) / 출고(아래쪽 ↓) 막대 — 0선을 기준으로 나뉜다.
+  //   이전에는 막대와 선이 같은 축을 써서 "출고가 재고보다 많아" 보였다.
+  // --------------------------------------------------------------------
+  const W    = Math.max(660, pts.length * 56 + 100);
+  const padL = 56, padR = 24, padT = 18;
+  const lineH = 180;          // 상단 보유량 영역 높이
+  const gap   = 14;           // 상/하 사이 여백
+  const barH  = 110;          // 하단 입출고 영역 높이(위 55 / 아래 55)
+  const padB  = 60;
+  const H = padT + lineH + gap + barH + padB;
+  const cw = W - padL - padR;
+
+  const maxBal = Math.max(1, ...pts.map(r=>r.bal));
+  const maxBar = Math.max(1, ...pts.map(r=>Math.max(r.in, r.out)));
+  const x  = (i) => padL + (cw / pts.length) * (i + 0.5);
+  const yL = (v) => padT + lineH - (Math.max(0,v) / maxBal) * lineH;   // 보유량 좌표
+  const zeroY = padT + lineH + gap + barH/2;                            // 막대 0선
+  const yB = (v) => (v / maxBar) * (barH/2);                            // 막대 높이
+  const bw = Math.min(16, (cw / pts.length) / 2.4);
+
+  // 상단 눈금(보유량)
+  let grid = '';
+  for(let g=0; g<=3; g++){
+    const val = Math.round(maxBal * g / 3), gy = yL(val);
+    grid += `<line x1="${padL}" y1="${gy}" x2="${W-padR}" y2="${gy}" stroke="#eee" stroke-width="1"/>
+             <text x="${padL-8}" y="${gy+4}" font-size="10" fill="#999" text-anchor="end">${val}</text>`;
+  }
+
+  // 입출고 막대 (0선 기준 위/아래)
+  const bars = pts.map((r,i)=>{
+    if(i===0) return '';
+    const cx = x(i); let out = '';
+    if(r.in){
+      const h = yB(r.in);
+      out += `<rect x="${cx-bw/2}" y="${zeroY-h}" width="${bw}" height="${h}" fill="#2e7d32" rx="1"><title>${r.date} 입고 ${r.in}개</title></rect>`
+           + `<text x="${cx}" y="${zeroY-h-3}" font-size="9" fill="#2e7d32" text-anchor="middle">${r.in}</text>`;
+    }
+    if(r.out){
+      const h = yB(r.out);
+      out += `<rect x="${cx-bw/2}" y="${zeroY}" width="${bw}" height="${h}" fill="#c62828" rx="1"><title>${r.date} 출고 ${r.out}개</title></rect>`
+           + `<text x="${cx}" y="${zeroY+h+10}" font-size="9" fill="#c62828" text-anchor="middle">${r.out}</text>`;
+    }
+    return out;
+  }).join('');
+
+  // 보유량 꺾은선
+  const line = pts.map((r,i)=>`${i===0?'M':'L'}${x(i)},${yL(r.bal)}`).join(' ');
+  const dots = pts.map((r,i)=>`<circle cx="${x(i)}" cy="${yL(r.bal)}" r="4" fill="#fff" stroke="#1a6ea8" stroke-width="2.5"><title>${r.date} 보유 ${r.bal}개</title></circle>`).join('');
+  const li = pts.length-1;
+  const lastLabel = `<text x="${x(li)}" y="${yL(pts[li].bal)-12}" font-size="12" font-weight="bold" fill="#1a6ea8" text-anchor="middle">${pts[li].bal}개</text>`;
+
+  const step = Math.ceil(pts.length / 14);
+  const labels = pts.map((r,i)=> (i % step === 0 || i === pts.length-1)
+    ? `<text x="${x(i)}" y="${H-padB+34}" font-size="9" fill="#666" text-anchor="end" transform="rotate(-45 ${x(i)} ${H-padB+34})">${r.date==='이전'?'이전':r.date.slice(2)}</text>` : '').join('');
+
+  area.innerHTML = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="background:#fff;">
+    ${grid}
+    <line x1="${padL}" y1="${padT+lineH}" x2="${W-padR}" y2="${padT+lineH}" stroke="#bbb" stroke-width="1"/>
+    <path d="${line}" fill="none" stroke="#1a6ea8" stroke-width="3" stroke-linejoin="round"/>
+    ${dots}${lastLabel}
+    <text x="${padL-8}" y="${padT+10}" font-size="10" fill="#1a6ea8" text-anchor="end" font-weight="bold">보유</text>
+    <line x1="${padL}" y1="${zeroY}" x2="${W-padR}" y2="${zeroY}" stroke="#999" stroke-width="1"/>
+    <text x="${padL-8}" y="${zeroY-6}" font-size="9" fill="#2e7d32" text-anchor="end">입고↑</text>
+    <text x="${padL-8}" y="${zeroY+14}" font-size="9" fill="#c62828" text-anchor="end">출고↓</text>
+    ${bars}
+    ${labels}
+  </svg>`;
 };
 
 window.exportStatDetailExcel = async function() {
@@ -4319,7 +4557,7 @@ window.exportLogsExcel = async function(){
       const r = allInventory.find(x=>x.id===l.ref_equip_id) || {};
       const row = [
         l.timestamp || '',
-        l.user_id || '',
+        window.getUserDisplayName(l.user_id) || '',
         l.action_type || '',
         r.project_name || '',
         r.equip_group || '',
