@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOKIA 장비 스마트 재고관리 시스템 Ver.10.4</title>
+<title>NOKIA 장비 스마트 재고관리 시스템 Ver.10.5</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -230,7 +230,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
   <div id="login-box">
     <div class="login-logo">📡</div>
     <h2>NOKIA 장비 스마트 재고관리</h2>
-    <div class="login-sub">Nokia Equipment Manager Web Ver.10.4</div>
+    <div class="login-sub">Nokia Equipment Manager Web Ver.10.5</div>
 
     <div class="mb-3 text-start">
       <label class="form-label" for="login-id">아이디</label>
@@ -284,7 +284,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.10.4</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.10.5 (읽기 비용 최적화)</span></h1>
   <div class="d-flex align-items-center gap-2">
     <span id="current-user-badge" class="text-white small fw-bold"></span>
     <button class="btn btn-sm btn-outline-light py-0 px-2" style="font-size:11px;" onclick="window.openPwChange(false)">🔑 비밀번호 변경</button>
@@ -783,7 +783,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <div id="statusbar-wrap">
 <div id="statusbar">
   <span id="status-left">✅ 준비됨</span>
-  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.10.4 | Firestore: Nokia_Equipment/data</span>
+  <span>Created by pokarekong@naver.com 2026-07 | Nokia Equipment Manager Web Ver.10.5 | Firestore: Nokia_Equipment/data</span>
 </div>
 </div>
 
@@ -1297,6 +1297,7 @@ import {
 
 // [Ver.7.8] 로그는 서버에서 최신순 N건만 가져온다 (읽기 과금 방지)
 const LOG_LIMIT = 200;   // [Ver.8.8] 화면 표시용 최근 건수 (DB엔 전부 저장, Excel은 전량 추출)
+const CHART_LOG_LIMIT = 3000;  // [Ver.10.5] 재고이력 차트가 읽는 최대 로그 건수
 
 const firebaseConfig = {
   apiKey: "AIzaSyBD5-AJDFJKsneHyqH70SlNU9VixDAHl3o",
@@ -1765,6 +1766,41 @@ window.loadInventory = async function(silent=false){
     throw e;   // [Ver.7.8] 호출자가 실패를 인지할 수 있도록 전파
   } finally { if(!silent) window.hideLoading(); }
 };
+
+// ── [Ver.10.5] 읽기 없는 로컬 갱신 ────────────────────────────────────
+// 문제: 저장할 때마다 loadInventory() 로 equipment 컬렉션 전량(2,000건+)을
+//       다시 읽어 Firestore 무료 읽기 한도(하루 5만)를 금방 소진했다.
+//       장비 50건 수정 = 읽기 10만회.
+// 해결: 서버에 쓴 내용을 allInventory 배열에도 똑같이 반영하고 화면만 다시
+//       그린다. 읽기 0회. 전량 재조회는 최초 로딩/엑셀가져오기/수동
+//       새로고침에서만 수행한다.
+// --------------------------------------------------------------------
+window.refreshInventoryUI = function(){
+  allInventory = allInventory.map((d,i)=>({
+    ...d, _rowNum: i+1,
+    usable_label: (d.usable === false) ? '사용불가' : '사용가능'
+  }));
+  window.renderInventoryTable();
+  window.renderStatsTable();
+  window.renderProjList();
+  if(typeof window.renderDashboard === 'function') window.renderDashboard();
+  window.setStatus(`✅ 반영 완료 — 총 ${allInventory.length}건`);
+};
+
+// 장비 1건의 필드를 로컬 배열에 병합
+window.patchLocalItem = function(id, patch){
+  const i = allInventory.findIndex(x => String(x.id) === String(id));
+  if(i >= 0) allInventory[i] = { ...allInventory[i], ...patch };
+};
+
+// 여러 건 삭제를 로컬 배열에 반영
+window.removeLocalItems = function(ids){
+  const set = new Set(ids.map(String));
+  allInventory = allInventory.filter(x => !set.has(String(x.id)));
+};
+
+// 신규 1건을 로컬 배열에 추가
+window.addLocalItem = function(obj){ allInventory.push(obj); };
 
 window.loadLogs = async function(silent=false){
   if(!silent) window.showLoading('이력 로딩 중...');
@@ -2921,8 +2957,11 @@ window.openStockChart = async function(){
   try {
     const logsRef = collection(db,'Nokia_Equipment','data','daily_logs');
     let snap;
-    try { snap = await getDocs(query(logsRef, orderBy('timestamp','asc'))); }
+    // [Ver.10.5] 차트는 최근 구간만 있으면 충분하다. 제한이 없으면 로그가
+    //            쌓일수록 차트를 열 때마다 읽기가 무한정 늘어난다.
+    try { snap = await getDocs(query(logsRef, orderBy('timestamp','desc'), limit(CHART_LOG_LIMIT))); }
     catch(e){ snap = await getDocs(logsRef); }
+    // desc 로 받았으므로 시간순(asc)으로 되돌린다
     const logs = snap.docs.map(d=>d.data())
       .filter(l => idSet.has(String(l.ref_equip_id)))
       .sort((a,b)=> String(a.timestamp||'').localeCompare(String(b.timestamp||'')));
@@ -3214,8 +3253,10 @@ window.editProjectName = async function() {
         // [Ver.8.6] 정렬 순서 배열의 이름도 갱신 (순서 유지)
         const oi = projOrder.indexOf(selectedProjName);
         if(oi !== -1){ projOrder[oi] = trimmedNewName; await window.saveProjOrder(); }
-        selectedProjName = trimmedNewName; 
-        await window.loadInventory(true);
+        selectedProjName = trimmedNewName;
+        // [Ver.10.5] 전량 재조회 대신 로컬 반영 (읽기 0회)
+        for(const t of targets) window.patchLocalItem(t.id, { project_name: trimmedNewName });
+        window.refreshInventoryUI();
         window.selectProject(trimmedNewName); 
         await window.customAlert('프로젝트명이 성공적으로 변경되었습니다.', '완료');
     } catch (e) {
@@ -3616,7 +3657,9 @@ window.saveDetailNote = async function(){
     if(modal) modal.hide();
 
     window.setStatus('✏️ 저장 완료');
-    await window.loadInventory(true);
+    // [Ver.10.5] 전량 재조회 대신 로컬 반영 (읽기 0회)
+    window.patchLocalItem(detailDocId, payload);
+    window.refreshInventoryUI();
 
     // [Ver.9.2] 출처에 맞춰 뒤 화면을 최신 데이터로 갱신
     if(detailSource === 'stat'){
@@ -3769,7 +3812,9 @@ window.bulkSetUsable = async function(usable){
     if(opCount > 0) await batch.commit();
 
     window.setStatus(`🔧 사용 상태 변경 완료 — ${changed}건 (${label})`);
-    await window.loadInventory(true);
+    // [Ver.10.5] 전량 재조회 대신 로컬 반영 (읽기 0회)
+    for(const tr of sel) window.patchLocalItem(tr.dataset.id, { usable: usable });
+    window.refreshInventoryUI();
     await window.customAlert(
       changed > 0 ? `${changed}건을 [${label}]로 변경했습니다.`
                   : '변경할 항목이 없습니다. (이미 모두 같은 상태입니다)', '완료');
@@ -3806,11 +3851,14 @@ window.delete_inventory = async function(){
     }
     if (opCount > 0) await batch.commit();
     window.setStatus(`🗑️ ${sel.length}건 삭제 완료`);
-    await window.loadInventory(true);
+    // [Ver.10.5] 전량 재조회 대신 로컬 반영 (읽기 0회)
+    window.removeLocalItems(sel.map(tr => tr.dataset.id));
+    window.refreshInventoryUI();
   } catch(e){ await window.customAlert("오류: " + e.message, "에러"); } finally { window.hideLoading(); }
 };
 
 window.saveInventory = async function(){
+  let savedNewId = null;   // [Ver.10.5] 신규 등록 시 생성된 문서 ID
   const name = document.getElementById('m-name').value.trim();
   const pn   = document.getElementById('m-pn').value.trim();
   if(!name||!pn){ await window.customAlert('품명과 P/N은 필수입니다.', '입력 오류'); return; }
@@ -3872,6 +3920,7 @@ window.saveInventory = async function(){
       window.setStatus(`✏️ 재고 수정 완료`);
     } else {
       const ref = await addDoc(collection(db,'Nokia_Equipment','data','equipment'), data);
+      savedNewId = ref.id;   // [Ver.10.5] 로컬 배열에 추가하기 위해 기억
       await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
         ref_equip_id: ref.id, action_type: '수동입력', qty_changed: data.total_qty, note: '관리자 수동 신규 등록', timestamp: ts, user_id: (window.currentUser?.id || '')
       });
@@ -3881,8 +3930,11 @@ window.saveInventory = async function(){
     const modalEl = document.getElementById('invModal');
     const modal = bootstrap.Modal.getInstance(modalEl);
     if(modal) modal.hide();
-    
-    await window.loadInventory(true);
+
+    // [Ver.10.5] 전량 재조회 대신 로컬 반영 (읽기 0회)
+    if(savedNewId){ window.addLocalItem({ id: savedNewId, ...data }); }
+    else          { window.patchLocalItem(editingDocId, data); }
+    window.refreshInventoryUI();
   } catch(e) { await window.customAlert("저장 오류: " + e.message, "에러"); } finally { window.hideLoading(); }
 };
 
@@ -4021,7 +4073,15 @@ window.doCheckout = async function(){
     
     window.setStatus(`📤 출고 완료 — ${itemsToCheckout.length}건 처리`);
     await window.customAlert('일괄 출고 처리 완료!', '완료');
-    await window.loadInventory(true);
+    // [Ver.10.5] 전량 재조회 대신 로컬 반영 (읽기 0회)
+    for(const it of itemsToCheckout){
+      window.patchLocalItem(it.id, {
+        current_stock: +it.r.current_stock - it.qty,
+        out_qty: +it.r.out_qty + it.qty,
+        outbound_date: outDate
+      });
+    }
+    window.refreshInventoryUI();
     if(selectedProjName) window.selectProject(selectedProjName);
   } catch(e){ await window.customAlert("오류: "+e.message, "에러"); } finally { window.hideLoading(); }
 };
