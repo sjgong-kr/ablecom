@@ -284,7 +284,7 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
 <!-- 헤더 -->
 <div id="app-header-wrap">
 <div id="app-header">
-  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.10.5 (읽기 비용 최적화)</span></h1>
+  <h1>📡 NOKIA 장비 스마트 재고관리 시스템 <span style="font-size:0.7em; font-weight:normal; opacity:0.8;">Ver.10.5 (프로젝트 그룹 폴더 관리)</span></h1>
   <div class="d-flex align-items-center gap-2">
     <span id="current-user-badge" class="text-white small fw-bold"></span>
     <button class="btn btn-sm btn-outline-light py-0 px-2" style="font-size:11px;" onclick="window.openPwChange(false)">🔑 비밀번호 변경</button>
@@ -500,7 +500,10 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
         <div class="col-3">
           <div class="d-flex justify-content-between align-items-center mb-1">
             <div class="fw-bold small" style="color:#1a5276;">[ 프로젝트명 ]</div>
-            <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 11px;" onclick="window.editProjectName()">✏️ 이름 수정</button>
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 11px;" onclick="window.openGroupManager()" title="프로젝트를 폴더로 묶어 관리">📁 그룹 관리</button>
+              <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 11px;" onclick="window.editProjectName()">✏️ 이름 수정</button>
+            </div>
           </div>
           <div class="tbl-wrap" style="max-height:600px; overflow-x: hidden;">
             <table class="inv-table" id="tbl-proj-list">
@@ -823,6 +826,59 @@ th.filter-header { cursor: pointer; position: relative; padding-right: 20px !imp
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">취소</button>
         <button type="button" class="btn btn-success btn-sm" onclick="window.saveInventory()">💾 저장 및 이력에 반영</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- [Ver.10.5] 프로젝트 그룹(폴더) 관리 모달 -->
+<div class="modal fade" id="projGroupModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1a6ea8;">
+        <h6 class="modal-title text-white">📁 프로젝트 그룹(폴더) 관리</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info py-2 small mb-3">
+          💡 그룹은 <b>프로젝트를 묶어 보기 위한 폴더</b>입니다. 프로젝트명이나 장비 데이터는 <b>전혀 변경되지 않으며</b>, 그룹을 지우면 원래 목록 그대로 돌아갑니다.
+        </div>
+
+        <fieldset class="section-box mb-3">
+          <legend>➕ 그룹 추가 / 순서</legend>
+          <div class="d-flex gap-2 mb-2">
+            <input type="text" id="grp-new-name" class="form-control form-control-sm" placeholder="새 그룹 이름 (예: KT 사업)"
+                   onkeydown="if(event.key==='Enter') window.addProjGroup()">
+            <button class="btn btn-sm btn-nokia flex-shrink-0" onclick="window.addProjGroup()">➕ 추가</button>
+          </div>
+          <div id="grp-chips" class="d-flex flex-wrap gap-1" style="min-height:34px;"></div>
+          <div class="form-text small">※ 칩을 드래그하면 폴더 표시 순서가 바뀝니다.</div>
+        </fieldset>
+
+        <fieldset class="section-box">
+          <legend>📋 프로젝트별 그룹 지정</legend>
+          <div class="d-flex gap-2 align-items-center flex-wrap mb-2">
+            <div class="input-group input-group-sm" style="width:220px;">
+              <span class="input-group-text">🔍</span>
+              <input type="text" id="grp-filter" class="form-control" placeholder="프로젝트 검색" oninput="window.renderGroupManager()">
+            </div>
+            <span class="small fw-bold ms-2">선택 일괄:</span>
+            <select id="grp-bulk-select" class="form-select form-select-sm" style="width:170px;"></select>
+            <button class="btn btn-sm btn-outline-primary" onclick="window.bulkAssignProjGroup()">적용</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="window.toggleAllGrpChk(true)">전체선택</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="window.toggleAllGrpChk(false)">해제</button>
+          </div>
+          <div class="tbl-wrap" style="max-height:340px;">
+            <table class="inv-table" id="tbl-grp-assign">
+              <thead><tr><th style="width:40px;">선택</th><th>프로젝트명</th><th style="width:70px;">재고</th><th style="width:180px;">그룹</th></tr></thead>
+              <tbody id="grp-assign-tbody"></tbody>
+            </table>
+          </div>
+        </fieldset>
+      </div>
+      <div class="modal-footer">
+        <span class="text-muted small me-auto">※ 목록에서 프로젝트를 폴더 위로 드래그해도 그룹을 옮길 수 있습니다.</span>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">닫기</button>
       </div>
     </div>
   </div>
@@ -1297,7 +1353,6 @@ import {
 
 // [Ver.7.8] 로그는 서버에서 최신순 N건만 가져온다 (읽기 과금 방지)
 const LOG_LIMIT = 200;   // [Ver.8.8] 화면 표시용 최근 건수 (DB엔 전부 저장, Excel은 전량 추출)
-const CHART_LOG_LIMIT = 3000;  // [Ver.10.5] 재고이력 차트가 읽는 최대 로그 건수
 
 const firebaseConfig = {
   apiKey: "AIzaSyBD5-AJDFJKsneHyqH70SlNU9VixDAHl3o",
@@ -1322,6 +1377,10 @@ let projOrder = [];   // [Ver.8.6] 프로젝트 정렬 순서 (Firestore 저장)
 // [Ver.10.0] 소분류: list=소분류 이름 목록, map={ 품명: 소분류 }
 let catData = { list: [], map: {} };
 let dashSelectedCat = null;   // Dashboard에서 선택한 소분류
+// [Ver.10.5] 프로젝트 그룹(폴더): list=그룹명 순서, map={ 프로젝트명: 그룹명 }
+//   ⚠️ equipment의 project_name 원본은 건드리지 않는다. 그룹은 별도 계층일 뿐.
+let groupData = { list: [], map: {} };
+let collapsedGroups = {};     // 접힌 폴더 상태 (화면용)
 let editingDocId    = null;
 let checkoutItems   = [];
 let dupResolve      = null;
@@ -1766,41 +1825,6 @@ window.loadInventory = async function(silent=false){
     throw e;   // [Ver.7.8] 호출자가 실패를 인지할 수 있도록 전파
   } finally { if(!silent) window.hideLoading(); }
 };
-
-// ── [Ver.10.5] 읽기 없는 로컬 갱신 ────────────────────────────────────
-// 문제: 저장할 때마다 loadInventory() 로 equipment 컬렉션 전량(2,000건+)을
-//       다시 읽어 Firestore 무료 읽기 한도(하루 5만)를 금방 소진했다.
-//       장비 50건 수정 = 읽기 10만회.
-// 해결: 서버에 쓴 내용을 allInventory 배열에도 똑같이 반영하고 화면만 다시
-//       그린다. 읽기 0회. 전량 재조회는 최초 로딩/엑셀가져오기/수동
-//       새로고침에서만 수행한다.
-// --------------------------------------------------------------------
-window.refreshInventoryUI = function(){
-  allInventory = allInventory.map((d,i)=>({
-    ...d, _rowNum: i+1,
-    usable_label: (d.usable === false) ? '사용불가' : '사용가능'
-  }));
-  window.renderInventoryTable();
-  window.renderStatsTable();
-  window.renderProjList();
-  if(typeof window.renderDashboard === 'function') window.renderDashboard();
-  window.setStatus(`✅ 반영 완료 — 총 ${allInventory.length}건`);
-};
-
-// 장비 1건의 필드를 로컬 배열에 병합
-window.patchLocalItem = function(id, patch){
-  const i = allInventory.findIndex(x => String(x.id) === String(id));
-  if(i >= 0) allInventory[i] = { ...allInventory[i], ...patch };
-};
-
-// 여러 건 삭제를 로컬 배열에 반영
-window.removeLocalItems = function(ids){
-  const set = new Set(ids.map(String));
-  allInventory = allInventory.filter(x => !set.has(String(x.id)));
-};
-
-// 신규 1건을 로컬 배열에 추가
-window.addLocalItem = function(obj){ allInventory.push(obj); };
 
 window.loadLogs = async function(silent=false){
   if(!silent) window.showLoading('이력 로딩 중...');
@@ -2662,6 +2686,211 @@ window.getCategory = function(itemOrName){
   return (catData.map && catData.map[key]) ? catData.map[key] : window.CAT_NONE;
 };
 
+// ==========================================================================
+// [Ver.10.5] 프로젝트 그룹(폴더) — 원본 데이터 무수정 방식
+//   저장: Nokia_Equipment/data/settings/proj_groups
+//   { list: ["KT 사업", ...], map: { "프로젝트명": "그룹명" } }
+//   equipment 문서는 전혀 수정하지 않으므로, 그룹을 지우면 원래대로 완전 복구된다.
+// ==========================================================================
+window.GROUP_NONE = '미지정';
+
+// ── 폴더 동작 ────────────────────────────────────────────────────────
+window.toggleGroup = function(g){
+  collapsedGroups[g] = !collapsedGroups[g];
+  window.renderProjList();
+};
+
+// 그룹 전체 장비 보기 (여러 프로젝트를 한 번에)
+window.selectGroup = function(g){
+  const names = Object.keys(groupData.map).filter(k => groupData.map[k] === g);
+  const rows = allInventory.filter(r => {
+    const pn = (r.project_name || '(프로젝트 미지정)').trim() || '(프로젝트 미지정)';
+    return (g === window.GROUP_NONE) ? !groupData.map[pn] : names.includes(pn);
+  });
+  selectedProjName = '__GROUP__' + g;
+  currentProjDocs = rows;
+  pdSortKey = null;
+  window.activeFilters['proj'] = {};
+  window.renderProjDetailTable(rows);
+  window.renderProjList();
+  const allChk = document.getElementById('proj-chk-all');
+  if(allChk) allChk.checked = false;
+  window.setStatus(`📁 그룹 전체 보기: ${g} (${rows.length}건)`);
+};
+
+// 프로젝트를 폴더에 끌어놓아 그룹 이동
+window.projDropToGroup = async function(ev, g){
+  ev.preventDefault();
+  const name = (typeof _dragProjName !== 'undefined' && _dragProjName) ? _dragProjName : null;
+  if(!name) return;
+  if(g === window.GROUP_NONE) delete groupData.map[name];
+  else groupData.map[name] = g;
+  try {
+    await window.saveProjGroups();
+    window.renderProjList();
+    window.setStatus(`📁 '${name}' ➔ ${g}`);
+  } catch(e){ window.setStatus('❌ 그룹 저장 실패'); }
+};
+
+// ── 그룹 관리 모달 ───────────────────────────────────────────────────
+window.openGroupManager = function(){
+  window.renderGroupManager();
+  window.openModalSafe('projGroupModal');
+};
+
+window.renderGroupManager = function(){
+  // 그룹 목록(칩)
+  const box = document.getElementById('grp-chips');
+  if(box){
+    box.innerHTML = (groupData.list||[]).length
+      ? groupData.list.map(g=>{
+          const cnt = Object.values(groupData.map).filter(v=>v===g).length;
+          const e = window.esc(g).replace(/'/g,"\\'");
+          return `<span class="badge bg-light text-dark border grp-chip" style="font-size:12px; padding:6px 8px; cursor:grab;"
+            draggable="true" data-grp="${window.esc(g)}"
+            ondragstart="window.grpDragStart(event,'${e}')" ondragend="window.grpDragEnd(event)"
+            ondragover="window.grpDragOver(event)" ondrop="window.grpDrop(event,'${e}')"
+            title="드래그하여 폴더 순서 변경">
+            <i class="bi bi-grip-vertical text-secondary"></i> 📁 ${window.esc(g)}
+            <span class="text-secondary">(${cnt})</span>
+            <a href="#" onclick="event.preventDefault(); event.stopPropagation(); window.deleteProjGroup('${e}')" style="text-decoration:none;color:#dc3545;margin-left:4px;" title="삭제">✕</a>
+          </span>`;
+        }).join('')
+      : '<span class="text-secondary small">등록된 그룹이 없습니다. 위에서 추가해 주세요.</span>';
+  }
+  // 일괄 지정 셀렉트
+  const sel = document.getElementById('grp-bulk-select');
+  if(sel) sel.innerHTML = `<option value="">(${window.GROUP_NONE}으로)</option>` + (groupData.list||[]).map(g=>`<option value="${window.esc(g)}">${window.esc(g)}</option>`).join('');
+
+  // 프로젝트 목록
+  const tbody = document.getElementById('grp-assign-tbody');
+  if(!tbody) return;
+  const kw = (document.getElementById('grp-filter')?.value||'').trim().toLowerCase();
+  const stockBy = {};
+  allInventory.forEach(r=>{
+    const pn = (r.project_name||'(프로젝트 미지정)').trim()||'(프로젝트 미지정)';
+    stockBy[pn] = (stockBy[pn]||0) + (+r.current_stock||0);
+  });
+  let names = Object.keys(stockBy).sort((a,b)=>a.localeCompare(b));
+  if(kw) names = names.filter(n=>n.toLowerCase().includes(kw));
+
+  tbody.innerHTML = names.map(n=>{
+    const cur = groupData.map[n] || '';
+    const opts = `<option value="">${window.GROUP_NONE}</option>` +
+      (groupData.list||[]).map(g=>`<option value="${window.esc(g)}" ${g===cur?'selected':''}>${window.esc(g)}</option>`).join('');
+    return `<tr>
+      <td class="text-center"><input type="checkbox" class="form-check-input grp-chk" data-name="${window.esc(n)}"></td>
+      <td style="white-space:normal; word-break:break-all; font-size:12px;">${window.esc(n)}</td>
+      <td class="text-center fw-bold">${stockBy[n]}</td>
+      <td><select class="form-select form-select-sm" onchange="window.assignProjGroup('${window.esc(n).replace(/'/g,"\\'")}', this.value)">${opts}</select></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" class="text-center text-secondary py-3">프로젝트가 없습니다.</td></tr>';
+};
+
+window.addProjGroup = async function(){
+  const el = document.getElementById('grp-new-name');
+  const name = (el?.value||'').trim();
+  if(!name){ await window.customAlert('그룹 이름을 입력해주세요.','입력 오류'); return; }
+  if(name === window.GROUP_NONE){ await window.customAlert(`'${window.GROUP_NONE}'는 예약된 이름입니다.`,'입력 오류'); return; }
+  if(groupData.list.includes(name)){ await window.customAlert('이미 있는 그룹입니다.','중복'); return; }
+  window.showLoading('그룹 추가 중...');
+  try {
+    groupData.list.push(name);
+    await window.saveProjGroups();
+    el.value='';
+    window.renderGroupManager(); window.renderProjList();
+    window.setStatus(`📁 그룹 추가: ${name}`);
+  } catch(e){ await window.customAlert('저장 오류: '+e.message,'에러'); }
+  finally { window.hideLoading(); }
+};
+
+window.deleteProjGroup = async function(g){
+  const cnt = Object.values(groupData.map).filter(v=>v===g).length;
+  const ok = await window.customConfirm(
+    `그룹 '${g}'을(를) 삭제합니다.` + (cnt?`\n소속된 프로젝트 ${cnt}건이 '${window.GROUP_NONE}'이 됩니다.`:'') +
+    `\n\n※ 프로젝트와 장비 데이터는 그대로 유지됩니다.\n\n계속하시겠습니까?`, '그룹 삭제');
+  if(!ok) return;
+  window.showLoading('그룹 삭제 중...');
+  try {
+    groupData.list = groupData.list.filter(x=>x!==g);
+    Object.keys(groupData.map).forEach(k=>{ if(groupData.map[k]===g) delete groupData.map[k]; });
+    await window.saveProjGroups();
+    window.renderGroupManager(); window.renderProjList();
+    window.setStatus(`🗑️ 그룹 삭제: ${g}`);
+  } catch(e){ await window.customAlert('삭제 오류: '+e.message,'에러'); }
+  finally { window.hideLoading(); }
+};
+
+window.assignProjGroup = async function(projName, g){
+  try {
+    if(g) groupData.map[projName] = g; else delete groupData.map[projName];
+    await window.saveProjGroups();
+    window.renderGroupManager(); window.renderProjList();
+    window.setStatus(`📁 '${projName}' ➔ ${g || window.GROUP_NONE}`);
+  } catch(e){ await window.customAlert('저장 오류: '+e.message,'에러'); }
+};
+
+window.toggleAllGrpChk = function(checked){
+  document.querySelectorAll('#grp-assign-tbody .grp-chk').forEach(c=>c.checked=checked);
+};
+
+window.bulkAssignProjGroup = async function(){
+  const g = document.getElementById('grp-bulk-select').value;
+  const chks = [...document.querySelectorAll('#grp-assign-tbody .grp-chk')].filter(c=>c.checked);
+  if(!chks.length){ await window.customAlert('먼저 프로젝트를 선택해주세요.','선택 오류'); return; }
+  const ok = await window.customConfirm(`선택한 ${chks.length}건을 [${g||window.GROUP_NONE}]로 지정합니다.\n\n계속하시겠습니까?`,'그룹 일괄 지정');
+  if(!ok) return;
+  window.showLoading('그룹 적용 중...');
+  try {
+    chks.forEach(c=>{ const n=c.dataset.name; if(g) groupData.map[n]=g; else delete groupData.map[n]; });
+    await window.saveProjGroups();
+    window.renderGroupManager(); window.renderProjList();
+    window.setStatus(`📁 ${chks.length}건 그룹 지정 완료`);
+  } catch(e){ await window.customAlert('저장 오류: '+e.message,'에러'); }
+  finally { window.hideLoading(); }
+};
+
+// 그룹 칩 드래그 정렬 (폴더 표시 순서)
+let _dragGrpName = null;
+window.grpDragStart = function(ev,g){ _dragGrpName=g; ev.dataTransfer.effectAllowed='move'; ev.currentTarget.style.opacity='0.4'; };
+window.grpDragEnd   = function(ev){ ev.currentTarget.style.opacity=''; document.querySelectorAll('.grp-chip').forEach(c=>c.style.borderLeft=''); };
+window.grpDragOver  = function(ev){ ev.preventDefault(); document.querySelectorAll('.grp-chip').forEach(c=>c.style.borderLeft=''); ev.currentTarget.style.borderLeft='3px solid #1a6ea8'; };
+window.grpDrop = async function(ev,target){
+  ev.preventDefault(); ev.currentTarget.style.borderLeft='';
+  if(!_dragGrpName || _dragGrpName===target) return;
+  const from=groupData.list.indexOf(_dragGrpName), to=groupData.list.indexOf(target);
+  if(from===-1||to===-1) return;
+  groupData.list.splice(from,1); groupData.list.splice(to,0,_dragGrpName);
+  _dragGrpName=null;
+  window.renderGroupManager();
+  try { await window.saveProjGroups(); window.renderProjList(); window.setStatus('↕️ 그룹 순서 변경됨'); }
+  catch(e){ window.setStatus('❌ 순서 저장 실패'); }
+};
+
+
+window.loadProjGroups = async function(){
+  try {
+    const snap = await getDoc(doc(db,'Nokia_Equipment','data','settings','proj_groups'));
+    if(snap.exists()){
+      const d = snap.data();
+      groupData = { list: Array.isArray(d.list)?d.list:[], map: (d.map&&typeof d.map==='object')?d.map:{} };
+    } else { groupData = { list: [], map: {} }; }
+  } catch(e){
+    console.warn('[loadProjGroups] 그룹 로드 실패', e);
+    groupData = { list: [], map: {} };
+  }
+};
+
+window.saveProjGroups = async function(){
+  await setDoc(doc(db,'Nokia_Equipment','data','settings','proj_groups'), { list: groupData.list, map: groupData.map });
+};
+
+// 프로젝트명 → 그룹명 (미지정이면 GROUP_NONE)
+window.getProjGroup = function(projName){
+  const k = String(projName||'').trim();
+  return (groupData.map && groupData.map[k]) ? groupData.map[k] : window.GROUP_NONE;
+};
+
 window.loadProjOrder = async function(){
   try {
     const snap = await getDoc(doc(db,'Nokia_Equipment','data','settings','proj_order'));
@@ -2746,27 +2975,73 @@ window.renderProjList = function(){
 
     projArray.sort((a, b) => projOrder.indexOf(a.name) - projOrder.indexOf(b.name));
 
-    document.getElementById('proj-list-tbody').innerHTML = projArray.map(p => {
-      const safeName = window.esc(p.name);
-      return `
-      <tr onclick="window.selectProject('${safeName}')" 
-          style="cursor:pointer;" 
-          class="${selectedProjName === p.name ? 'selected' : ''}"
-          data-proj="${safeName}"
-          draggable="true"
-          ondragstart="window.projDragStart(event, '${safeName}')"
-          ondragend="window.projDragEnd(event)"
-          ondragover="window.projDragOver(event)"
-          ondrop="window.projDrop(event, '${safeName}')">
-        <td class="d-flex justify-content-between align-items-center" style="white-space: normal !important; word-break: break-all; padding: 8px 10px;">
-          <div style="line-height: 1.4; padding-right: 5px;">
-            <i class="bi bi-grip-vertical text-secondary me-1" style="cursor:grab;" title="드래그하여 순서 변경"></i>
-            <span class="d-inline align-middle">${safeName}</span>
+    // ── [Ver.10.5] 그룹(폴더) 트리로 렌더 ─────────────────────────────
+    //   그룹 순서는 groupData.list, 그룹 내 프로젝트 순서는 기존 projOrder를 따른다.
+    const groups = {};
+    projArray.forEach(p => {
+      const g = window.getProjGroup(p.name);
+      if(!groups[g]) groups[g] = { name:g, projects:[], stock:0 };
+      groups[g].projects.push(p);
+      groups[g].stock += p.totalStock;
+    });
+    // 등록된 그룹은 프로젝트가 없어도 폴더를 보여준다
+    (groupData.list||[]).forEach(g => { if(!groups[g]) groups[g] = { name:g, projects:[], stock:0 }; });
+
+    const gList = Object.values(groups).sort((a,b)=>{
+      if(a.name === window.GROUP_NONE) return 1;
+      if(b.name === window.GROUP_NONE) return -1;
+      const ia = groupData.list.indexOf(a.name), ib = groupData.list.indexOf(b.name);
+      if(ia === -1 && ib === -1) return a.name.localeCompare(b.name);
+      if(ia === -1) return 1;
+      if(ib === -1) return -1;
+      return ia - ib;
+    });
+
+    let html = '';
+    gList.forEach(g => {
+      const gEsc = window.esc(g.name).replace(/'/g,"\\'");
+      const isCollapsed = !!collapsedGroups[g.name];
+      const isGroupSel = (selectedProjName === '__GROUP__' + g.name);
+      html += `
+      <tr class="proj-group-row ${isGroupSel?'selected':''}" data-group="${window.esc(g.name)}"
+          ondragover="window.projDragOver(event)" ondrop="window.projDropToGroup(event,'${gEsc}')">
+        <td style="padding:6px 8px; background:#eef4fa; font-weight:bold; cursor:pointer;">
+          <div class="d-flex justify-content-between align-items-center">
+            <div style="line-height:1.3;" onclick="event.stopPropagation(); window.toggleGroup('${gEsc}')" title="클릭하여 접기/펼치기">
+              <span style="display:inline-block; width:14px;">${isCollapsed?'▶':'▼'}</span>
+              <span>${g.name===window.GROUP_NONE?'📂':'📁'} ${window.esc(g.name)}</span>
+              <span class="text-secondary" style="font-weight:normal; font-size:11px;">(${g.projects.length})</span>
+            </div>
+            <span class="badge ${g.stock>0?'bg-primary':'bg-secondary'} flex-shrink-0" style="font-size:10px; cursor:pointer;"
+                  onclick="event.stopPropagation(); window.selectGroup('${gEsc}')" title="이 그룹 전체 장비 보기">${g.stock}</span>
           </div>
-          <span class="badge ${p.totalStock > 0 ? 'bg-success' : 'bg-secondary'} flex-shrink-0" style="font-size: 10px;">${p.totalStock}</span>
         </td>
       </tr>`;
-    }).join('');
+      if(isCollapsed) return;
+      g.projects.sort((a,b)=> projOrder.indexOf(a.name) - projOrder.indexOf(b.name));
+      g.projects.forEach(p => {
+        const safeName = window.esc(p.name);
+        html += `
+        <tr onclick="window.selectProject('${safeName}')"
+            style="cursor:pointer;"
+            class="${selectedProjName === p.name ? 'selected' : ''}"
+            data-proj="${safeName}"
+            draggable="true"
+            ondragstart="window.projDragStart(event, '${safeName}')"
+            ondragend="window.projDragEnd(event)"
+            ondragover="window.projDragOver(event)"
+            ondrop="window.projDrop(event, '${safeName}')">
+          <td class="d-flex justify-content-between align-items-center" style="white-space: normal !important; word-break: break-all; padding: 7px 10px 7px 24px;">
+            <div style="line-height: 1.4; padding-right: 5px;">
+              <i class="bi bi-grip-vertical text-secondary me-1" style="cursor:grab;" title="드래그: 순서 변경 / 폴더에 끌어놓으면 그룹 이동"></i>
+              <span class="d-inline align-middle">${safeName}</span>
+            </div>
+            <span class="badge ${p.totalStock > 0 ? 'bg-success' : 'bg-secondary'} flex-shrink-0" style="font-size: 10px;">${p.totalStock}</span>
+          </td>
+        </tr>`;
+      });
+    });
+    document.getElementById('proj-list-tbody').innerHTML = html;
   } catch(e) { console.error("renderProjList error", e); }
 };
 
@@ -2957,11 +3232,8 @@ window.openStockChart = async function(){
   try {
     const logsRef = collection(db,'Nokia_Equipment','data','daily_logs');
     let snap;
-    // [Ver.10.5] 차트는 최근 구간만 있으면 충분하다. 제한이 없으면 로그가
-    //            쌓일수록 차트를 열 때마다 읽기가 무한정 늘어난다.
-    try { snap = await getDocs(query(logsRef, orderBy('timestamp','desc'), limit(CHART_LOG_LIMIT))); }
+    try { snap = await getDocs(query(logsRef, orderBy('timestamp','asc'))); }
     catch(e){ snap = await getDocs(logsRef); }
-    // desc 로 받았으므로 시간순(asc)으로 되돌린다
     const logs = snap.docs.map(d=>d.data())
       .filter(l => idSet.has(String(l.ref_equip_id)))
       .sort((a,b)=> String(a.timestamp||'').localeCompare(String(b.timestamp||'')));
@@ -3253,10 +3525,8 @@ window.editProjectName = async function() {
         // [Ver.8.6] 정렬 순서 배열의 이름도 갱신 (순서 유지)
         const oi = projOrder.indexOf(selectedProjName);
         if(oi !== -1){ projOrder[oi] = trimmedNewName; await window.saveProjOrder(); }
-        selectedProjName = trimmedNewName;
-        // [Ver.10.5] 전량 재조회 대신 로컬 반영 (읽기 0회)
-        for(const t of targets) window.patchLocalItem(t.id, { project_name: trimmedNewName });
-        window.refreshInventoryUI();
+        selectedProjName = trimmedNewName; 
+        await window.loadInventory(true);
         window.selectProject(trimmedNewName); 
         await window.customAlert('프로젝트명이 성공적으로 변경되었습니다.', '완료');
     } catch (e) {
@@ -3657,9 +3927,7 @@ window.saveDetailNote = async function(){
     if(modal) modal.hide();
 
     window.setStatus('✏️ 저장 완료');
-    // [Ver.10.5] 전량 재조회 대신 로컬 반영 (읽기 0회)
-    window.patchLocalItem(detailDocId, payload);
-    window.refreshInventoryUI();
+    await window.loadInventory(true);
 
     // [Ver.9.2] 출처에 맞춰 뒤 화면을 최신 데이터로 갱신
     if(detailSource === 'stat'){
@@ -3812,9 +4080,7 @@ window.bulkSetUsable = async function(usable){
     if(opCount > 0) await batch.commit();
 
     window.setStatus(`🔧 사용 상태 변경 완료 — ${changed}건 (${label})`);
-    // [Ver.10.5] 전량 재조회 대신 로컬 반영 (읽기 0회)
-    for(const tr of sel) window.patchLocalItem(tr.dataset.id, { usable: usable });
-    window.refreshInventoryUI();
+    await window.loadInventory(true);
     await window.customAlert(
       changed > 0 ? `${changed}건을 [${label}]로 변경했습니다.`
                   : '변경할 항목이 없습니다. (이미 모두 같은 상태입니다)', '완료');
@@ -3851,14 +4117,11 @@ window.delete_inventory = async function(){
     }
     if (opCount > 0) await batch.commit();
     window.setStatus(`🗑️ ${sel.length}건 삭제 완료`);
-    // [Ver.10.5] 전량 재조회 대신 로컬 반영 (읽기 0회)
-    window.removeLocalItems(sel.map(tr => tr.dataset.id));
-    window.refreshInventoryUI();
+    await window.loadInventory(true);
   } catch(e){ await window.customAlert("오류: " + e.message, "에러"); } finally { window.hideLoading(); }
 };
 
 window.saveInventory = async function(){
-  let savedNewId = null;   // [Ver.10.5] 신규 등록 시 생성된 문서 ID
   const name = document.getElementById('m-name').value.trim();
   const pn   = document.getElementById('m-pn').value.trim();
   if(!name||!pn){ await window.customAlert('품명과 P/N은 필수입니다.', '입력 오류'); return; }
@@ -3920,7 +4183,6 @@ window.saveInventory = async function(){
       window.setStatus(`✏️ 재고 수정 완료`);
     } else {
       const ref = await addDoc(collection(db,'Nokia_Equipment','data','equipment'), data);
-      savedNewId = ref.id;   // [Ver.10.5] 로컬 배열에 추가하기 위해 기억
       await addDoc(collection(db,'Nokia_Equipment','data','daily_logs'),{
         ref_equip_id: ref.id, action_type: '수동입력', qty_changed: data.total_qty, note: '관리자 수동 신규 등록', timestamp: ts, user_id: (window.currentUser?.id || '')
       });
@@ -3930,11 +4192,8 @@ window.saveInventory = async function(){
     const modalEl = document.getElementById('invModal');
     const modal = bootstrap.Modal.getInstance(modalEl);
     if(modal) modal.hide();
-
-    // [Ver.10.5] 전량 재조회 대신 로컬 반영 (읽기 0회)
-    if(savedNewId){ window.addLocalItem({ id: savedNewId, ...data }); }
-    else          { window.patchLocalItem(editingDocId, data); }
-    window.refreshInventoryUI();
+    
+    await window.loadInventory(true);
   } catch(e) { await window.customAlert("저장 오류: " + e.message, "에러"); } finally { window.hideLoading(); }
 };
 
@@ -4073,15 +4332,7 @@ window.doCheckout = async function(){
     
     window.setStatus(`📤 출고 완료 — ${itemsToCheckout.length}건 처리`);
     await window.customAlert('일괄 출고 처리 완료!', '완료');
-    // [Ver.10.5] 전량 재조회 대신 로컬 반영 (읽기 0회)
-    for(const it of itemsToCheckout){
-      window.patchLocalItem(it.id, {
-        current_stock: +it.r.current_stock - it.qty,
-        out_qty: +it.r.out_qty + it.qty,
-        outbound_date: outDate
-      });
-    }
-    window.refreshInventoryUI();
+    await window.loadInventory(true);
     if(selectedProjName) window.selectProject(selectedProjName);
   } catch(e){ await window.customAlert("오류: "+e.message, "에러"); } finally { window.hideLoading(); }
 };
@@ -4822,6 +5073,7 @@ window.initDataLoad = async function() {
     // [Ver.8.2] 세 로더를 silent 로 호출 → 바깥 스피너 1개만 유지(깜빡임 제거)
     await window.loadUsers();       // [Ver.9.5] 계정 목록 로드(다음 로그인부터 반영)
     await window.loadCategories();  // [Ver.10.0] 소분류 로드
+    await window.loadProjGroups(); // [Ver.10.5] 프로젝트 그룹 로드
     await window.loadProjOrder();   // [Ver.8.6] 프로젝트 정렬 순서 로드
     await window.loadMaster(true);
     await window.loadInventory(true);
